@@ -5,40 +5,58 @@ weight: 1
 chapter: false
 ---
 
-    
 # Internship Report
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your report, including this warning.
-{{% /notice %}}
+TODO: Replace with actual project information.
 
-### Student Information:
-&emsp; **Full Name:** Nguyen Van A
+![Student profile](/images/profile/student-profile.png)
 
-&emsp; **Phone Number:** 0989888999 
+## Student Information
 
-&emsp; **Email:** Anguyenvan@gmail.com
+| Field | Value |
+|---|---|
+| Student name | `[STUDENT_NAME]` |
+| University | `[UNIVERSITY]` |
+| Major | `[MAJOR]` |
+| Internship position | `[INTERNSHIP_POSITION]` |
 
-&emsp; **University:** Ho Chi Minh City University of Technology and Education
+## Internship Organization
 
-&emsp; **Major:** Information Technology
+| Field | Value |
+|---|---|
+| Program or organization | First Cloud AI Journey / FCAJ |
+| Team members | `[TEAM_MEMBERS]` |
 
-&emsp; **Class:** AWS082025
+## Internship Period
 
-&emsp; **Internship Company:** Amazon Web Services Viet Nam Company Limited
+`[START_DATE] - [END_DATE]`
 
-&emsp; **Internship Position:** Workforce Bootcamp - First Cloud AI Journey
+## Project
 
-&emsp; **Internship Duration:** From 12/08/2025 to 12/11/2025
+| Field | Value |
+|---|---|
+| Project name | `[PROJECT_NAME]` |
+| Project description | `[PROJECT_DESCRIPTION]` |
+| Personal contribution | `[PERSONAL_CONTRIBUTION]` |
+| Public deployment URL | `[DEPLOYMENT_URL]` |
 
-![Your profile picture](/images/avatar.png)
+## Main AWS Services
 
-### Report Content
+- `[AWS_SERVICE_1]`
+- `[AWS_SERVICE_2]`
+- `[AWS_SERVICE_3]`
+- AWS Region: `[AWS_REGION]`
 
-1.  [Worklog](1-Worklog/)
-2.  [Proposal](2-Proposal/)
-3.  [BlogsPosted](3-BlogsPosted/)
-4.  [Events Participated](4-EventParticipated/)
-5.  [Workshop](5-Workshop/)
-6.  [Self-evaluation](6-Self-evaluation/)
-7.  [Sharing and Feedback](7-Feedback/)
+## Report Sections
+
+1. [Worklog](1-Worklog/)
+2. [Proposal](2-Proposal/)
+3. [Blogs Posted](3-BlogsPosted/)
+4. [Events Participated](4-EventParticipated/)
+5. [Workshop](5-Workshop/)
+6. [Self-evaluation](6-Self-evaluation/)
+7. [Sharing and Feedback](7-Feedback/)
+
+## Security Notice
+
+Do not publish secrets, access keys, passwords, tokens, database URLs, private repository URLs or private source code on this website.

@@ -1,59 +1,39 @@
----
-title: "Worklog Tuần 1"
+﻿---
+title: "Nhật ký tuần 1"
 date: 2024-01-01
 weight: 1
 chapter: false
 pre: " <b> 1.1. </b> "
 ---
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
 
+# Tuần 1 - Định hướng chương trình, kiến trúc và nền tảng backend
 
 ### Mục tiêu tuần 1:
 
-* Kết nối, làm quen với các thành viên trong First Cloud AI Journey.
-* Hiểu dịch vụ AWS cơ bản, cách dùng console & CLI.
+- Hiểu yêu cầu thực tập và quy định báo cáo project FCAJ.
+- Phân tích bài toán quản lý ứng tuyển thực tập và xác định các nhóm người dùng chính.
+- Khởi tạo nền tảng backend, database schema, authentication flow và role-based access.
 
-### Các công việc cần triển khai trong tuần này:
-| Thứ | Công việc                                                                                                                                                                                   | Ngày bắt đầu | Ngày hoàn thành | Nguồn tài liệu                            |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- | ----------------------------------------- |
-| 2   | - Làm quen với các thành viên FCAJ <br> - Đọc và lưu ý các nội quy, quy định tại đơn vị thực tập                                                                                             | 11/08/2025   | 11/08/2025      |
-| 3   | - Tìm hiểu AWS và các loại dịch vụ <br>&emsp; + Compute <br>&emsp; + Storage <br>&emsp; + Networking <br>&emsp; + Database <br>&emsp; + ... <br>                                            | 12/08/2025   | 12/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
-| 4   | - Tạo AWS Free Tier account <br> - Tìm hiểu AWS Console & AWS CLI <br> - **Thực hành:** <br>&emsp; + Tạo AWS account <br>&emsp; + Cài AWS CLI & cấu hình <br> &emsp; + Cách sử dụng AWS CLI | 13/08/2025   | 13/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
-| 5   | - Tìm hiểu EC2 cơ bản: <br>&emsp; + Instance types <br>&emsp; + AMI <br>&emsp; + EBS <br>&emsp; + ... <br> - Các cách remote SSH vào EC2 <br> - Tìm hiểu Elastic IP   <br>                  | 14/08/2025   | 15/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
-| 6   | - **Thực hành:** <br>&emsp; + Tạo EC2 instance <br>&emsp; + Kết nối SSH <br>&emsp; + Gắn EBS volume                                                                                         | 15/08/2025   | 15/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
+### Các công việc thực hiện trong tuần:
 
+| Ngày | Công việc | Ngày bắt đầu | Ngày hoàn thành | Tài liệu tham khảo |
+|---|---|---|---|---|
+| 1 | Đọc quy định, cấu trúc workshop mẫu và yêu cầu project. | 08/06/2026 | 14/06/2026 | [FCAJ Project Requirements](https://cloudjourney.awsstudygroup.com/8-fcjworkforce/); [FCAJ Internship Report Sample](https://workshop-sample.awsfcaj.com) |
+| 2 | Phân tích vấn đề người dùng và xác định hai nhóm Candidate, HR/Company. | 08/06/2026 | 14/06/2026 | [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html); [FCAJ Project Requirements](https://cloudjourney.awsstudygroup.com/8-fcjworkforce/) |
+| 3 | Xác định authentication, jobs, applications, documents, chat và AI matching. | 08/06/2026 | 14/06/2026 | [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html) |
+| 4 | Khởi tạo FastAPI, database connection, models và Alembic migration. | 08/06/2026 | 14/06/2026 | [FastAPI Documentation - OAuth2 with JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/); [SQLAlchemy ORM Quick Start](https://docs.sqlalchemy.org/en/20/orm/quickstart.html); [Alembic Tutorial](https://alembic.sqlalchemy.org/en/latest/tutorial.html) |
+| 5 | Xây dựng registration, login, JWT handling, password hashing và protected endpoint checks. | 08/06/2026 | 14/06/2026 | [FastAPI Documentation - OAuth2 with JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/); [PostgreSQL Documentation](https://www.postgresql.org/docs/current/) |
 
-### Kết quả đạt được tuần 1:
+### Kết quả đạt được trong tuần:
 
-* Hiểu AWS là gì và nắm được các nhóm dịch vụ cơ bản: 
-  * Compute
-  * Storage
-  * Networking 
-  * Database
-  * ...
+- Phạm vi project và các business flows chính được xác định.
+- Vai trò Candidate và HR/Company được làm rõ.
+- React/Vite, FastAPI, Node.js/Socket.IO và AI service được chọn cho hệ thống.
+- PostgreSQL, DynamoDB, Redis và S3 được ánh xạ với các nhu cầu dữ liệu khác nhau.
+- Nền tảng backend, authentication flow và migration ban đầu được chuẩn bị.
 
-* Đã tạo và cấu hình AWS Free Tier account thành công.
-
-* Làm quen với AWS Management Console và biết cách tìm, truy cập, sử dụng dịch vụ từ giao diện web.
-
-* Cài đặt và cấu hình AWS CLI trên máy tính bao gồm:
-  * Access Key
-  * Secret Key
-  * Region mặc định
-  * ...
-
-* Sử dụng AWS CLI để thực hiện các thao tác cơ bản như:
-
-  * Kiểm tra thông tin tài khoản & cấu hình
-  * Lấy danh sách region
-  * Xem dịch vụ EC2
-  * Tạo và quản lý key pair
-  * Kiểm tra thông tin dịch vụ đang chạy
-  * ...
-
-* Có khả năng kết nối giữa giao diện web và CLI để quản lý tài nguyên AWS song song.
-* ...
-
-
+<!--
+TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Expected image directory:
+static/images/worklog/week-1/
+-->

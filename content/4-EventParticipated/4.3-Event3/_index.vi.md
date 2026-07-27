@@ -1,0 +1,71 @@
+---
+title: "Sự kiện 3: FCAJ x Agentic AI Build Week 2026"
+date: 2024-01-01
+weight: 3
+chapter: false
+pre: " <b> 4.3. </b> "
+---
+
+# Sự kiện 3: FCAJ x Agentic AI Build Week 2026
+
+## Tên sự kiện
+
+FCAJ x Agentic AI Build Week 2026: Show Up. Build. Pitch. WIN!
+
+Đây là chương trình chia sẻ và tổng kết những hoạt động, sản phẩm và phần trình bày nổi bật trong khuôn khổ Agentic AI Build Week 2026. Chương trình chính diễn ra trong năm ngày, từ ngày 08/07/2026 đến ngày 12/07/2026, bao gồm các hoạt động workshop, phát triển sản phẩm, hackathon và trình bày giải pháp AI trước ban giám khảo.
+
+## Thời gian
+
+- Thời gian diễn ra Agentic AI Build Week: 08–12/07/2026.
+- Thời gian nhóm mình tham gia trực tiếp: 26/07/2026.
+
+## Địa điểm
+
+- Hình thức tham gia: Trực tiếp.
+- Địa điểm tổ chức chương trình chính: Thành phố Hồ Chí Minh, Việt Nam.
+
+## Vai trò
+
+Người tham dự trực tiếp.
+
+Trong quá trình tham gia sự kiện, nhóm mình tập trung quan sát cách các đội thi xác định vấn đề thực tế, xây dựng giải pháp Agentic AI, lựa chọn kiến trúc AWS và trình bày giá trị của sản phẩm trước ban giám khảo.
+
+## Nội dung chính
+
+Sự kiện tập trung vào quá trình phát triển các hệ thống AI Agent và Agentic AI có khả năng xử lý tác vụ theo nhiều bước, sử dụng công cụ bên ngoài và hỗ trợ giải quyết các vấn đề thực tế của doanh nghiệp.
+
+Khác với chatbot thông thường chỉ phản hồi câu hỏi, AI Agent có thể phân tích yêu cầu, lập kế hoạch, lựa chọn công cụ phù hợp, xử lý dữ liệu và thực hiện một số hành động dựa trên mục tiêu đã được xác định.
+
+Một số nội dung và dự án nổi bật được giới thiệu trong chương trình gồm:
+
+- Xây dựng chatbot đặt thức ăn đa kênh thông qua Zalo và Messenger.
+- Phát triển hệ thống Multi-Agent để thu thập và phân tích các tín hiệu thay đổi chiến lược của doanh nghiệp.
+- Tự động hóa quá trình thiết kế kiến trúc AWS, tạo sơ đồ hệ thống và ước lượng chi phí triển khai.
+- Kết hợp Computer Vision và Agentic AI để theo dõi mật độ, dự đoán tình trạng ùn tắc và hỗ trợ điều phối đám đông.
+- Sử dụng nhiều AI Sub-agent để hỗ trợ phát hiện và điều tra các giao dịch tài chính đáng ngờ.
+
+Thông qua các phần trình bày, mình nhận thấy một sản phẩm AI không chỉ cần mô hình có năng lực tốt mà còn phải giải quyết đúng vấn đề của người dùng. Các đội thi phải cân bằng giữa kiến trúc kỹ thuật, thời gian phát triển, chi phí vận hành, tính bảo mật và giá trị kinh doanh.
+
+Một nội dung đáng chú ý khác là vai trò của Human-in-the-loop. Trong các lĩnh vực nhạy cảm như tài chính, ngân hàng hoặc chăm sóc khách hàng, AI có thể hỗ trợ thu thập thông tin, phân tích dữ liệu và đưa ra đề xuất, nhưng con người vẫn cần kiểm tra và đưa ra quyết định cuối cùng.
+
+## Hình ảnh hoặc video chứng minh tham gia
+
+Minh chứng tham gia trực tiếp của nhóm:
+
+![Minh chứng tham gia trực tiếp sự kiện 3](/images/3-Events/Evidence_Events%203.jpg)
+
+## Bài học rút ra
+
+Sau khi theo dõi sự kiện, mình rút ra một số bài học quan trọng.
+
+Thứ nhất, một dự án AI nên bắt đầu từ pain point thực tế thay vì bắt đầu bằng việc lựa chọn một công nghệ đang thịnh hành. Một kiến trúc phức tạp sẽ không mang lại nhiều giá trị nếu sản phẩm không giải quyết được nhu cầu cụ thể của người dùng.
+
+Thứ hai, trong điều kiện thời gian phát triển hạn chế, nhóm cần kiểm soát tốt phạm vi của dự án. Một sản phẩm MVP hoạt động ổn định và chứng minh rõ giá trị thường hiệu quả hơn một hệ thống có quá nhiều tính năng nhưng chưa được hoàn thiện.
+
+Thứ ba, khi xây dựng Agentic AI, nhóm phát triển cần quan tâm đến độ chính xác, bảo mật, quyền truy cập công cụ, chi phí sử dụng mô hình và khả năng theo dõi các hành động do Agent thực hiện. AI không nên được trao quyền thực hiện những hành động quan trọng nếu chưa có cơ chế kiểm soát và xác nhận phù hợp.
+
+## Đóng góp cá nhân
+
+Đóng góp cá nhân của mình trong hoạt động này là chủ động theo dõi, ghi chép và tổng hợp các mô hình ứng dụng Agentic AI được trình bày trong sự kiện.
+
+Mình cũng phân tích khả năng áp dụng những kiến thức đã học vào project thực tập, đặc biệt là việc sử dụng AI Agent để xử lý dữ liệu, hỗ trợ người dùng và tự động hóa các tác vụ lặp lại. Những ghi chú này giúp mình có thêm cơ sở để đánh giá tính khả thi, phạm vi và các yêu cầu bảo mật khi tích hợp AI vào hệ thống thực tế.

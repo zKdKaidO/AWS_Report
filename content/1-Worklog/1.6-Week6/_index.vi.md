@@ -1,58 +1,39 @@
----
-title: "Worklog Tuần 6"
+﻿---
+title: "Nhật ký tuần 6"
 date: 2024-01-01
-weight: 1
+weight: 6
 chapter: false
 pre: " <b> 1.6. </b> "
 ---
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
 
+# Tuần 6 - Container hóa và tích hợp Docker Compose
 
 ### Mục tiêu tuần 6:
 
-* Kết nối, làm quen với các thành viên trong First Cloud AI Journey.
-* Hiểu dịch vụ AWS cơ bản, cách dùng console & CLI.
+- Chuẩn hóa runtime cho toàn bộ services.
+- Tích hợp full stack trong local environment.
+- Xây dựng quy trình startup và smoke test có thể lặp lại.
 
-### Các công việc cần triển khai trong tuần này:
-| Thứ | Công việc                                                                                                                                                                                   | Ngày bắt đầu | Ngày hoàn thành | Nguồn tài liệu                            |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- | ----------------------------------------- |
-| 2   | - Làm quen với các thành viên FCAJ <br> - Đọc và lưu ý các nội quy, quy định tại đơn vị thực tập                                                                                             | 11/08/2025   | 11/08/2025      |
-| 3   | - Tìm hiểu AWS và các loại dịch vụ <br>&emsp; + Compute <br>&emsp; + Storage <br>&emsp; + Networking <br>&emsp; + Database <br>&emsp; + ... <br>                                            | 12/08/2025   | 12/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
-| 4   | - Tạo AWS Free Tier account <br> - Tìm hiểu AWS Console & AWS CLI <br> - **Thực hành:** <br>&emsp; + Tạo AWS account <br>&emsp; + Cài AWS CLI & cấu hình <br> &emsp; + Cách sử dụng AWS CLI | 13/08/2025   | 13/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
-| 5   | - Tìm hiểu EC2 cơ bản: <br>&emsp; + Instance types <br>&emsp; + AMI <br>&emsp; + EBS <br>&emsp; + ... <br> - Các cách remote SSH vào EC2 <br> - Tìm hiểu Elastic IP   <br>                  | 14/08/2025   | 15/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
-| 6   | - **Thực hành:** <br>&emsp; + Tạo EC2 instance <br>&emsp; + Kết nối SSH <br>&emsp; + Gắn EBS volume                                                                                         | 15/08/2025   | 15/08/2025      | <https://cloudjourney.awsstudygroup.com/> |
+### Các công việc thực hiện trong tuần:
 
+| Ngày | Công việc | Ngày bắt đầu | Ngày hoàn thành | Tài liệu tham khảo |
+|---|---|---|---|---|
+| 1 | Viết Dockerfiles cho backend, frontend, chat và AI services. | 13/07/2026 | 19/07/2026 | [Docker Compose File Reference](https://docs.docker.com/compose/compose-file/) |
+| 2 | Cấu hình PostgreSQL, Redis và DynamoDB Local. | 13/07/2026 | 19/07/2026 | [Docker Compose Application Model](https://docs.docker.com/compose/intro/compose-application-model/); [Docker Compose File Reference](https://docs.docker.com/compose/compose-file/) |
+| 3 | Tích hợp backend, worker, frontend và chat trong Compose. | 13/07/2026 | 19/07/2026 | [Docker Compose Quickstart](https://docs.docker.com/compose/gettingstarted/); [Docker Compose Application Model](https://docs.docker.com/compose/intro/compose-application-model/) |
+| 4 | Tách AI service thành Compose file riêng. | 13/07/2026 | 19/07/2026 | [Docker Compose File Reference](https://docs.docker.com/compose/compose-file/) |
+| 5 | Chạy migration, seed, health check và smoke test. | 13/07/2026 | 19/07/2026 | [Docker Documentation - Health Checks and Service Dependencies](https://docs.docker.com/compose/how-tos/startup-order/); [Docker Compose Quickstart](https://docs.docker.com/compose/gettingstarted/) |
 
-### Kết quả đạt được tuần 6:
-* Hiểu AWS là gì và nắm được các nhóm dịch vụ cơ bản: 
-  * Compute
-  * Storage
-  * Networking 
-  * Database
-  * ...
+### Kết quả đạt được trong tuần:
 
-* Đã tạo và cấu hình AWS Free Tier account thành công.
+- Hệ thống có thể chạy bằng Docker Compose.
+- Containers giao tiếp thông qua internal network.
+- Backend sử dụng PostgreSQL; chat sử dụng Redis và DynamoDB Local.
+- Demo data có thể được seed.
+- Local runbook và troubleshooting notes được chuẩn bị.
 
-* Làm quen với AWS Management Console và biết cách tìm, truy cập, sử dụng dịch vụ từ giao diện web.
-
-* Cài đặt và cấu hình AWS CLI trên máy tính bao gồm:
-  * Access Key
-  * Secret Key
-  * Region mặc định
-  * ...
-
-* Sử dụng AWS CLI để thực hiện các thao tác cơ bản như:
-
-  * Kiểm tra thông tin tài khoản & cấu hình
-  * Lấy danh sách region
-  * Xem dịch vụ EC2
-  * Tạo và quản lý key pair
-  * Kiểm tra thông tin dịch vụ đang chạy
-  * ...
-
-* Có khả năng kết nối giữa giao diện web và CLI để quản lý tài nguyên AWS song song.
-* ...
-
-
+<!--
+TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Expected image directory:
+static/images/worklog/week-6/
+-->

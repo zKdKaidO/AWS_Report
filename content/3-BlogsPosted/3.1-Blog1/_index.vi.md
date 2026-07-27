@@ -5,27 +5,66 @@ weight: 1
 chapter: false
 pre: " <b> 3.1. </b> "
 ---
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
 
-# SESSION POLICIES TRONG AMAZON EKS POD IDENTITY
+# TẮT EC2 RỒI NHƯNG AWS VẪN TÍNH PHÍ?
 
-Amazon EKS Pod Identity vừa bổ sung tính năng session policies, cho phép bạn thu hẹp quyền IAM một cách linh hoạt và chính xác cho từng pod mà không cần tạo thêm nhiều IAM roles riêng biệt. Đây là bước tiến quan trọng giúp áp dụng nguyên tắc least privilege hiệu quả hơn trong môi trường Kubernetes quy mô lớn.
+Một hiểu lầm khá phổ biến khi mới học AWS là: *EC2 đã tắt = AWS ngừng tính phí.*
 
-Các điểm chính cần nắm:
+Nhưng qua những bài post và tin nhắn trong group, mình thấy rất nhiều người vẫn nhận hóa đơn dù instance đã ở trạng thái *Stopped*, thậm chí đã *Terminated*.
 
-* Session policy là một IAM policy inline được chỉ định khi tạo hoặc cập nhật Pod Identity association.
-* Quyền hiệu quả = intersection (giao) giữa permissions của IAM role và session policy → session policy chỉ có thể thu hẹp, không thể mở rộng quyền.
-* Giúp tránh tình trạng over-permissioning khi reuse chung một IAM role cho nhiều workloads có nhu cầu khác nhau.
-* Hỗ trợ cả same-account và cross-account (qua IAM role chaining).
-* Giảm đáng kể số lượng IAM roles cần quản lý, tránh chạm giới hạn quota IAM trong cluster lớn.
-* Cấu hình dễ dàng qua AWS Management Console, AWS CLI hoặc AWS SDK khi tạo association giữa Kubernetes ServiceAccount và IAM role.
+Có một trường hợp thực tế là một người bạn của mình đã vô tình để quên NAT Gateway sau khi làm lab và nhận hóa đơn khoảng gần $250.
 
-Tính năng này đặc biệt hữu ích khi bạn có nhiều ứng dụng chạy trên cùng một IAM role nhưng cần giới hạn quyền khác nhau (ví dụ: một pod chỉ đọc S3 bucket cụ thể, pod khác chỉ gọi một số API nhất định).
+Vấn đề nằm ở chỗ: EC2 chỉ là một phần trong hệ thống. Những tài nguyên được tạo cùng với nó không phải lúc nào cũng tự biến mất.
 
-...Hình ảnh...
+## Stop EC2 chỉ dừng phí máy ảo
 
-...Link...
+Khi EC2 ở trạng thái Stopped, AWS ngừng tính phí phần compute. Tuy nhiên, ổ đĩa EBS vẫn được giữ lại để lần sau có thể bật máy và tiếp tục sử dụng, vì vậy dung lượng lưu trữ vẫn bị tính phí.
 
-...Hướng dẫn...
+Ta có thể hiểu đơn giản:
+
+- Stop = Tắt máy nhưng giữ nguyên ổ cứng.
+- Terminate = Xóa máy, nhưng vẫn nên kiểm tra xem EBS volume có được cấu hình xóa cùng với instance hay không.
+
+## NAT Gateway vẫn tính tiền dù EC2 đã tắt
+
+NAT Gateway là một tài nguyên riêng trong VPC nên nó không tự dừng theo EC2.
+
+AWS tính phí dựa trên cả:
+
+- Số giờ NAT Gateway tồn tại.
+- Lượng dữ liệu đi qua nó.
+
+Ví dụ, trong bảng giá AWS tại một số region, NAT Gateway có thể tốn khoảng $0.045 mỗi giờ (chi phí tham khảo), tương đương hơn $32 mỗi tháng, ngay cả khi gần như không có traffic.
+
+Nếu có dữ liệu đi qua, chi phí sẽ còn tăng thêm.
+
+## Elastic IP cũng không miễn phí
+
+Nếu đã cấp một Elastic IP nhưng quên release, địa chỉ đó vẫn có thể tiếp tục tạo ra chi phí.
+
+AWS hiện tính phí public IPv4 cả khi đang được sử dụng lẫn khi để idle. Một địa chỉ chỉ tốn khoảng vài USD mỗi tháng, nhưng nếu nhiều địa chỉ bị bỏ quên ở nhiều region thì chi phí sẽ cộng dồn thành một con số đáng kể.
+
+## AWS Budget không phải “hard spending limit”
+
+AWS Budget mặc định chủ yếu dùng để gửi cảnh báo. Nó không tự động khóa toàn bộ tài khoản khi chi phí đạt đến mức đã đặt.
+
+Nếu muốn hệ thống tự phản ứng, chúng ta cần cấu hình thêm Budget Actions, chẳng hạn:
+
+- Stop một EC2 hoặc RDS cụ thể.
+- Gắn IAM policy để ngăn tạo thêm tài nguyên.
+- Gửi cảnh báo qua email hoặc SNS.
+
+## Checklist tham khảo mình đúc kết sau mỗi buổi lab AWS
+
+- Vào Cost Explorer, group theo Service và Usage Type.
+- Kiểm tra EC2 → Volumes và xóa những EBS không còn cần thiết.
+- Kiểm tra VPC → NAT Gateways.
+- Release các Elastic IP không còn sử dụng.
+- Kiểm tra đúng region vì tài nguyên ở region khác vẫn có thể tính tiền.
+- Bật AWS Budget và Cost Anomaly Detection ngay từ đầu.
+
+Bài học quan trọng nhất mình rút ra là: khi xóa một service trên AWS, đừng chỉ hỏi: *“Mình đã tắt nó chưa?”* Mà hãy hỏi thêm:
+
+*“Service này đã tạo ra những tài nguyên phụ nào, và chúng có còn đang tính phí không?”*
+
+`#AWS` `#EC2` `#CloudComputing` `#AWSCostOptimization`

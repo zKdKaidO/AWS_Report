@@ -1,9 +1,10 @@
----
-title : "On-premises DNS Simulation"
-date : 2024-01-01
-weight : 4
-chapter : false
-pre : " <b> 5.4.4 </b> "
+﻿---
+title: "On-premises DNS Simulation"
+date: 2024-01-01
+weight: 4
+chapter: false
+pre: " <b> 5.4.4 </b> "
+draft: true
 ---
 
 AWS PrivateLink endpoints have a fixed IP address in each Availability Zone where they are deployed, for the life of the endpoint (until it is deleted). These IP addresses are attached to Elastic Network Interfaces (ENIs). AWS recommends using DNS to resolve the IP addresses for endpoints so that downstream applications use the latest IP addresses when ENIs are added to new AZs, or deleted over time.

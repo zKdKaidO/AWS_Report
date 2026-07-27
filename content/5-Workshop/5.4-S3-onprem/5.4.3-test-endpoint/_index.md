@@ -1,9 +1,10 @@
----
-title : "Test the Interface Endpoint"
-date : 2024-01-01
-weight : 3
-chapter : false
-pre : " <b> 5.4.3 </b> "
+﻿---
+title: "Test the Interface Endpoint"
+date: 2024-01-01
+weight: 3
+chapter: false
+pre: " <b> 5.4.3 </b> "
+draft: true
 ---
 
 #### Get the regional DNS name of S3 interface endpoint
@@ -53,7 +54,3 @@ Now the file has been added to your S3 bucket. Let check your S3 bucket in the n
 3. Click the name of your bucket and you will see testfile2.xyz has been added to your bucket
 
 ![check bucket](/images/5-Workshop/5.4-S3-onprem/check-bucket.png)
-
-
-
-

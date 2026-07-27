@@ -1,125 +1,82 @@
 ---
-title: "Event 2"
+title: "Sự kiện 2: Kiến trúc Cloud doanh nghiệp và ứng dụng trong thực tế"
 date: 2024-01-01
-weight: 1
+weight: 2
 chapter: false
 pre: " <b> 4.2. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
+# Sự kiện 2: Kiến trúc Cloud doanh nghiệp và ứng dụng trong thực tế
 
-# Bài thu hoạch “GenAI-powered App-DB Modernization workshop”
+## Tên sự kiện
 
-### Mục Đích Của Sự Kiện
+AWS Study Tour: Enterprise Cloud Architectures and Industry Applications featuring Cloud Kinetics and Renova Cloud
 
-- Chia sẻ best practices trong thiết kế ứng dụng hiện đại
-- Giới thiệu phương pháp DDD và event-driven architecture
-- Hướng dẫn lựa chọn compute services phù hợp
-- Giới thiệu công cụ AI hỗ trợ development lifecycle
+Đây là chương trình tham quan và học tập thực tế tại AWS, với các phần chia sẻ chuyên môn đến từ đại diện AWS, Cloud Kinetics và Renova Cloud.
 
-### Danh Sách Diễn Giả
+## Thời gian
 
-- **Jignesh Shah** - Director, Open Source Databases
-- **Erica Liu** - Sr. GTM Specialist, AppMod
-- **Fabrianne Effendi** - Assc. Specialist SA, Serverless Amazon Web Services
+Ngày 23/05/2026.
 
-### Nội Dung Nổi Bật
+## Địa điểm
 
-#### Đưa ra các ảnh hưởng tiêu cực của kiến trúc ứng dụng cũ
+Văn phòng Amazon Web Services Việt Nam, Bitexco Financial Tower, Thành phố Hồ Chí Minh.
 
-- Thời gian release sản phẩm lâu → Mất doanh thu/bỏ lỡ cơ hội
-- Hoạt động kém hiệu quả → Mất năng suất, tốn kém chi phí
-- Không tuân thủ các quy định về bảo mật → Mất an ninh, uy tín
+Nội dung sự kiện cũng được phát trực tuyến và lưu lại trên kênh YouTube của AWS Study Group để người tham dự có thể theo dõi từ xa hoặc xem lại sau chương trình.
 
-#### Chuyển đổi sang kiến trúc ứng dụng mới - Microservice Architecture
+## Vai trò
 
-Chuyển đổi thành hệ thống modular – từng chức năng là một **dịch vụ độc lập** giao tiếp với nhau qua **sự kiện** với 3 trụ cột cốt lõi:
+Người tham dự trực tuyến.
 
-- **Queue Management**: Xử lý tác vụ bất đồng bộ
-- **Caching Strategy:** Tối ưu performance
-- **Message Handling:** Giao tiếp linh hoạt giữa services
+Mình tham gia với vai trò người học, theo dõi các phần chia sẻ của chuyên gia và tìm hiểu cách kiến trúc Cloud được thiết kế, triển khai và vận hành trong môi trường doanh nghiệp.
 
-#### Domain-Driven Design (DDD)
+## Nội dung chính
 
-- **Phương pháp 4 bước**: Xác định domain events → sắp xếp timeline → identify actors → xác định bounded contexts
-- **Case study bookstore**: Minh họa cách áp dụng DDD thực tế
-- **Context mapping**: 7 patterns tích hợp bounded contexts
+Sự kiện giới thiệu các kiến thức liên quan đến kiến trúc Cloud cấp doanh nghiệp và cách AWS được ứng dụng để giải quyết các bài toán thực tế.
 
-#### Event-Driven Architecture
+Một nội dung quan trọng là sự khác biệt giữa một hệ thống Cloud đơn giản và một hệ thống đáp ứng các yêu cầu của doanh nghiệp. Một kiến trúc doanh nghiệp không chỉ cần hoạt động được mà còn phải đáp ứng các tiêu chí như:
 
-- **3 patterns tích hợp**: Publish/Subscribe, Point-to-point, Streaming
-- **Lợi ích**: Loose coupling, scalability, resilience
-- **So sánh sync vs async**: Hiểu rõ trade-offs (sự đánh đổi)
+- Khả năng mở rộng khi số lượng người dùng hoặc khối lượng dữ liệu tăng.
+- Tính sẵn sàng cao và khả năng hạn chế thời gian gián đoạn.
+- Bảo mật dữ liệu và quản lý quyền truy cập.
+- Khả năng sao lưu và phục hồi khi xảy ra sự cố.
+- Theo dõi hiệu năng, nhật ký hoạt động và chi phí sử dụng tài nguyên.
+- Tuân thủ các yêu cầu nội bộ và quy định của từng lĩnh vực.
 
-#### Compute Evolution
+Các diễn giả cũng trình bày vai trò của Solution Architect trong quá trình chuyển đổi yêu cầu kinh doanh thành kiến trúc kỹ thuật. Solution Architect cần tìm hiểu nhu cầu của khách hàng, xác định yêu cầu chức năng và phi chức năng, sau đó lựa chọn các dịch vụ AWS phù hợp.
 
-- **Shared Responsibility Model**: Từ EC2 → ECS → Fargate → Lambda
-- **Serverless benefits**: No server management, auto-scaling, pay-for-value
-- **Functions vs Containers**: Criteria lựa chọn phù hợp
+Một nội dung đáng chú ý khác là quá trình đưa ứng dụng từ môi trường development lên production. Một hệ thống production cần có quy trình triển khai tự động, cơ chế giám sát và cảnh báo, phương pháp kiểm soát thay đổi và kế hoạch khôi phục khi phiên bản mới gặp lỗi.
 
-#### Amazon Q Developer
+Các phần chia sẻ từ Cloud Kinetics và Renova Cloud giúp mình hiểu rõ hơn cách doanh nghiệp ứng dụng Cloud để hiện đại hóa hệ thống, cải thiện khả năng mở rộng và hỗ trợ quá trình chuyển đổi số. Sự kiện cũng tạo cơ hội để sinh viên tiếp cận kinh nghiệm thực tế từ các Solution Architect đang làm việc trong lĩnh vực Cloud.
 
-- **SDLC automation**: Từ planning đến maintenance
-- **Code transformation**: Java upgrade, .NET modernization
-- **AWS Transform agents**: VMware, Mainframe, .NET migration
+## Hình ảnh hoặc video chứng minh tham gia
 
-### Những Gì Học Được
+[Xem video ghi hình sự kiện trên YouTube](https://www.youtube.com/live/FKtMkUqyny4?si=SdhD3d67wFy7qNr6)
 
-#### Tư Duy Thiết Kế
+Minh chứng cá nhân cần bổ sung:
 
-- **Business-first approach**: Luôn bắt đầu từ business domain, không phải technology
-- **Ubiquitous language**: Importance của common vocabulary giữa business và tech teams
-- **Bounded contexts**: Cách identify và manage complexity trong large systems
+- Ảnh chụp màn hình khi video sự kiện đang phát.
+- Ảnh lịch sử xem YouTube.
+- Ảnh hiển thị thông tin tài khoản người tham dự.
+- Ghi chú cá nhân được thực hiện trong quá trình theo dõi sự kiện.
 
-#### Kiến Trúc Kỹ Thuật
+<!--
+TODO: Thêm ảnh minh chứng tham gia:
+static/images/events/event-2/participation-evidence.png
+-->
 
-- **Event storming technique**: Phương pháp thực tế để mô hình hóa quy trình kinh doanh
-- Sử dụng **Event-driven communication** thay vì synchronous calls
-- **Integration patterns**: Hiểu khi nào dùng sync, async, pub/sub, streaming
-- **Compute spectrum**: Criteria chọn từ VM → containers → serverless
+## Bài học rút ra
 
-#### Chiến Lược Hiện Đại Hóa
+Bài học đầu tiên mình rút ra là khi thiết kế một hệ thống Cloud, không nên chỉ tập trung vào việc làm cho ứng dụng có thể chạy. Người phát triển còn phải quan tâm đến bảo mật, hiệu năng, khả năng mở rộng, giám sát, phục hồi sự cố và chi phí vận hành.
 
-- **Phased approach**: Không rush, phải có roadmap rõ ràng
-- **7Rs framework**: Nhiều con đường khác nhau tùy thuộc vào đặc điểm của mỗi ứng dụng
-- **ROI measurement**: Cost reduction + business agility
+Bài học thứ hai là mỗi dịch vụ AWS chỉ nên được sử dụng khi phù hợp với yêu cầu của hệ thống. Việc sử dụng nhiều dịch vụ không đồng nghĩa với một kiến trúc tốt hơn. Một kiến trúc phù hợp cần đơn giản, có thể quản lý, dễ mở rộng và giải quyết đúng nhu cầu.
 
-### Ứng Dụng Vào Công Việc
+Bài học thứ ba là môi trường production cần được chuẩn bị và vận hành khác với môi trường development. Thông tin nhạy cảm không nên được lưu trực tiếp trong source code; dữ liệu cần có cơ chế sao lưu; hệ thống cần có log, metric, alarm và quy trình xử lý sự cố.
 
-- **Áp dụng DDD** cho project hiện tại: Event storming sessions với business team
-- **Refactor microservices**: Sử dụng bounded contexts để identify service boundaries
-- **Implement event-driven patterns**: Thay thế một số sync calls bằng async messaging
-- **Serverless adoption**: Pilot AWS Lambda cho một số use cases phù hợp
-- **Try Amazon Q Developer**: Integrate vào development workflow để boost productivity
+## Đóng góp cá nhân
 
-### Trải nghiệm trong event
+Đối với project thực tập, kiến thức từ sự kiện giúp mình hiểu rõ hơn vai trò của các thành phần như API Gateway, máy chủ backend, cơ sở dữ liệu, hệ thống lưu trữ và dịch vụ giám sát.
 
-Tham gia workshop **“GenAI-powered App-DB Modernization”** là một trải nghiệm rất bổ ích, giúp tôi có cái nhìn toàn diện về cách hiện đại hóa ứng dụng và cơ sở dữ liệu bằng các phương pháp và công cụ hiện đại. Một số trải nghiệm nổi bật:
+Mình đã tổng hợp các nguyên tắc thiết kế kiến trúc doanh nghiệp và đối chiếu với kiến trúc của project đang triển khai. Qua đó, mình xác định được một số nội dung cần tiếp tục cải thiện, bao gồm monitoring, backup, quản lý secret, khả năng mở rộng và kiểm soát chi phí.
 
-#### Học hỏi từ các diễn giả có chuyên môn cao
-- Các diễn giả đến từ AWS và các tổ chức công nghệ lớn đã chia sẻ **best practices** trong thiết kế ứng dụng hiện đại.
-- Qua các case study thực tế, tôi hiểu rõ hơn cách áp dụng **Domain-Driven Design (DDD)** và **Event-Driven Architecture** vào các project lớn.
-
-#### Trải nghiệm kỹ thuật thực tế
-- Tham gia các phiên trình bày về **event storming** giúp tôi hình dung cách **mô hình hóa quy trình kinh doanh** thành các domain events.
-- Học cách **phân tách microservices** và xác định **bounded contexts** để quản lý sự phức tạp của hệ thống lớn.
-- Hiểu rõ trade-offs giữa **synchronous và asynchronous communication** cũng như các pattern tích hợp như **pub/sub, point-to-point, streaming**.
-
-#### Ứng dụng công cụ hiện đại
-- Trực tiếp tìm hiểu về **Amazon Q Developer**, công cụ AI hỗ trợ SDLC từ lập kế hoạch đến maintenance.
-- Học cách **tự động hóa code transformation** và pilot serverless với **AWS Lambda**, từ đó nâng cao năng suất phát triển.
-
-#### Kết nối và trao đổi
-- Workshop tạo cơ hội trao đổi trực tiếp với các chuyên gia, đồng nghiệp và team business, giúp **nâng cao ngôn ngữ chung (ubiquitous language)** giữa business và tech.
-- Qua các ví dụ thực tế, tôi nhận ra tầm quan trọng của **business-first approach**, luôn bắt đầu từ nhu cầu kinh doanh thay vì chỉ tập trung vào công nghệ.
-
-#### Bài học rút ra
-- Việc áp dụng DDD và event-driven patterns giúp giảm **coupling**, tăng **scalability** và **resilience** cho hệ thống.
-- Chiến lược hiện đại hóa cần **phased approach** và đo lường **ROI**, không nên vội vàng chuyển đổi toàn bộ hệ thống.
-- Các công cụ AI như Amazon Q Developer có thể **boost productivity** nếu được tích hợp vào workflow phát triển hiện tại.
-
-#### Một số hình ảnh khi tham gia sự kiện
-* Thêm các hình ảnh của các bạn tại đây
-> Tổng thể, sự kiện không chỉ cung cấp kiến thức kỹ thuật mà còn giúp tôi thay đổi cách tư duy về thiết kế ứng dụng, hiện đại hóa hệ thống và phối hợp hiệu quả hơn giữa các team.
+Mình cũng áp dụng tư duy phân lớp hệ thống, giới hạn quyền truy cập và giám sát tài nguyên khi đánh giá mức độ an toàn và khả năng vận hành của project.

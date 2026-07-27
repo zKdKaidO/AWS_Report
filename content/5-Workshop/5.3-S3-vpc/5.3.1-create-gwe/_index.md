@@ -1,9 +1,10 @@
----
-title : "Create a gateway endpoint"
-date : 2024-01-01 
-weight : 1
-chapter : false
-pre : " <b> 5.3.1 </b> "
+﻿---
+title: "Create a gateway endpoint"
+date: 2024-01-01 
+weight: 1
+chapter: false
+pre: " <b> 5.3.1 </b> "
+draft: true
 ---
 
 1. Open the [Amazon VPC console](https://us-east-1.console.aws.amazon.com/vpc/home?region=us-east-1#Home:)

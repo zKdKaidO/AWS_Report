@@ -1,9 +1,10 @@
----
-title : "Kiểm tra Interface Endpoint"
-date : 2024-01-01
-weight : 3
-chapter : false
-pre : " <b> 5.4.3 </b> "
+﻿---
+title: "Kiểm tra Interface Endpoint"
+date: 2024-01-01
+weight: 3
+chapter: false
+pre: " <b> 5.4.3 </b> "
+draft: true
 ---
 
 #### Lấy regional DNS name (tên DNS khu vực) của S3 interface endpoint
@@ -49,7 +50,3 @@ Bây giờ tệp đã được thêm vào bộ chứa S3 của bạn. Hãy kiể
 3. Click tên bucket của bạn và bạn sẽ thấy testfile2.xyz đã được thêm vào s3 bucket của bạn
 
 ![check bucket](/images/5-Workshop/5.4-S3-onprem/check-bucket.png)
-
-
-
-

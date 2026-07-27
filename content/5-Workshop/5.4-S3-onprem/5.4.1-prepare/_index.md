@@ -1,9 +1,10 @@
----
-title : "Prepare the environment"
-date : 2024-01-01
-weight : 1
-chapter : false
-pre : " <b> 5.4.1 </b> "
+﻿---
+title: "Prepare the environment"
+date: 2024-01-01
+weight: 1
+chapter: false
+pre: " <b> 5.4.1 </b> "
+draft: true
 ---
 
 To prepare for this part of the workshop you will need to:
@@ -52,6 +53,3 @@ This workshop uses a strongSwan VPN running on an EC2 instance to simulate conne
 ![add route](/images/5-Workshop/5.4-S3-onprem/add-route.png)
 
 6. Click Save changes
-
-
-

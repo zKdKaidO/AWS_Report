@@ -6,34 +6,19 @@ chapter: false
 pre: " <b> 1. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your report, including this warning.
-{{% /notice %}}
+# Internship Worklog
 
-**On this page**, you will need to introduce your worklog. **How** did you complete it? How many weeks did you take to complete the program? **What** did you do in those weeks?
+The internship worklog records the development process of the AI-Powered Internship Application Tracker over 8 weeks, from 08/06/2026 to 30/07/2026. The schedule follows weekly reporting blocks that start on Monday; the final week is shortened to match the internship end date.
 
-Typically, and as a standard, a worklog is carried out over about 3 months (throughout the internship period) with weekly contents as follows:
+| Week | Time | Main Content |
+|---|---|---|
+| 1 | 08/06/2026 - 14/06/2026 | Program orientation, problem analysis, backend foundation, database, and authentication |
+| 2 | 15/06/2026 - 21/06/2026 | Candidate-HR platform, applications, documents, and Amazon S3 |
+| 3 | 22/06/2026 - 28/06/2026 | React frontend, REST API integration, and protected user flows |
+| 4 | 29/06/2026 - 05/07/2026 | Realtime chat with Socket.IO, Redis, and DynamoDB |
+| 5 | 06/07/2026 - 12/07/2026 | AI analysis, asynchronous processing, idempotency, and concurrency |
+| 6 | 13/07/2026 - 19/07/2026 | Docker containerization, Docker Compose integration, and local smoke testing |
+| 7 | 20/07/2026 - 26/07/2026 | Local Kubernetes with kind, scaling controls, and observability |
+| 8 | 27/07/2026 - 30/07/2026 | CI/CD, AWS deployment preparation, end-to-end testing, and project reporting |
 
-**Week 1:** [Getting familiar with AWS and basic AWS services](1.1-week1/)
-
-**Week 2:** [Doing task A...](1.2-week2/)
-
-**Week 3:** [Doing task B...](1.3-week3/)
-
-**Week 4:** [Doing task C...](1.4-week4/)
-
-**Week 5:** [Doing task D...](1.5-week5/)
-
-**Week 6:** [Doing task E...](1.6-week6/)
-
-**Week 7:** [Doing task G...](1.7-week7/)
-
-**Week 8:** [Doing task H...](1.8-week8/)
-
-**Week 9:** [Doing task I...](1.9-week9/)
-
-**Week 10:** [Doing task L...](1.10-week10/)
-
-**Week 11:** [Doing task M...](1.11-week11/)
-
-**Week 12:** [Doing task N...](1.12-week12/)
+This worklog provides a structured view of the project progress and helps connect weekly implementation tasks with the final system architecture and report.

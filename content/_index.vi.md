@@ -6,35 +6,57 @@ chapter: false
 ---
 
 # Báo cáo thực tập
-### Thông tin sinh viên:
-&emsp; **Họ và tên:** Nguyễn Văn A
 
-&emsp; **Số điện thoại:** 0989888999
+TODO: Replace with actual project information.
 
-&emsp; **Email:** Anguyenvan@gmail.com
+![Student profile](/images/profile/student-profile.png)
 
-&emsp; **Trường:** Đại học Sư phạm Kỹ thuật TP.HCM
+## Thông tin sinh viên
 
-&emsp; **Ngành:** Công nghệ thông tin
+| Trường thông tin | Giá trị |
+|---|---|
+| Họ tên sinh viên | `[STUDENT_NAME]` |
+| Trường đại học | `[UNIVERSITY]` |
+| Chuyên ngành | `[MAJOR]` |
+| Vị trí thực tập | `[INTERNSHIP_POSITION]` |
 
-&emsp; **Lớp:** AWS082025
+## Đơn vị thực tập
 
-&emsp; **Công ty thực tập:** Công ty TNHH Amazon Web Services Viet Nam
+| Trường thông tin | Giá trị |
+|---|---|
+| Chương trình hoặc đơn vị | First Cloud AI Journey / FCAJ |
+| Thành viên nhóm | `[TEAM_MEMBERS]` |
 
-&emsp; **Vị trí thực tập:** Workforce Bootcamp - First Cloud AI Journey
+## Thời gian thực tập
 
-&emsp; **Thời gian thực tập:** Từ ngày 12/08/2025 đến ngày 12/11/2025
+`[START_DATE] - [END_DATE]`
 
-![Ảnh đại diện của bạn](/images/avatar.png)
+## Dự án
 
+| Trường thông tin | Giá trị |
+|---|---|
+| Tên dự án | `[PROJECT_NAME]` |
+| Mô tả dự án | `[PROJECT_DESCRIPTION]` |
+| Đóng góp cá nhân | `[PERSONAL_CONTRIBUTION]` |
+| URL triển khai công khai | `[DEPLOYMENT_URL]` |
 
+## Dịch vụ AWS chính
 
-### Nội dung báo cáo
+- `[AWS_SERVICE_1]`
+- `[AWS_SERVICE_2]`
+- `[AWS_SERVICE_3]`
+- AWS Region: `[AWS_REGION]`
 
-1.  [Worklog](1-Worklog/)
-2.  [Proposal](2-Proposal/)
-3.  [Các bài blogs đã đăng](3-BlogsPosted/)
-4.  [Các events đã tham gia](4-EventParticipated/)
-5.  [Workshop](5-Workshop/)
-6.  [Tự đánh giá](6-Self-evaluation/)
-7.  [Chia sẻ, đóng góp ý kiến](7-Feedback/)
+## Các phần của báo cáo
+
+1. [Nhật ký công việc](1-Worklog/)
+2. [Đề xuất dự án](2-Proposal/)
+3. [Blogs Posted](3-BlogsPosted/)
+4. [Events Participated](4-EventParticipated/)
+5. [Workshop](5-Workshop/)
+6. [Tự đánh giá](6-Self-evaluation/)
+7. [Chia sẻ và phản hồi](7-Feedback/)
+
+## Lưu ý bảo mật
+
+Không công khai secret, access key, password, token, database URL, private repository URL hoặc private source code trên website này.

@@ -1,9 +1,10 @@
----
-title : "Tạo một S3 Interface endpoint"
-date : 2024-01-01
-weight : 2
-chapter : false
-pre : " <b> 5.4.2 </b> "
+﻿---
+title: "Tạo một S3 Interface endpoint"
+date: 2024-01-01
+weight: 2
+chapter: false
+pre: " <b> 5.4.2 </b> "
+draft: true
 ---
 
 Trong phần này, bạn sẽ tạo và kiểm tra Interface Endpoint  S3 bằng cách sử dụng môi trường truyền thống mô phỏng.

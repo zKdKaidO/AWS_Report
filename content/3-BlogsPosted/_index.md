@@ -6,17 +6,27 @@ chapter: false
 pre: " <b> 3. </b> "
 ---
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your own report, including this warning.
-{{% /notice %}}
 
-This section will list and introduce the blogs you have posted to [AWS Study Group](https://www.facebook.com/groups/awsstudygroupfcj). For example:
+This section lists and introduces the blogs I have posted or prepared for the [AWS Study Group](https://www.facebook.com/groups/awsstudygroupfcj). The blog entries are organized into three small sections, following the same structure as the workshop sample.
 
-###  [Blog 1 - SESSION POLICIES IN AMAZON EKS POD IDENTITY](3.1-Blog1/)
-This blog introduces the newly added session policies feature in Amazon EKS Pod Identity, which allows you to narrow IAM permissions flexibly and precisely for each pod without needing to create multiple separate IAM roles. This is an important step forward that helps apply the principle of least privilege more effectively in large-scale Kubernetes environments.
+### [Blog 1 - WHY DOES AWS STILL CHARGE AFTER STOPPING EC2?](3.1-Blog1/)
 
-###  [Blog 2 - ...](3.2-Blog2/)
-This blog introduces the newly added session policies feature in Amazon EKS Pod Identity, which allows you to narrow IAM permissions flexibly and precisely for each pod without needing to create multiple separate IAM roles. This is an important step forward that helps apply the principle of least privilege more effectively in large-scale Kubernetes environments.
+This blog explains why AWS may still generate charges even after an EC2 instance has been stopped, focusing on related billable resources that may continue to exist outside the running instance itself.
 
-###  [Blog 3 - ...](3.3-Blog3/)
-This blog introduces the newly added session policies feature in Amazon EKS Pod Identity, which allows you to narrow IAM permissions flexibly and precisely for each pod without needing to create multiple separate IAM roles. This is an important step forward that helps apply the principle of least privilege more effectively in large-scale Kubernetes environments.
+**Published on:** July 22, 2026  
+**Platform:** AWS Study Groups  
+**Status:** Approved  
+**Public link:** [Blog 1](https://www.facebook.com/groups/awsstudygroupfcj/permalink/2219932025438424/?rdid=SGRgenG5JS3UR6Y0#)
+
+### [Blog 2 - BUILDING A SCALABLE REAL-TIME CHAT SYSTEM WITH SOCKET.IO, REDIS, AND DYNAMODB](3.2-Blog2/)
+
+This blog introduces the design of a scalable real-time chat system using Socket.IO, Redis, and DynamoDB. It focuses on how real-time communication, distributed state, and persistent storage can work together in a larger system.
+
+**Published on:** July 23, 2026  
+**Platform:** AWS Study Groups  
+**Status:** Pending  
+**Public link:** Blog 2
+
+### [Blog 3 - ...](3.3-Blog3/)
+
+The third blog has not been completed yet. It will be updated after the topic is finalized and the blog is published.
