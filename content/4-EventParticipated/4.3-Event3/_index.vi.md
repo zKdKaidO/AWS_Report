@@ -424,12 +424,12 @@ Sau sự kiện này, mình cam kết thiết lập cho chính bản thân một
 
 Dưới đây là tập danh bạ và lưu ký trữ vãng tổng hợp về nguồn cội tệp tin tài liệu slide trình chiếu kỹ thuật được cung cống thâu từ 4 nhóm chủ đề sự kiện Meetup, song hành cùng minh chứng hình ảnh tham chiếu thực chiến của nhóm mình cùng ghi chép học thuật tại hội nghị thi đấu chuyên nghề này:
 
-- **Data Analytics and MNC Culture Slides** *(Trình bày bởi Mr. Đạt Phạm & Mr. Cường Nguyễn)*: `(TODO: Link tải tài liệu chuyên đề Data Analytics & MNC Culture sẽ được cập nhật khi diễn giả công bố trực tiếp)`
-- **What Does a DevOps Engineer Really Do?** *(Trình bày bởi Mr. Trong H. Truong)*: `(TODO: Link tài liệu trình chiếu chuyên đề DevOps Fundamentals đang chờ đồng bộ từ kho AWS Community)`
-- **From First Cloud AI Journey to AWS Partner** *(Trình bày bởi Mr. Danh Hoàng Hiếu Nghị)*: `(TODO: Link truy xuất bản tham khảo định hướng lộ trình FCA & AWS Community ecosystem sẽ sớm cập nhật)`
-- **Scalable URL Shortening Service on AWS** *(Trình bày bởi Đinh Trung Kiên & Nguyễn Minh Thọ)*: `(TODO: Link tải slide sơ đồ kiến trúc chi tiết của URL Shortening Service trên Cloud sẽ sớm bồi cập)`
+- **Data Analytics and MNC Culture Slides** *(Trình bày bởi Mr. Đạt Phạm & Mr. Cường Nguyễn)*: `(Evidence pending: Link tải tài liệu chuyên đề Data Analytics & MNC Culture sẽ được cập nhật khi diễn giả công bố trực tiếp)`
+- **What Does a DevOps Engineer Really Do?** *(Trình bày bởi Mr. Trong H. Truong)*: `(Evidence pending: Link tài liệu trình chiếu chuyên đề DevOps Fundamentals đang chờ đồng bộ từ kho AWS Community)`
+- **From First Cloud AI Journey to AWS Partner** *(Trình bày bởi Mr. Danh Hoàng Hiếu Nghị)*: `(Evidence pending: Link truy xuất bản tham khảo định hướng lộ trình FCA & AWS Community ecosystem sẽ sớm cập nhật)`
+- **Scalable URL Shortening Service on AWS** *(Trình bày bởi Đinh Trung Kiên & Nguyễn Minh Thọ)*: `(Evidence pending: Link tải slide sơ đồ kiến trúc chi tiết của URL Shortening Service trên Cloud sẽ sớm bồi cập)`
 - **Hình ảnh sự kiện (Event photos) - Minh chứng tham lam thi chiến trực tiếp của nhóm tại ngày hội Meetup:**
 
 ![Minh chứng tham gia trực tiếp sự kiện 3](/images/3-Events/Evidence_Events%203.jpg)
 
-- **Personal notes:** `(TODO: Link truy xuất tài liệu chép cẩm nang phân tích ghi chép thực thi cá nhân của thực sinh tại sự kiện sẽ sớm hoàn tất thiếp tải)`
+- **Personal notes:** `(Evidence pending: Link truy xuất tài liệu chép cẩm nang phân tích ghi chép thực thi cá nhân của thực sinh tại sự kiện sẽ sớm hoàn tất thiếp tải)`

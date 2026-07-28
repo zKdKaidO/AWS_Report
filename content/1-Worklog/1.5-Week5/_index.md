@@ -1,4 +1,4 @@
----
+﻿---
 title: "Week 5 Worklog"
 date: 2024-01-01
 weight: 5
@@ -6,34 +6,129 @@ chapter: false
 pre: " <b> 1.5. </b> "
 ---
 
-# Week 5 - AI Integration, Asynchronous Processing, and Concurrency
+# Week 5 - Local Kubernetes Deployment
 
-### Week 5 Objectives:
+## Objectives
 
-- Build the AI service for CV and Job Description analysis.
-- Support candidate matching, scoring, and reranking.
-- Separate long-running jobs from API requests and improve reliability.
+Week 5 focused on running the application in local Kubernetes using kind. The goal was to move from Compose-only development to Kubernetes Deployments, Services, Jobs, ConfigMaps, Secrets, ingress, autoscaling, and observability resources.
 
-### Tasks to be carried out this week:
+## Tasks Completed
 
-| Day | Task | Start Date | Completion Date | Reference Material |
-|---|---|---|---|---|
-| 1 | Initialize the AI service, health endpoints, and request/response models. | 06/07/2026 | 12/07/2026 | [FastAPI Documentation - Request and Response Models](https://fastapi.tiangolo.com/tutorial/response-model/); [Amazon SageMaker AI - Real-Time Inference](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html) |
-| 2 | Build cleaning, prompts, and parsers for Job Description and CV content. | 06/07/2026 | 12/07/2026 | [Hugging Face Transformers - Text Generation](https://huggingface.co/docs/transformers/en/llm_tutorial); [Prompt Engineering Guidelines](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-engineering-guidelines.html) |
-| 3 | Build scoring, matching, Qwen reranker, and backend/frontend AI integration. | 06/07/2026 | 12/07/2026 | [Hugging Face Transformers - Text Generation](https://huggingface.co/docs/transformers/en/llm_tutorial); [Amazon SageMaker AI - Real-Time Inference](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html) |
-| 4 | Design processing jobs, worker lease, retry behavior, and idempotency key support. | 06/07/2026 | 12/07/2026 | [AWS Prescriptive Guidance - Retry with Backoff Pattern](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/retry-backoff.html); [AWS Prescriptive Guidance - Asynchronous Communication](https://docs.aws.amazon.com/prescriptive-guidance/latest/modernization-integrating-microservices/asynchronous.html) |
-| 5 | Apply optimistic concurrency control and transactional outbox dispatching. | 06/07/2026 | 12/07/2026 | [PostgreSQL Documentation - Transaction Isolation](https://www.postgresql.org/docs/current/transaction-iso.html); [AWS Prescriptive Guidance - Transactional Outbox Pattern](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html) |
+| Status | Task | Evidence basis |
+|---|---|---|
+| Completed | Added kind cluster configuration. | `k8s/cluster/kind-config.yaml` and commit `8dae02c`. |
+| Completed | Added Kubernetes resources for backend, chat, PostgreSQL, Redis, DynamoDB Local, migration job, and chat initialization job. | `k8s/app/*.yaml`. |
+| Completed | Added local deployment automation for PowerShell and shell users. | `scripts/k8s/deploy-local.ps1` and `scripts/k8s/deploy-local.sh`. |
+| Completed | Added HPA and PDB definitions for app services. | `k8s/app/autoscaling.yaml`. |
+| Completed | Added observability resources for Prometheus, Grafana, Loki, Tempo, Alloy, OTel collector, ServiceMonitors, and PrometheusRules. | `k8s/observability/*` and `observability/grafana/*`. |
+| Partially completed | Captured live `kubectl` screenshots and command logs. | Evidence pending: screenshots/log artifacts are not present in the report repo. |
 
-### Week 5 Achievements:
+## Technical Implementation
 
-- CV and Job Description content can be converted into structured data.
-- The system supports scoring, matching, and reranking.
-- AI and document processing no longer block the main request.
-- Repeated requests do not create duplicate data.
-- Concurrent updates and outbox events are handled more reliably.
+The local Kubernetes path uses kind for the cluster, in-cluster PostgreSQL/Redis/DynamoDB Local for dependencies, and Kubernetes manifests under `k8s/app` for the workload layer.
 
-<!--
-Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
-Expected image directory:
-static/images/worklog/week-5/
--->
+```mermaid
+flowchart TB
+  subgraph Kind["kind-internship-local"]
+    subgraph Internship["namespace: internship"]
+      Backend["Deployment/backend"]
+      Chat["Deployment/chat-service"]
+      Dispatcher["Deployment/backend-outbox-dispatcher"]
+      Worker["Deployment/backend-processing-worker"]
+      Postgres["Deployment/postgres"]
+      Redis["Deployment/redis"]
+      DDB["Deployment/dynamodb-local"]
+      Migrate["Job/backend-migrate"]
+      Init["Job/chat-init"]
+    end
+    subgraph Monitoring["namespace: monitoring"]
+      Prom["Prometheus"]
+      Grafana["Grafana"]
+      Loki["Loki"]
+      Tempo["Tempo"]
+    end
+  end
+  Backend --> Postgres
+  Backend --> DDB
+  Backend --> Dispatcher
+  Worker --> Backend
+  Chat --> Redis
+  Chat --> DDB
+  Prom --> Backend
+  Prom --> Chat
+  Prom --> Dispatcher
+```
+
+The deployment scripts build local images, load them into kind, apply app manifests, run migration/init jobs, wait for rollouts, and print port-forward commands for backend, chat, and optional AI service checks.
+
+## Problems and Solutions
+
+| Problem | Root cause | Resolution | Status |
+|---|---|---|---|
+| Compose did not prove Kubernetes readiness. | Services could work locally while still missing probes, Services, Jobs, or ConfigMaps. | Added Kubernetes manifests and local deployment scripts. | Completed |
+| Fresh local images might not be used by kind. | Building an image is not enough; kind nodes need the image loaded. | Scripts run `kind load docker-image` and restart deployments. | Completed |
+| Migrations and chat table creation need ordered startup. | API/chat pods should not assume databases are initialized. | Added `backend-migrate` and `chat-init` Jobs. | Completed |
+| Local observability required multiple supporting components. | Metrics, logs, and traces need separate platform services. | Added Helm-backed Prometheus/Grafana/Loki/Tempo/Alloy resources and local runbook guidance. | Completed |
+| Live cluster screenshots are missing. | Runtime screenshots were not supplied with the report repo. | Marked Kubernetes evidence as pending. | Blocked |
+
+## Testing, Build and Deployment Results
+
+| Area | Result | Evidence |
+|---|---|---|
+| Kubernetes manifests | Implemented | `k8s/app` includes Deployments, Services, Jobs, ConfigMaps, Secret examples, ingress, HPA, and PDB. |
+| Local deployment scripts | Implemented | `scripts/k8s/deploy-local.ps1` and `.sh` automate cluster setup, image load, jobs, rollouts, and resource display. |
+| Observability resources | Implemented | `k8s/observability` and `observability/grafana` include dashboards, datasources, rules, and collectors. |
+| Runtime validation logs | Partially completed | Commands are scripted, but current report does not include saved `kubectl` output. |
+
+## Evidence
+
+### Screenshots
+
+Evidence pending: add screenshots under `/images/worklog/week-05/`, for example:
+
+- `/images/worklog/week-05/kubectl-get-nodes.png`
+- `/images/worklog/week-05/kubectl-get-pods.png`
+- `/images/worklog/week-05/grafana-dashboard.png`
+
+### Commits and Pull Requests
+
+| Commit | Description | Evidence | Pull Request |
+|---|---|---|---|
+| `8dae02c` | Added the first Kubernetes configuration for backend, chat, dependencies, jobs, namespace, and kind config. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/8dae02cc55c9782a390ac851126e79e25892070f) | Evidence pending |
+| `7dbe7c6` | Added Kubernetes/EKS deployment platform, autoscaling, ingress, service accounts, observability, and deploy scripts. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/7dbe7c6555fbb1bebd218d9af149ab90ebdd999a) | Evidence pending |
+| `4f37d4d` | Added Kubernetes deployment workflows. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/4f37d4db753c8646172cd17cd5f481b6c4e6a4d9) | Evidence pending |
+| `7407fda` | Added tracing and chat initialization support. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/7407fda080ac210411f67985996772185c311b06) | Evidence pending |
+| `3b6f346` | Added local terminal runbook and environment examples. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/3b6f34675b11b9c2a8c66006e3d4eb7fe9ca2e6f) | Evidence pending |
+
+### Test Logs
+
+Evidence pending: attach actual local Kubernetes output from commands such as:
+
+```bash
+kubectl cluster-info
+kubectl get nodes
+kubectl get pods -n internship
+kubectl get services -n internship
+kubectl rollout status deployment/backend -n internship
+kubectl rollout status deployment/chat-service -n internship
+```
+
+### Build Logs
+
+Evidence pending: attach output from local image builds and `kind load docker-image` commands.
+
+### Deployment Logs
+
+Evidence pending: attach output from `scripts/k8s/deploy-local.ps1` or `scripts/k8s/deploy-local.sh`.
+
+## Weekly Results
+
+The project moved from local Compose toward a Kubernetes-shaped runtime. Backend, chat, dependencies, jobs, workers, ingress, autoscaling, and observability resources were represented in manifests and deployment scripts.
+
+## Lessons Learned
+
+Local Kubernetes validation is more than checking that pods start. Jobs, readiness probes, image freshness, DNS, service ports, ingress, HPA metrics, and observability scraping all need explicit checks.
+
+## Next Week Plan
+
+Prepare the AWS foundation: AWS CLI validation, region selection, GitHub OIDC, IAM deployment role, ECR repositories, and image build/push workflow.

@@ -16,12 +16,12 @@ Do bài chia sẻ này được tổng hợp thuần túy từ tài liệu trìn
 
 | Hạng mục thông tin | Chi tiết sự kiện |
 |---|---|
-| **Tên chính thức của sự kiện** | `[Placeholder: Official Event Name to be confirmed]` |
-| **Ngày tổ chức** | `[Placeholder: Event Date to be confirmed]` |
-| **Đơn vị tổ chức** | `[Placeholder: Organizer to be confirmed]` |
-| **Địa điểm tổ chức** | `[Placeholder: Venue to be confirmed]` |
-| **Hình thức tham gia** | `[Placeholder: Online/Offline format to be confirmed]` |
-| **Số lượng người tham dự** | `[Placeholder: Participant count to be confirmed]` |
+| **Tên chính thức của sự kiện** | `[Evidence pending: Official Event Name to be confirmed]` |
+| **Ngày tổ chức** | `[Evidence pending: Event Date to be confirmed]` |
+| **Đơn vị tổ chức** | `[Evidence pending: Organizer to be confirmed]` |
+| **Địa điểm tổ chức** | `[Evidence pending: Venue to be confirmed]` |
+| **Hình thức tham gia** | `[Evidence pending: Online/Offline format to be confirmed]` |
+| **Số lượng người tham dự** | `[Evidence pending: Participant count to be confirmed]` |
 
 ## Lý do tôi tham gia
 
@@ -77,9 +77,9 @@ Phần 1 đã bớt đi tính khô khan của một lớp hướng dẫn luyện
 
 ## Phiên 2: Bảo mật ứng dụng web với AWS Security Agent
 
-Phiên trình bày thứ hai mở ra một tầm nhìn chuyên sâu trong khía cạnh làm mềm mại hóa quy trình DevSecOps và phát hiện lỗ hổng an ninh sớm cho các ứng dụng đám mây. Có một tiểu tiết hành chính liên quan đến tác quyền trình bày: trên các slide tài liệu báo cáo của phiên thi đấu này, tên của diễn giả xuất hiện với sự không nhất quán ở nhiều phần khác nhau là **Thinh Nguyen** và **Nguyen Tuan Thinh**. Nhằm tôn trọng thực tiễn tài liệu góc đồng thời tuân thủ nguyên tắc không được thêu dệt và tự suy đoán, định danh tác giả của phiên này được tôi bảo lưu dưới dạng placeholder tường trình chân thực:
+Phiên trình bày thứ hai mở ra một tầm nhìn chuyên sâu trong khía cạnh làm mềm mại hóa quy trình DevSecOps và phát hiện lỗ hổng an ninh sớm cho các ứng dụng đám mây. Có một tiểu tiết hành chính liên quan đến tác quyền trình bày: trên các slide tài liệu báo cáo của phiên thi đấu này, tên của diễn giả xuất hiện với sự không nhất quán ở nhiều phần khác nhau là **Thinh Nguyen** và **Nguyen Tuan Thinh**. Nhằm tôn trọng thực tiễn tài liệu góc đồng thời tuân thủ nguyên tắc không được thêu dệt và tự suy đoán, định danh tác giả của phiên này được bảo lưu dưới dạng ghi chú evidence-pending tường trình chân thực:
 
-*Diễn giả:* `[Placeholder: Presenter Name - Thinh Nguyen / Nguyen Tuan Thinh to be confirmed from official event records]`
+*Diễn giả:* `[Evidence pending: Presenter Name - Thinh Nguyen / Nguyen Tuan Thinh to be confirmed from official event records]`
 
 Mở đầu phiên trình bày, diễn giả chỉ ra bốn thách thức an ninh nhức nhối khiến các đội ngũ kỹ thuật thường lâm vào bế tắc trong khâu canh phòng an ninh ứng dụng:
 
@@ -227,18 +227,18 @@ Bảo an trọn vẹn thế ứng xử tự trọng, thành thật của ngườ
 
 Danh mục dưới đây lưu chiểu tổ chức tường rào các trang liên kết tải tài liệu học tập slide, thư mục thực tiễn kỹ thuật AWS, bản ghi chép cá nhân cùng minh chứng hình ảnh tham dự trực quan tích tập suốt buổi nghe chuyên môn ở Sự kiện 4. Riêng những mục liên kết đường dẫn chưa có bản công bố chính thức hoặc tài khoản giấy chứng nhận cá nhân hiện trạng chưa tới mốc thì gặt lấy sự giữ nguyên cấu trúc thẻ thô theo phương châm tuyệt đối không tự tay thao nhào tạo lập link vô cõi (no invented links):
 
-- **Inside the Exam: AWS Cloud Practitioner Slides** *(Diễn giả Ngo Le Tan Huy)*: <a href="#" data-placeholder="true">[Placeholder: Presentation slides deck to be updated upon official release]</a>
-- **Securing Your Web Apps With AWS Security Agent Slides** *(Diễn giả Thinh Nguyen / Nguyen Tuan Thinh)*: <a href="#" data-placeholder="true">[Placeholder: Application security presentation slides deck to be updated]</a>
-- **SLA and Monitoring: From SLA to Monitoring What Really Matters Slides** *(Diễn giả Nguyễn Huỳnh Sơn)*: <a href="#" data-placeholder="true">[Placeholder: SLA and monitoring presentation slides deck to be updated]</a>
-- **Event Photos (Hệ hình ảnh chia sẻ tại buổi sự kiện)**: <a href="#" data-placeholder="true">[Placeholder: Link to official meetup photo album and livestream participation gallery]</a>
-- **Personal Notes (Ghi chép chuyên môn học thuật cá nhân)**: <a href="#" data-placeholder="true">[Placeholder: Link to personal study notes, certification keyword mapping tables, and session takeaways]</a>
-- **Event Recap Article (Bài viết tổng quan đúc kết mốc sự kiện từ diễn đàn)**: <a href="#" data-placeholder="true">[Placeholder: Link to community meetup recap and technical summary article]</a>
-- **Speaker and Event Resources (Tài nguyên thực tiễn từ chuyên gia chia sẻ)**: <a href="#" data-placeholder="true">[Placeholder: Link to supplementary AWS architecture repositories and Skill Builder learning paths]</a>
-- **AWS Cloud Practitioner Certificate (Chứng chỉ hoàn thành lộ trình đào tạo)**: <a href="#" data-placeholder="true">[Placeholder: Personal certification examination verification badge, to be attached upon completing official CLF-C02 examination]</a>
+- **Inside the Exam: AWS Cloud Practitioner Slides** *(Diễn giả Ngo Le Tan Huy)*: <a href="#" data-evidence-status="pending">[Evidence pending: Presentation slides deck to be updated upon official release]</a>
+- **Securing Your Web Apps With AWS Security Agent Slides** *(Diễn giả Thinh Nguyen / Nguyen Tuan Thinh)*: <a href="#" data-evidence-status="pending">[Evidence pending: Application security presentation slides deck to be updated]</a>
+- **SLA and Monitoring: From SLA to Monitoring What Really Matters Slides** *(Diễn giả Nguyễn Huỳnh Sơn)*: <a href="#" data-evidence-status="pending">[Evidence pending: SLA and monitoring presentation slides deck to be updated]</a>
+- **Event Photos (Hệ hình ảnh chia sẻ tại buổi sự kiện)**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to official meetup photo album and livestream participation gallery]</a>
+- **Personal Notes (Ghi chép chuyên môn học thuật cá nhân)**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to personal study notes, certification keyword mapping tables, and session takeaways]</a>
+- **Event Recap Article (Bài viết tổng quan đúc kết mốc sự kiện từ diễn đàn)**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to community meetup recap and technical summary article]</a>
+- **Speaker and Event Resources (Tài nguyên thực tiễn từ chuyên gia chia sẻ)**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to supplementary AWS architecture repositories and Skill Builder learning paths]</a>
+- **AWS Cloud Practitioner Certificate (Chứng chỉ hoàn thành lộ trình đào tạo)**: <a href="#" data-evidence-status="pending">[Evidence pending: Personal certification examination verification badge, to be attached upon completing official CLF-C02 examination]</a>
 
 ### Minh chứng hình ảnh tham gia thực tế
 
-<div class="image-placeholder" data-placeholder="true">
-  <p><strong>[Image Placeholder: Event 4 Knowledge Sharing Attendance Evidence]</strong></p>
+<div class="image-evidence-pending" data-evidence-status="pending">
+  <p><strong>[Image evidence pending: Event 4 Knowledge Sharing Attendance Evidence]</strong></p>
   <p><em>Caption: Ảnh chụp màn hình quá trình tham dự trực tuyến sự kiện chia sẻ kiến thức kỹ thuật AWS, làm nổi bật các chủ đề thảo luận sôi nổi về chiến lược luyện thi chứng chỉ Cloud Practitioner, thực nghiệm đánh giá mã nguồn tự động thông qua pull request của DevSecOps và quy trình cảnh báo custom alarm dựa trên chỉ số nghiệp vụ CloudWatch. (Hình ảnh chứng tích trực quan thực tế sẽ được nhúng đính kèm ngay sau khi thu nhận đủ từ hệ sao lưu dữ liệu của hội nghị).</em></p>
 </div>
