@@ -6,50 +6,67 @@ chapter: false
 pre: " <b> 7. </b> "
 ---
 
-# Chia sẻ và phản hồi
+# Sharing and Feedback
 
-TODO: Replace with actual project information.
+## Supervisor information
 
-## Trải nghiệm tổng quan
+| Field | Value |
+|---|---|
+| Supervisor name | Official supervisor feedback required. |
+| Position | Official supervisor feedback required. |
+| Organization | Official supervisor feedback required. |
+| Feedback date | Official supervisor feedback required. |
+| Evaluation form or source | Official supervisor feedback required. |
 
-TODO
+## Technical feedback
 
-## Kiến thức giá trị nhất
+Official supervisor feedback required.
 
-TODO
+Suggested areas for official technical feedback:
 
-## Thách thức chính
+- AWS architecture design
+- EKS and Kubernetes deployment
+- CI/CD implementation with GitHub Actions and OIDC
+- Database, messaging, and event-driven design
+- Security and secret handling
+- AI service and SageMaker integration
+- Monitoring, troubleshooting, and evidence collection
+- Final report quality
 
-TODO
+## Working-attitude feedback
 
-## Hỗ trợ từ mentor
+Official supervisor feedback required.
 
-TODO
+Suggested areas for official working-attitude feedback:
 
-## Hỗ trợ từ team và cộng đồng
+- responsibility and ownership
+- learning ability
+- communication
+- teamwork
+- discipline and deadline management
+- troubleshooting persistence
+- documentation habit
 
-TODO
+## Strengths
 
-## Điểm mạnh của chương trình
+Official supervisor feedback required.
 
-TODO
+Based on my own project reflection, the main strengths I demonstrated were evidence-led troubleshooting, willingness to learn unfamiliar AWS services, and the ability to connect application code with deployment and documentation.
 
-## Điểm cần cải thiện
+## Areas for improvement
 
-TODO
+Official supervisor feedback required.
 
-## Đề xuất
+Based on my own reflection, I should continue improving IAM policy design, AWS cost estimation, automated end-to-end testing, and production evidence collection.
 
-TODO
+## Overall assessment
 
-## Tác động đến định hướng nghề nghiệp
+Official supervisor feedback required.
 
-TODO
+No fake names, ratings, quotations, approval statements, or supervisor conclusions are included in this report.
 
-## Tôi có giới thiệu chương trình không?
+## Student response
 
-TODO
+This internship project helped me understand how a modern application becomes a real AWS system. I learned that successful deployment is not only about writing application code. It also requires networking, IAM, Kubernetes readiness, database reliability, asynchronous processing, logging, monitoring, cost control, and careful documentation.
 
-## Lời nhắn cuối
-
-TODO
+The most valuable lesson for me was to verify before claiming. A manifest can show intended configuration, but runtime logs, AWS CLI outputs, and deployment evidence show what is actually running. I will continue improving by building stronger test evidence, documenting operational decisions more clearly, and practicing secure, cost-aware cloud deployment.

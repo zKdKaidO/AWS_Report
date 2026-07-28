@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Nhật ký tuần 5"
 date: 2024-01-01
 weight: 5
@@ -33,7 +33,7 @@ pre: " <b> 1.5. </b> "
 - Concurrent updates và outbox events được xử lý tin cậy hơn.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-5/
 -->

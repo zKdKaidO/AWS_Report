@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Week 3 Worklog"
 date: 2024-01-01
 weight: 3
@@ -33,7 +33,7 @@ pre: " <b> 1.3. </b> "
 - The frontend production build is prepared.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-3/
 -->

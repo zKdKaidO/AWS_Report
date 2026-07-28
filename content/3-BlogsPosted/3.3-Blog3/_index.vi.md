@@ -8,28 +8,28 @@ pre: " <b> 3.3. </b> "
 
 # Blog 3
 
-{{% notice warning %}}
-⚠️ **Lưu ý:** Các thông tin dưới đây chỉ nhằm mục đích tham khảo, vui lòng **không sao chép nguyên văn** cho bài báo cáo của bạn kể cả warning này.
-{{% /notice %}}
+## Publication status
 
-# ...
+The third blog has not been completed or published in the available evidence.
 
-Bài blog thứ ba chưa được hoàn thành. Trang này giữ cùng format với sample và sẽ được cập nhật khi có chủ đề, ngày đăng và public link.
+| Field | Value |
+|---|---|
+| Topic | Evidence required: final Blog 3 topic |
+| Publication date | Evidence required: publication date |
+| Platform | AWS Study Groups |
+| Public link | Evidence required: public URL after publishing |
+| Status | Not completed in the available report evidence |
 
-Các điểm chính cần lưu ý:
+## Planned content
 
-- Chủ đề: TODO
-- Ngày đăng: TODO
-- Nền tảng: AWS Study Groups
-- Public link: TODO
-- Trạng thái: TODO: Complete and publish the third blog.
+The final Blog 3 page should be updated after publication with:
 
-…Hình ảnh…
+- a concise topic summary
+- key technical points
+- the public article link
+- screenshots or evidence of publication
+- a reflection on how the article relates to the Internship Application Tracker project
 
-…Link…
+## Current note
 
-TODO
-
-…Hướng dẫn…
-
-TODO: Bổ sung tóm tắt, các ý chính, public link và ghi chú liên quan sau khi đăng bài blog thứ ba.
+This page intentionally avoids inventing a topic, link, date, or publication result. Official publication evidence is required before this page can be marked as complete.

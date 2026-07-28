@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Nhật ký tuần 4"
 date: 2024-01-01
 weight: 4
@@ -33,7 +33,7 @@ pre: " <b> 1.4. </b> "
 - CORS và concurrency behavior được kiểm thử.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-4/
 -->

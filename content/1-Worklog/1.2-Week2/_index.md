@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Week 2 Worklog"
 date: 2024-01-01
 weight: 2
@@ -33,7 +33,7 @@ pre: " <b> 1.2. </b> "
 - Document flows support validation and private S3 access through presigned URLs.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-2/
 -->

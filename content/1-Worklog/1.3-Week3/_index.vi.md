@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Nhật ký tuần 3"
 date: 2024-01-01
 weight: 3
@@ -33,7 +33,7 @@ pre: " <b> 1.3. </b> "
 - Frontend production build được chuẩn bị.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-3/
 -->

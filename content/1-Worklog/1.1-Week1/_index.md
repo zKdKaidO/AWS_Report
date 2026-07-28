@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Week 1 Worklog"
 date: 2024-01-01
 weight: 1
@@ -33,7 +33,7 @@ pre: " <b> 1.1. </b> "
 - The backend foundation, authentication flow, and initial migration were prepared.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-1/
 -->

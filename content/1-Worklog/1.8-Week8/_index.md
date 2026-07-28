@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Week 8 Worklog"
 date: 2024-01-01
 weight: 8
@@ -33,7 +33,7 @@ pre: " <b> 1.8. </b> "
 - Technical documentation and report content are completed for submission.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-8/
 -->

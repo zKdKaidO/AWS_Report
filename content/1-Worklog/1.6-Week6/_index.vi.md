@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Nhật ký tuần 6"
 date: 2024-01-01
 weight: 6
@@ -33,7 +33,7 @@ pre: " <b> 1.6. </b> "
 - Local runbook và troubleshooting notes được chuẩn bị.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-6/
 -->

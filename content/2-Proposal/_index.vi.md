@@ -6,376 +6,473 @@ chapter: false
 pre: " <b> 2. </b> "
 ---
 
-
 ## Internship Application Platform
 
-**Nền tảng quản lý ứng tuyển thực tập tích hợp AI và triển khai trên AWS**
+**An AI-integrated internship application management platform deployed on AWS**
 
-## Tóm tắt dự án
+## Project Summary
 
-Internship Application Platform là nền tảng hỗ trợ sinh viên, ứng viên và doanh nghiệp quản lý toàn bộ quá trình tuyển dụng thực tập trên một hệ thống tập trung.
+Internship Application Platform is a centralized platform that helps students, candidates, and companies manage the internship recruitment process in one system.
 
-Đối với Candidate, hệ thống hỗ trợ tạo hồ sơ cá nhân, tìm kiếm cơ hội thực tập, theo dõi trạng thái ứng tuyển, quản lý CV và các tài liệu liên quan, trao đổi trực tiếp với HR và sử dụng AI để đánh giá mức độ phù hợp giữa CV với Job Description.
+For Candidates, the system supports profile creation, internship opportunity discovery, application status tracking, CV and document management, direct communication with HR, and AI-based evaluation of the fit between a CV and a Job Description.
 
-Đối với HR và doanh nghiệp, hệ thống hỗ trợ quản lý thông tin công ty, đăng tin tuyển dụng, xem danh sách ứng viên, cập nhật trạng thái tuyển dụng, trao đổi với Candidate và sử dụng AI để phân tích, so sánh và xếp hạng hồ sơ.
+For HR teams and companies, the system supports company profile management, job posting, applicant review, recruitment status updates, direct communication with Candidates, and AI-assisted CV analysis, comparison, and ranking.
 
-Project được xây dựng theo kiến trúc nhiều dịch vụ, bao gồm:
+The project is designed as a multi-service architecture, including:
 
-- Frontend phát triển bằng React và Vite.
-- Backend REST API phát triển bằng FastAPI.
-- Chat service sử dụng Node.js, Socket.IO, Redis và DynamoDB.
-- AI service hỗ trợ phân tích CV, Job Description và xếp hạng ứng viên.
-- PostgreSQL lưu dữ liệu nghiệp vụ.
-- Amazon S3 lưu CV và tài liệu.
-- Docker và Kubernetes chuẩn hóa môi trường triển khai.
-- Observability thu thập metrics, logs và distributed traces.
-- GitHub Actions hỗ trợ CI/CD và kiểm tra bảo mật.
+- A React and Vite frontend.
+- A FastAPI REST backend.
+- A chat service using Node.js, Socket.IO, Redis, and DynamoDB.
+- An AI service for CV analysis, Job Description analysis, and candidate ranking.
+- PostgreSQL for business data.
+- Amazon S3 for CV and document storage.
+- Docker and Kubernetes for standardized deployment environments.
+- Observability for metrics, logs, and distributed traces.
+- GitHub Actions for CI/CD and security checks.
 
-Kiến trúc production được định hướng triển khai trên AWS với Amazon EKS, Amazon ECR, Amazon RDS for PostgreSQL, Amazon DynamoDB, Amazon ElastiCache, Amazon S3, Amazon CloudFront, Application Load Balancer và các dịch vụ giám sát phù hợp.
+The production architecture is planned for AWS using Amazon EKS, Amazon ECR, Amazon RDS for PostgreSQL, Amazon DynamoDB, Amazon ElastiCache, Amazon S3, Amazon CloudFront, Application Load Balancer, and suitable monitoring services.
 
-## Phát biểu vấn đề
+## Problem Statement
 
-### Vấn đề hiện tại
+### Current Problems
 
-Trong quá trình tìm kiếm thực tập, sinh viên thường quản lý thông tin ứng tuyển bằng bảng tính, ghi chú cá nhân, email hoặc nhiều nền tảng riêng lẻ. Cách làm này dẫn đến nhiều vấn đề:
+During the internship search process, students often manage application information with spreadsheets, personal notes, email, or several separate platforms. This approach creates several problems:
 
-- Thông tin công việc và doanh nghiệp bị phân tán.
-- Khó theo dõi trạng thái của từng hồ sơ ứng tuyển.
-- CV, bảng điểm, chứng chỉ và tài liệu liên quan được lưu ở nhiều vị trí.
-- Candidate khó đánh giá CV của mình phù hợp với Job Description ở mức nào.
-- Việc trao đổi với HR không được liên kết trực tiếp với hồ sơ ứng tuyển.
-- Candidate dễ bỏ lỡ thời hạn, lịch phỏng vấn hoặc yêu cầu bổ sung tài liệu.
+- Job and company information is scattered.
+- It is difficult to track the status of each application.
+- CVs, transcripts, certificates, and related documents are stored in multiple places.
+- Candidates have limited support for evaluating how well their CV matches a Job Description.
+- Communication with HR is not directly connected to the application record.
+- Candidates can easily miss deadlines, interview schedules, or document requests.
 
-Đối với HR và doanh nghiệp, quá trình tuyển dụng thủ công cũng tạo ra nhiều hạn chế:
+For HR teams and companies, manual recruitment workflows also create limitations:
 
-- Mất nhiều thời gian để đọc và phân loại CV.
-- Khó so sánh nhiều ứng viên theo cùng một tiêu chí.
-- Trạng thái tuyển dụng có thể không được cập nhật đồng nhất.
-- Dữ liệu ứng viên có nguy cơ bị lưu trữ không an toàn.
-- Việc trao đổi giữa HR và Candidate bị phân tán qua nhiều kênh.
-- Thiếu công cụ tập trung để theo dõi hoạt động và hiệu quả tuyển dụng.
+- CV reading and classification takes a significant amount of time.
+- It is difficult to compare multiple candidates using consistent criteria.
+- Recruitment status may not be updated consistently.
+- Candidate data may be stored insecurely.
+- Communication between HR and Candidates is scattered across multiple channels.
+- There is no centralized tool for tracking recruitment activity and effectiveness.
 
-### Giải pháp đề xuất
+### Proposed Solution
 
-Internship Application Platform cung cấp một hệ thống tập trung cho cả Candidate và HR.
+Internship Application Platform provides a centralized system for both Candidates and HR.
 
-Candidate có thể:
+Candidates can:
 
-- Đăng ký và quản lý tài khoản.
-- Cập nhật hồ sơ cá nhân.
-- Tìm kiếm và xem thông tin công việc.
-- Nộp hồ sơ ứng tuyển.
-- Theo dõi trạng thái tuyển dụng.
-- Upload và quản lý CV, chứng chỉ và bảng điểm.
-- Trao đổi trực tiếp với HR.
-- Sử dụng AI để phân tích CV và mức độ phù hợp với công việc.
+- Register and manage their accounts.
+- Update personal profiles.
+- Search and view job information.
+- Submit applications.
+- Track recruitment status.
+- Upload and manage CVs, certificates, and transcripts.
+- Communicate directly with HR.
+- Use AI to analyze CV fit against a job.
 
-HR và doanh nghiệp có thể:
+HR teams and companies can:
 
-- Tạo và quản lý hồ sơ công ty.
-- Đăng và chỉnh sửa tin tuyển dụng.
-- Xem danh sách hồ sơ ứng tuyển.
-- Cập nhật trạng thái của ứng viên.
-- Trao đổi trực tiếp với Candidate.
-- Sử dụng AI để trích xuất thông tin, tính điểm và hỗ trợ xếp hạng ứng viên.
+- Create and manage company profiles.
+- Post and edit job openings.
+- View submitted applications.
+- Update candidate recruitment status.
+- Communicate directly with Candidates.
+- Use AI to extract information, calculate fit scores, and support candidate ranking.
 
-Các tác vụ mất nhiều thời gian như đọc tài liệu, phân tích CV và reranking được xử lý bất đồng bộ thông qua worker, giúp API chính không bị chặn trong thời gian xử lý.
+Long-running tasks such as document reading, CV analysis, and reranking are processed asynchronously through workers so that the main API is not blocked during processing.
 
-## Lợi ích và giá trị
+## Benefits and Value
 
-Đối với Candidate, nền tảng giúp:
+For Candidates, the platform helps:
 
-- Quản lý toàn bộ quá trình ứng tuyển tại một nơi.
-- Hạn chế thất lạc tài liệu và thông tin công việc.
-- Theo dõi rõ trạng thái của từng application.
-- Nhận biết kỹ năng phù hợp và kỹ năng còn thiếu.
-- Trao đổi thuận tiện hơn với doanh nghiệp.
+- Manage the full application process in one place.
+- Reduce the risk of losing documents and job information.
+- Track the status of each application clearly.
+- Identify relevant skills and missing skills.
+- Communicate with companies more conveniently.
 
-Đối với HR, nền tảng giúp:
+For HR teams, the platform helps:
 
-- Giảm thời gian xử lý hồ sơ thủ công.
-- Tập trung thông tin ứng viên và trạng thái tuyển dụng.
-- Chuẩn hóa quá trình đánh giá hồ sơ.
-- Hỗ trợ ra quyết định bằng dữ liệu.
-- Cải thiện khả năng theo dõi và phối hợp tuyển dụng.
+- Reduce manual CV processing time.
+- Centralize candidate information and recruitment status.
+- Standardize the resume evaluation process.
+- Support data-driven decision-making.
+- Improve recruitment tracking and coordination.
 
-Đối với nhóm phát triển, project tạo cơ hội áp dụng kiến thức về full-stack development, Cloud architecture, AI integration, realtime communication, Kubernetes, CI/CD, observability và bảo mật hệ thống.
+For the development team, the project provides an opportunity to apply full-stack development, Cloud architecture, AI integration, realtime communication, Kubernetes, CI/CD, observability, and system security knowledge.
 
-## Kiến trúc giải pháp
+## Solution Architecture
 
-Hệ thống được thiết kế theo kiến trúc nhiều dịch vụ để tách biệt các nhóm chức năng, tăng khả năng bảo trì và hỗ trợ mở rộng độc lập.
+The original proposal expected a multi-service AWS architecture with Kubernetes for containerized services, managed databases, object storage, realtime chat, observability, and CI/CD. The final implementation keeps that direction but adjusts two important areas based on deployment evidence:
 
-```text
-Candidate / HR
-       |
-       v
-React Frontend
-       |
-       v
-Amazon CloudFront
-       |
-       +-------------------------------+
-       v                               v
-Application Load Balancer       Amazon S3
-       |                       Frontend assets
-       v
-Amazon EKS
-+-- FastAPI Backend
-+-- Processing Worker
-+-- Outbox Dispatcher
-+-- Chat Service
-+-- AI Service / AI Client
-       |
-       +-- Amazon RDS PostgreSQL
-       +-- Amazon DynamoDB
-       +-- Amazon ElastiCache
-       +-- Amazon S3
-       +-- Amazon SQS
-       +-- Amazon SageMaker
+- The React frontend is no longer a Kubernetes workload. It is built with Vite, stored in a private S3 bucket, and delivered by CloudFront.
+- Backend, chat, worker, outbox dispatcher, and the SageMaker adapter remain on EKS because they are long-running processes or need Kubernetes rollout, health check, and scaling controls.
 
-Metrics / Logs / Traces
-       |
-       v
-CloudWatch / Prometheus / Grafana / Loki / Tempo
+### Final implemented architecture
+
+```mermaid
+flowchart LR
+    User["Candidate / HR browser"]
+    CF["Amazon CloudFront<br/>dhm2rz5nmsibj.cloudfront.net"]
+    S3Frontend["Private S3 frontend bucket<br/>internship-prod-frontend-587953673860"]
+    ALB["Application Load Balancer<br/>internet-facing"]
+    EKS["Amazon EKS<br/>internship-prod / namespace internship"]
+    Backend["FastAPI backend<br/>Deployment/backend :8000"]
+    Chat["Node.js Socket.IO chat<br/>Deployment/chat-service :3000"]
+    Dispatcher["Outbox dispatcher<br/>Deployment/backend-outbox-dispatcher"]
+    Worker["Processing worker<br/>Deployment/backend-processing-worker"]
+    AI["AI service adapter<br/>Deployment/ai-service :8010"]
+    RDS["Amazon RDS PostgreSQL<br/>internship-prod-postgres"]
+    Redis["Amazon ElastiCache Redis<br/>internship-prod-redis"]
+    DDBChat["DynamoDB chat tables<br/>ChatUsers / ChatGroups / ChatMessages"]
+    S3Uploads["S3 uploads and archive bucket<br/>internship-prod-uploads-587953673860"]
+    SQS["Amazon SQS<br/>internship-prod-outbox"]
+    DLQ["SQS DLQ<br/>internship-prod-outbox-dlq"]
+    Lambda["AWS Lambda<br/>internship-outbox-handler"]
+    Dedupe["DynamoDB dedupe table<br/>InternshipLambdaEventDedupe"]
+    SES["Amazon SES"]
+    SageMaker["SageMaker endpoint<br/>internship-qwen3-4b"]
+    GitHub["GitHub Actions OIDC"]
+    ECR["Amazon ECR images"]
+
+    User --> CF
+    CF -->|"Default *"| S3Frontend
+    CF -->|"/api/*"| ALB
+    CF -->|"/chat/*"| ALB
+    CF -->|"/socket.io/*"| ALB
+    ALB --> Backend
+    ALB --> Chat
+    Backend --> RDS
+    Backend --> S3Uploads
+    Backend --> Dispatcher
+    Backend --> Worker
+    Chat --> Redis
+    Chat --> DDBChat
+    Worker --> AI
+    AI --> SageMaker
+    Dispatcher --> SQS
+    SQS --> Lambda
+    SQS --> DLQ
+    Lambda --> Dedupe
+    Lambda --> S3Uploads
+    Lambda --> SES
+    GitHub --> ECR
+    GitHub --> EKS
+    GitHub --> S3Frontend
+    GitHub --> CF
 ```
 
-<!--
-TODO: Add the real architecture diagram when available:
-static/images/proposal/internship-platform-architecture.png
--->
+### Architecture explanation
 
-### Các dịch vụ AWS được sử dụng
+CloudFront is the single public entry point for users. Static assets use the default CloudFront behavior and are read from the private frontend S3 bucket through CloudFront Origin Access Control. Dynamic API and realtime routes are sent to the public Application Load Balancer:
 
-| Dịch vụ AWS | Vai trò trong hệ thống | Lý do lựa chọn |
+- `/api/*` is rewritten by the ALB Ingress and routed to the FastAPI backend.
+- `/chat/*` is rewritten and routed to the chat service.
+- `/socket.io/*` is routed to the chat service for Socket.IO transport.
+
+The EKS cluster hosts only services that need long-running runtime behavior: backend, chat, outbox dispatcher, processing worker, and the AI adapter. PostgreSQL is the transactional database for users, jobs, applications, workflow state, async processing jobs, outbox records, and idempotency records. DynamoDB stores permanent chat entities and Lambda event deduplication state. Redis is used only for Socket.IO pub/sub between chat replicas. SQS decouples committed business events from notification processing, and Lambda performs short event-driven work such as deduplication, S3 archive, and SES email delivery.
+
+### Component responsibility table
+
+| Component | Final responsibility | Implementation evidence |
 |---|---|---|
-| Amazon EKS | Chạy backend, worker, chat service và các workload dạng container | Hỗ trợ Kubernetes, scaling, rolling update và quản lý nhiều service |
-| Amazon ECR | Lưu trữ container image | Tích hợp trực tiếp với EKS và GitHub Actions |
-| Application Load Balancer | Tiếp nhận và phân phối request đến các service | Hỗ trợ routing, health check và tích hợp với Kubernetes Ingress |
-| Amazon RDS for PostgreSQL | Lưu user, company, job, application, document metadata và processing job | Phù hợp với dữ liệu quan hệ và transaction |
-| Amazon DynamoDB | Lưu user chat, conversation và message | Phù hợp với dữ liệu chat có lưu lượng đọc ghi lớn |
-| Amazon ElastiCache | Redis pub/sub cho Socket.IO và hỗ trợ dữ liệu tạm thời | Giúp nhiều chat-service instance đồng bộ sự kiện |
-| Amazon S3 | Lưu CV, chứng chỉ, bảng điểm và frontend assets | Có khả năng mở rộng, độ bền cao và hỗ trợ presigned URL |
-| Amazon CloudFront | Phân phối frontend và static assets | Cải thiện tốc độ truy cập và hỗ trợ HTTPS |
-| Amazon SQS | Nhận sự kiện bất đồng bộ từ outbox dispatcher | Giảm sự phụ thuộc trực tiếp giữa các service |
-| Amazon SageMaker | Cung cấp endpoint suy luận AI khi triển khai production | Hỗ trợ quản lý model endpoint và khả năng mở rộng |
-| Amazon CloudWatch | Thu thập log, metric và cảnh báo AWS | Hỗ trợ vận hành và điều tra sự cố |
-| AWS IAM | Quản lý quyền truy cập giữa workload và AWS resource | Hỗ trợ nguyên tắc quyền tối thiểu |
+| React/Vite frontend | Candidate and HR user interface, built to static assets | `frontend/package.json`, `scripts/ci/deploy-frontend.sh` |
+| CloudFront | HTTPS public entry point and route dispatcher | `scripts/aws/ensure-cloudfront.sh`, supplied distribution `EQIGYNECXDYL8` |
+| Frontend S3 bucket | Private storage for `frontend/dist` assets | Supplied bucket `internship-prod-frontend-587953673860` |
+| Application Load Balancer | Public routing to EKS services | `k8s/eks/ingress-alb-no-domain.yaml` |
+| FastAPI backend | Auth, jobs, applications, uploads, dashboards, processing job APIs | `backend/app/main.py`, backend routers |
+| Chat service | REST chat APIs and Socket.IO realtime channel | `chat-service/server.js` |
+| Processing worker | Claims asynchronous processing jobs and writes results | `backend/app/workers/processing_worker.py`, `k8s/app/backend-processing-worker.yaml` |
+| Outbox dispatcher | Publishes committed PostgreSQL outbox events to SQS | `backend/app/workers/outbox_dispatcher.py`, ADR-001 |
+| AI service | Stable worker-facing adapter for SageMaker | `ai_service/app.py`, `k8s/app/ai-service.yaml` |
+| RDS PostgreSQL | Transactional business data and reliable worker queues | Alembic migrations through `0008_async_processing_jobs.py` |
+| DynamoDB | Chat persistence and Lambda event deduplication | Chat table names in Kubernetes config and supplied runtime context |
+| Redis | Socket.IO pub/sub between chat pods | `chat-service/lib/redis.js`, Kubernetes config |
+| SQS and DLQ | At-least-once event delivery and failed-message isolation | ADR-001, supplied queue evidence |
+| Lambda and SES | Event notification, archive, and email delivery | Supplied runtime smoke-test context |
+| GitHub Actions OIDC | CI/CD without long-lived AWS access keys | `.github/workflows/cicd.yml` |
 
-### Thiết kế các thành phần
+### Design rationale
+
+The frontend was moved from EKS to S3 and CloudFront because it is static after build time. This reduces Kubernetes workload count, removes the need for a frontend Deployment, Service, HPA and PDB, and lets CloudFront handle caching and SPA delivery.
+
+The backend and chat service remain in EKS because they are long-running APIs with health probes, replicas, HPA, PDB, and rolling deployment needs. The processing worker also remains in EKS because CV parsing, job parsing, and matching jobs can run longer than a short Lambda-style task and need queue leases, retries, and controlled concurrency.
+
+The AI service isolates SageMaker-specific inference logic from the worker contract. The worker continues to call stable routes such as `/parse-job`, `/parse-cv`, and `/match-applications`, while the AI adapter handles SageMaker endpoint invocation, timeout, retry, and response normalization.
+
+The transactional outbox is used because committing application data and publishing an event are separate failure domains. Events are first inserted in PostgreSQL in the same transaction as the business mutation. A dispatcher later sends them to SQS. This provides at-least-once delivery, and Lambda uses DynamoDB conditional writes to deduplicate `eventId`.
+
+### Proposal vs final implementation
+
+| Area | Original proposal | Final implemented architecture |
+|---|---|---|
+| Frontend hosting | Could be served through Kubernetes or AWS static hosting | Implemented as private S3 plus CloudFront |
+| Public entry point | ALB and/or CloudFront expected | CloudFront is the user-facing entry point; ALB is an origin for API/chat/socket paths |
+| Backend runtime | Kubernetes on EKS | EKS Deployment `backend`, 2 replicas, HPA 2-5 |
+| Chat runtime | Node.js and Socket.IO with Redis/DynamoDB | EKS Deployment `chat-service`, 2 replicas, ALB stickiness, Redis pub/sub |
+| AI runtime | AI service expected | EKS `ai-service` adapter invokes SageMaker endpoint `internship-qwen3-4b` |
+| Event processing | Asynchronous events expected | PostgreSQL outbox, SQS, Lambda, DynamoDB dedupe, S3 archive and SES |
+| Deployment | CI/CD expected | GitHub Actions workflow dispatch modes with OIDC and ECR image verification |
+| Runtime proof | Design-stage assumption | Runtime evidence supplied for CloudFront, EKS workloads, RDS, Redis, DynamoDB, SQS, Lambda smoke test, and SageMaker endpoint |
+
+### AWS Services Used
+
+| AWS service | Role in the system | Reason for selection |
+|---|---|---|
+| Amazon EKS | Runs the backend, worker, chat service, and container workloads | Supports Kubernetes, scaling, rolling updates, and multi-service management |
+| Amazon ECR | Stores container images | Integrates directly with EKS and GitHub Actions |
+| Application Load Balancer | Receives and routes requests to services | Supports routing, health checks, and Kubernetes Ingress integration |
+| Amazon RDS for PostgreSQL | Stores users, companies, jobs, applications, document metadata, and processing jobs | Suitable for relational data and transactions |
+| Amazon DynamoDB | Stores chat users, conversations, and messages | Suitable for chat data with high read/write traffic |
+| Amazon ElastiCache | Provides Redis pub/sub for Socket.IO and temporary data | Helps multiple chat-service instances synchronize events |
+| Amazon S3 | Stores CVs, certificates, transcripts, and frontend assets | Provides scalability, high durability, and presigned URL support |
+| Amazon CloudFront | Distributes frontend and static assets | Improves access speed and supports HTTPS |
+| Amazon SQS | Receives asynchronous events from the outbox dispatcher | Reduces direct coupling between services |
+| Amazon SageMaker | Provides an AI inference endpoint in production | Supports managed model endpoints and scalability |
+| Amazon CloudWatch | Collects AWS logs, metrics, and alarms | Supports operations and incident investigation |
+| AWS IAM | Manages access between workloads and AWS resources | Supports the least privilege principle |
+
+### Component Design
 
 **Frontend**
 
-Frontend được phát triển bằng React và Vite, cung cấp giao diện cho Candidate và HR. Static files có thể được build và lưu trên Amazon S3, sau đó phân phối qua Amazon CloudFront. Frontend giao tiếp với backend và chat service thông qua các endpoint được công bố qua Application Load Balancer.
+The frontend is developed with React and Vite and provides interfaces for Candidates and HR. Static files can be built and stored on Amazon S3, then distributed through Amazon CloudFront. The frontend communicates with the backend and chat service through endpoints exposed by the Application Load Balancer.
 
 **Backend API**
 
-Backend được phát triển bằng FastAPI và chịu trách nhiệm xác thực người dùng, quản lý Candidate và HR, quản lý công ty và tin tuyển dụng, quản lý application và document metadata, tạo presigned URL, khởi tạo processing job, đồng thời cung cấp dashboard và dữ liệu nghiệp vụ.
+The backend is developed with FastAPI and is responsible for user authentication, Candidate and HR management, company and job management, application and document metadata management, presigned URL generation, processing job creation, dashboard data, and business APIs.
 
 **Processing Worker**
 
-Processing worker thực hiện các tác vụ lâu như trích xuất nội dung CV, phân tích Job Description, phân tích CV, tính điểm matching và rerank ứng viên. Cơ chế lease, retry và giới hạn số lần thử được sử dụng để giảm lỗi khi worker bị dừng giữa quá trình xử lý.
+The processing worker performs long-running tasks such as CV content extraction, Job Description analysis, CV analysis, matching score calculation, and candidate reranking. Lease, retry, and attempt-limit mechanisms are used to reduce failures when a worker stops during processing.
 
 **Chat Service**
 
-Chat service sử dụng Node.js, Express và Socket.IO để hỗ trợ giao tiếp realtime. DynamoDB lưu user, group và message; Redis adapter đồng bộ sự kiện giữa nhiều pod; sticky session hỗ trợ duy trì kết nối Socket.IO khi có nhiều replica.
+The chat service uses Node.js, Express, and Socket.IO to support realtime communication. DynamoDB stores users, groups, and messages; the Redis adapter synchronizes events across multiple pods; sticky sessions help maintain Socket.IO connections when multiple replicas are running.
 
 **AI Service**
 
-AI service phân tích CV và Job Description, chuyển dữ liệu văn bản thành cấu trúc có thể xử lý và hỗ trợ tính điểm phù hợp. AI service cần có schema validation, timeout, retry có giới hạn, health check, kiểm soát log để không làm lộ dữ liệu CV và cơ chế fallback khi model không khả dụng.
+The AI service analyzes CVs and Job Descriptions, converts text into structured data, and supports fit scoring. The AI service should include schema validation, timeout, limited retry, health checks, log control to avoid exposing CV data, and fallback behavior when the model is unavailable.
 
 **Data Storage**
 
-PostgreSQL lưu dữ liệu có quan hệ và cần transaction. DynamoDB lưu dữ liệu chat. Amazon S3 lưu file lớn. Redis hỗ trợ realtime event distribution. Việc lựa chọn nhiều loại lưu trữ giúp mỗi nhóm dữ liệu được quản lý bằng công nghệ phù hợp với đặc điểm truy cập.
+PostgreSQL stores relational data that requires transactions. DynamoDB stores chat data. Amazon S3 stores large files. Redis supports realtime event distribution. Using multiple storage technologies allows each data group to be managed with a technology that matches its access pattern.
 
 **Observability**
 
-Hệ thống thu thập metrics để theo dõi hiệu năng và trạng thái, logs để kiểm tra sự kiện và lỗi, distributed traces để theo dõi request qua nhiều service. Prometheus, Grafana, Loki, OpenTelemetry và Tempo được sử dụng trong môi trường Kubernetes; Amazon CloudWatch được sử dụng để theo dõi resource và log trong môi trường AWS.
+The system collects metrics for performance and health monitoring, logs for event and error investigation, and distributed traces to follow requests across services. Prometheus, Grafana, Loki, OpenTelemetry, and Tempo are used in Kubernetes environments; Amazon CloudWatch is used for AWS resource and log monitoring.
 
-## Triển khai kỹ thuật
+## Technical Implementation
 
-### Các giai đoạn triển khai
+### Implementation Phases
 
-| Giai đoạn | Nội dung chính |
+| Phase | Main activities |
 |---|---|
-| 1. Phân tích và thiết kế | Phân tích bài toán Candidate-HR, xác định yêu cầu chức năng và phi chức năng, thiết kế database, thiết kế kiến trúc nhiều dịch vụ và xác định dịch vụ AWS cần sử dụng |
-| 2. Xây dựng nền tảng nghiệp vụ | Xây dựng authentication, Candidate/HR profile, company management, job management, application tracking và document management |
-| 3. Tích hợp realtime và AI | Xây dựng chat service, tích hợp Socket.IO, lưu chat data bằng DynamoDB, tích hợp Redis adapter, xây dựng AI service, phân tích CV/JD, matching và reranking |
-| 4. Nâng cao độ tin cậy | Xây dựng processing worker, retry, lease, idempotency, optimistic concurrency, transactional outbox, validation và error handling |
-| 5. Container hóa và Kubernetes | Viết Dockerfile, xây dựng Docker Compose, tạo local Kubernetes cluster bằng kind, triển khai Deployment, Service, Ingress, HPA, PDB, health probe và migration Job |
-| 6. Observability và CI/CD | Thu thập metrics, logs, traces, xây dựng dashboard, thiết lập alert, xây dựng GitHub Actions, chạy automated test, smoke test và quét bảo mật |
-| 7. Triển khai AWS và hoàn thiện | Build image, push lên Amazon ECR, triển khai workload lên Amazon EKS, kết nối RDS, DynamoDB, ElastiCache, S3, triển khai frontend lên S3/CloudFront, kiểm thử end-to-end và hoàn thiện báo cáo |
+| 1. Analysis and design | Analyze the Candidate-HR problem, define functional and non-functional requirements, design the database, design the multi-service architecture, and identify required AWS services |
+| 2. Business platform foundation | Build authentication, Candidate/HR profiles, company management, job management, application tracking, and document management |
+| 3. Realtime and AI integration | Build the chat service, integrate Socket.IO, store chat data in DynamoDB, integrate Redis adapter, build the AI service, analyze CV/JD content, and implement matching and reranking |
+| 4. Reliability improvements | Build processing workers, retry, lease, idempotency, optimistic concurrency, transactional outbox, validation, and error handling |
+| 5. Containerization and Kubernetes | Write Dockerfiles, build Docker Compose, create a local Kubernetes cluster with kind, deploy Deployment, Service, Ingress, HPA, PDB, health probes, and migration jobs |
+| 6. Observability and CI/CD | Collect metrics, logs, and traces, build dashboards, set up alerts, build GitHub Actions, run automated tests, smoke tests, and security scans |
+| 7. AWS deployment and completion | Build images, push to Amazon ECR, deploy workloads on Amazon EKS, connect RDS, DynamoDB, ElastiCache, and S3, deploy frontend on S3/CloudFront, run end-to-end tests, and complete the report |
 
-### Yêu cầu kỹ thuật
+### Technical Requirements
 
-| Thành phần | Công nghệ hoặc yêu cầu |
+| Component | Technology or requirement |
 |---|---|
 | Frontend | React, Vite, Tailwind CSS |
 | Backend | Python, FastAPI, SQLAlchemy, Alembic |
 | Chat service | Node.js, Express, Socket.IO |
-| AI service | Python, FastAPI, Qwen-compatible model hoặc SageMaker endpoint |
+| AI service | Python, FastAPI, Qwen-compatible model or SageMaker endpoint |
 | Relational database | PostgreSQL |
 | Chat database | DynamoDB |
-| Cache/pub-sub | Redis hoặc Amazon ElastiCache |
+| Cache/pub-sub | Redis or Amazon ElastiCache |
 | Object storage | Amazon S3 |
 | Containers | Docker |
-| Container orchestration | Kubernetes, kind và Amazon EKS |
+| Container orchestration | Kubernetes, kind, and Amazon EKS |
 | CI/CD | GitHub Actions |
-| Monitoring | Prometheus, Grafana và CloudWatch |
-| Logs | Loki và CloudWatch Logs |
-| Tracing | OpenTelemetry và Tempo |
-| Security | JWT, IAM Role, OIDC, least privilege và secret management |
+| Monitoring | Prometheus, Grafana, and CloudWatch |
+| Logs | Loki and CloudWatch Logs |
+| Tracing | OpenTelemetry and Tempo |
+| Security | JWT, IAM Role, OIDC, least privilege, and secret management |
 
-## Tiến độ và cột mốc
+## Timeline and Milestones
 
-Kế hoạch được điều chỉnh theo 8 tuần, từ 08/06/2026 đến 30/07/2026, để thống nhất với Worklog của báo cáo.
+The plan is adjusted to 8 weeks, from 08/06/2026 to 30/07/2026, to stay consistent with the Worklog section of the report.
 
-| Tuần | Thời gian | Cột mốc | Kết quả dự kiến |
+| Week | Time | Milestone | Expected deliverable |
 |---|---|---|---|
-| 1 | 08/06/2026 - 14/06/2026 | Phân tích yêu cầu, kiến trúc, backend foundation và authentication | Hoàn thành phạm vi, kiến trúc tổng thể, đăng ký, đăng nhập và migration ban đầu |
-| 2 | 15/06/2026 - 21/06/2026 | Candidate-HR platform, applications, documents và S3 | Hoàn thành company, jobs, application flow, upload và tải tài liệu an toàn |
-| 3 | 22/06/2026 - 28/06/2026 | Frontend và REST API integration | Hoàn thành giao diện Candidate/HR, protected routes và API integration |
-| 4 | 29/06/2026 - 05/07/2026 | Realtime chat | Candidate và HR trao đổi realtime qua Socket.IO, Redis và DynamoDB |
-| 5 | 06/07/2026 - 12/07/2026 | AI integration và reliable processing | Phân tích CV/JD, matching, worker, idempotency, concurrency và outbox |
-| 6 | 13/07/2026 - 19/07/2026 | Docker Compose | Chạy được full stack trong local và có quy trình smoke test |
-| 7 | 20/07/2026 - 26/07/2026 | Kubernetes và observability | Chạy hệ thống trên kind, có metrics, logs, traces và alert |
-| 8 | 27/07/2026 - 30/07/2026 | CI/CD, AWS và báo cáo | Kiểm thử end-to-end, chuẩn bị deployment AWS và hoàn thiện tài liệu |
+| 1 | 08/06/2026 - 14/06/2026 | Requirements analysis, architecture, backend foundation, and authentication | Project scope, high-level architecture, registration, login, and initial migration |
+| 2 | 15/06/2026 - 21/06/2026 | Candidate-HR platform, applications, documents, and S3 | Company, jobs, application flow, secure upload, and document download |
+| 3 | 22/06/2026 - 28/06/2026 | Frontend and REST API integration | Candidate/HR interfaces, protected routes, and API integration |
+| 4 | 29/06/2026 - 05/07/2026 | Realtime chat | Realtime communication between Candidate and HR using Socket.IO, Redis, and DynamoDB |
+| 5 | 06/07/2026 - 12/07/2026 | AI integration and reliable processing | CV/JD analysis, matching, worker, idempotency, concurrency, and outbox |
+| 6 | 13/07/2026 - 19/07/2026 | Docker Compose | Full stack runs locally with smoke test procedure |
+| 7 | 20/07/2026 - 26/07/2026 | Kubernetes and observability | System runs on kind with metrics, logs, traces, and alerts |
+| 8 | 27/07/2026 - 30/07/2026 | CI/CD, AWS, and reporting | End-to-end testing, AWS deployment preparation, and completed documentation |
 
-## Ước tính ngân sách
+## Budget Estimation
 
-Chi phí thực tế phụ thuộc vào Region, loại instance, thời gian chạy, dữ liệu lưu trữ, lưu lượng mạng và số lượng request. Không nên điền số tiền cố định trước khi cấu hình các resource thực tế trong AWS Pricing Calculator.
+Exact monthly cost must be calculated with AWS Pricing Calculator or current billing data for account `587953673860` in region `ap-southeast-1`. This proposal therefore records the cost method and known configuration instead of inventing prices.
 
-| Dịch vụ | Cấu hình dự kiến | Chi phí ước tính mỗi tháng |
-|---|---|---:|
-| Amazon EKS | Một cluster | TBD |
-| EC2 worker nodes | Instance type và số node thực tế | TBD |
-| Amazon ECR | Dung lượng container image | TBD |
-| Amazon RDS PostgreSQL | Instance class, storage và backup | TBD |
-| Amazon DynamoDB | On-demand hoặc provisioned capacity | TBD |
-| Amazon ElastiCache | Node type và số node | TBD |
-| Amazon S3 | CV, tài liệu và frontend assets | TBD |
-| Amazon CloudFront | Data transfer và request | TBD |
-| Application Load Balancer | Số giờ và lưu lượng | TBD |
-| Amazon SQS | Số lượng message | TBD |
-| Amazon SageMaker | Loại endpoint và thời gian hoạt động | TBD |
-| Amazon CloudWatch | Log ingestion, retention và metric | TBD |
-| Data transfer | Lưu lượng outbound | TBD |
-| Tổng cộng |  | TBD |
+### Cost assumptions
 
-### Giải pháp tối ưu chi phí
+| Area | Assumption used for estimation | Evidence status |
+|---|---|---|
+| Environment | Production environment in `ap-southeast-1` | Verified from supplied context and workflow defaults |
+| Public traffic | CloudFront distribution `EQIGYNECXDYL8` fronts all browser traffic | Verified from supplied context |
+| Frontend | Static assets in S3 bucket `internship-prod-frontend-587953673860` | Verified from supplied context and deploy script |
+| Kubernetes | EKS cluster `internship-prod`, namespace `internship` | Verified from supplied context and workflow |
+| Backend/chat | 2 replicas each, HPA min 2/max 5 | Verified from manifests |
+| Worker/dispatcher | Dispatcher 1 replica; processing worker can be disabled until AI is ready | Verified from manifests and deploy script |
+| AI | SageMaker endpoint `internship-qwen3-4b` | Verified from supplied context |
+| SQS | Main queue `internship-prod-outbox`, DLQ `internship-prod-outbox-dlq` | Verified from supplied runtime context; repository provisioning script still defaults to older queue names |
+| Lambda | `internship-outbox-handler` consumes SQS and sends SES email | Verified from supplied runtime context |
 
-- Chỉ chạy môi trường production khi cần demo hoặc kiểm thử.
-- Sử dụng instance phù hợp với tải thực tế.
-- Giới hạn số worker node.
-- Tắt hoặc xóa SageMaker endpoint khi không sử dụng.
-- Thiết lập retention hợp lý cho log.
-- Xóa image cũ trong ECR.
-- Áp dụng S3 lifecycle policy khi phù hợp.
-- Sử dụng DynamoDB on-demand trong giai đoạn có lưu lượng chưa ổn định.
-- Cấu hình AWS Budget và Billing Alarm.
-- Xóa Load Balancer, public IPv4, snapshot và volume không sử dụng.
-- Tránh tạo NAT Gateway nếu kiến trúc workshop không thật sự cần.
+### Cost-estimation methodology
 
-## Đánh giá rủi ro
+1. Open AWS Pricing Calculator for `ap-southeast-1`.
+2. Add each production service in the table below.
+3. Enter the real deployed configuration: instance type, storage size, request count, data transfer, retention period, and runtime hours.
+4. Export the Pricing Calculator estimate and attach it as evidence before replacing `Pricing evidence required`.
+5. Compare with AWS Cost Explorer after the environment has run for a representative period.
 
-### Ma trận rủi ro
+| Service | Known configuration or input required | Cost field |
+|---|---|---|
+| Amazon EKS | One production cluster, `internship-prod` | Pricing evidence required |
+| EC2 worker nodes | Managed node group instance type, node count, EBS volumes, runtime hours | Pricing evidence required |
+| NAT Gateway | Private subnet egress, NAT hourly charge and processed data | Pricing evidence required |
+| Amazon ECR | Backend, chat, and AI images tagged by Git SHA | Pricing evidence required |
+| Amazon RDS PostgreSQL | Instance class, allocated storage, Multi-AZ status, backup retention | Pricing evidence required |
+| Amazon ElastiCache Redis | Replication group `internship-prod-redis`, node type and node count required | Pricing evidence required |
+| Amazon DynamoDB | ChatUsers, ChatGroups, ChatMessages, InternshipLambdaEventDedupe capacity mode and request volume | Pricing evidence required |
+| Amazon S3 | Frontend assets, uploads, event archive, storage GB, PUT/GET volume, lifecycle policy | Pricing evidence required |
+| Amazon CloudFront | Requests, regional data transfer, invalidations beyond free tier if any | Pricing evidence required |
+| Application Load Balancer | One internet-facing ALB, LCU usage and runtime hours | Pricing evidence required |
+| Amazon SQS | Standard queue and DLQ request volume, retention, SSE | Pricing evidence required |
+| AWS Lambda | SQS-triggered `internship-outbox-handler`, invocations, memory, duration | Pricing evidence required |
+| Amazon SES | Email send volume and region-specific SES pricing | Pricing evidence required |
+| Amazon SageMaker | Real-time endpoint instance type and uptime for `internship-qwen3-4b` | Pricing evidence required |
+| Amazon CloudWatch | Log ingestion, storage retention, metrics, alarms | Pricing evidence required |
+| Data transfer | CloudFront egress, NAT processing, ALB traffic, inter-AZ traffic if applicable | Pricing evidence required |
+| Total | Sum exported from AWS Pricing Calculator | Pricing evidence required |
 
-| Rủi ro | Khả năng | Ảnh hưởng | Mức độ |
+The largest likely cost drivers are the EKS control plane, EC2 worker nodes, NAT Gateway, RDS, Redis, ALB, CloudFront data transfer, and especially the SageMaker real-time endpoint. If the SageMaker endpoint uses GPU-backed instances and remains online continuously, AI uptime may dominate the total monthly cost.
+
+### Cost Optimization
+
+- Run the production environment only when demoing or testing.
+- Use instance types that match the actual workload.
+- Limit the number of worker nodes.
+- Stop or delete SageMaker endpoints when not in use.
+- Configure suitable log retention.
+- Delete old images in ECR.
+- Apply S3 lifecycle policies when appropriate.
+- Use DynamoDB on-demand while traffic is still unstable.
+- Configure AWS Budget and Billing Alarm.
+- Delete unused Load Balancers, public IPv4 addresses, snapshots, and volumes.
+- Avoid creating a NAT Gateway if the workshop architecture does not require it.
+
+## Risk Assessment
+
+### Risk Matrix
+
+| Risk | Likelihood | Impact | Severity |
 |---|---|---|---|
-| Lộ secret hoặc AWS credential | Thấp | Rất cao | Cao |
-| RDS hoặc service bị public không cần thiết | Trung bình | Cao | Cao |
-| CV và dữ liệu cá nhân bị truy cập trái phép | Thấp | Rất cao | Cao |
-| AI trả kết quả không chính xác | Trung bình | Trung bình | Trung bình |
-| AI service hết tài nguyên hoặc timeout | Trung bình | Cao | Cao |
-| Chat realtime mất kết nối khi scale | Trung bình | Trung bình | Trung bình |
-| Worker xử lý trùng job | Trung bình | Cao | Cao |
-| Database update xảy ra race condition | Trung bình | Cao | Cao |
-| Kubernetes pod hoặc node bị lỗi | Trung bình | Trung bình | Trung bình |
-| Chi phí AWS vượt dự kiến | Trung bình | Cao | Cao |
-| CI/CD deployment thất bại | Trung bình | Trung bình | Trung bình |
-| Third-party package có lỗ hổng | Trung bình | Cao | Cao |
+| Secret or AWS credential exposure | Low | Very high | High |
+| RDS or services become public unnecessarily | Medium | High | High |
+| CV and personal data are accessed without permission | Low | Very high | High |
+| AI returns inaccurate results | Medium | Medium | Medium |
+| AI service runs out of resources or times out | Medium | High | High |
+| Realtime chat disconnects when scaled | Medium | Medium | Medium |
+| Worker processes duplicate jobs | Medium | High | High |
+| Database updates encounter race conditions | Medium | High | High |
+| Kubernetes pod or node failure | Medium | Medium | Medium |
+| AWS cost exceeds expectations | Medium | High | High |
+| CI/CD deployment fails | Medium | Medium | Medium |
+| Third-party package has a vulnerability | Medium | High | High |
 
-### Biện pháp giảm thiểu
+### Mitigation Measures
 
-**Bảo mật**
+**Security**
 
-- Sử dụng IAM Role và nguyên tắc quyền tối thiểu.
-- Không lưu AWS Access Key trong source code.
-- Sử dụng GitHub Actions OIDC.
-- Đưa `.env`, private key và secret ra khỏi repository.
-- Giữ S3 bucket ở trạng thái private.
-- Sử dụng presigned URL có thời hạn.
-- Không ghi toàn bộ nội dung CV hoặc token vào log.
-- Kiểm tra authorization và object ownership trên backend.
+- Use IAM Roles and least privilege.
+- Do not store AWS Access Keys in source code.
+- Use GitHub Actions OIDC.
+- Keep `.env`, private keys, and secrets out of the repository.
+- Keep S3 buckets private.
+- Use presigned URLs with expiration.
+- Do not log full CV content or tokens.
+- Check authorization and object ownership in the backend.
 
-**Độ tin cậy**
+**Reliability**
 
-- Sử dụng readiness và liveness probes.
-- Dùng HPA để hỗ trợ scaling.
-- Dùng PDB để giảm gián đoạn khi bảo trì.
-- Sử dụng retry có giới hạn.
-- Áp dụng processing-job lease.
-- Sử dụng idempotency key.
-- Áp dụng optimistic concurrency.
-- Dùng transactional outbox cho event.
+- Use readiness and liveness probes.
+- Use HPA to support scaling.
+- Use PDB to reduce disruption during maintenance.
+- Use limited retry.
+- Apply processing-job leases.
+- Use idempotency keys.
+- Apply optimistic concurrency.
+- Use transactional outbox for events.
 
 **AI**
 
-- Kiểm tra output bằng schema.
-- Thiết lập timeout.
-- Giới hạn retry.
-- Cho phép human review trước quyết định tuyển dụng.
-- Không sử dụng điểm AI như quyết định tuyển dụng duy nhất.
-- Ghi nhận lý do hoặc các yếu tố góp phần vào kết quả khi có thể.
+- Validate output with schemas.
+- Set timeouts.
+- Limit retries.
+- Allow human review before recruitment decisions.
+- Do not use AI scores as the only hiring decision.
+- Record reasons or contributing factors when possible.
 
-**Chi phí**
+**Cost**
 
-- Thiết lập AWS Budget.
-- Theo dõi Cost Explorer.
-- Xóa resource ngay sau workshop.
-- Giới hạn thời gian hoạt động của AI endpoint.
-- Sử dụng log retention phù hợp.
-- Kiểm tra EBS, Elastic IP, Load Balancer và snapshot còn sót.
+- Configure AWS Budget.
+- Monitor Cost Explorer.
+- Delete resources after the workshop.
+- Limit AI endpoint runtime.
+- Use suitable log retention.
+- Check for remaining EBS volumes, Elastic IPs, Load Balancers, and snapshots.
 
-### Kế hoạch dự phòng
+### Contingency Plan
 
-- Nếu EKS chưa sẵn sàng, sử dụng Docker Compose hoặc local Kubernetes để demo.
-- Nếu AI model không hoạt động, sử dụng mock response hoặc deterministic scoring để tiếp tục kiểm tra business flow.
-- Nếu Redis không sẵn sàng, chạy một chat-service instance cho môi trường demo.
-- Nếu S3 không truy cập được, sử dụng local storage trong development.
-- Nếu worker gặp lỗi, processing job được retry theo lease và attempt limit.
-- Nếu deployment mới thất bại, rollback về container image hoặc Kubernetes revision trước đó.
-- Nếu chi phí vượt giới hạn, dừng workload không thiết yếu và xóa resource có phí cao.
+- If EKS is not ready, use Docker Compose or local Kubernetes for the demo.
+- If the AI model is unavailable, use mock responses or deterministic scoring to continue testing the business flow.
+- If Redis is unavailable, run a single chat-service instance for the demo environment.
+- If S3 cannot be accessed, use local storage in development.
+- If a worker fails, processing jobs are retried with lease and attempt limits.
+- If a new deployment fails, roll back to the previous container image or Kubernetes revision.
+- If cost exceeds the limit, stop non-essential workloads and delete high-cost resources.
 
-## Kết quả mong đợi
+## Expected Outcomes
 
-Sau khi hoàn thành project, hệ thống dự kiến đạt được các kết quả:
+After completion, the system is expected to achieve the following outcomes:
 
-- Cung cấp nền tảng tập trung cho Candidate và HR.
-- Quản lý đầy đủ company, jobs, applications và documents.
-- Lưu CV và tài liệu bằng cơ chế an toàn.
-- Hỗ trợ chat realtime.
-- Hỗ trợ AI phân tích CV và Job Description.
-- Xử lý tác vụ lâu bằng worker.
-- Kiểm soát request lặp và cập nhật đồng thời.
-- Chạy được bằng Docker Compose và Kubernetes.
-- Có CI/CD pipeline.
-- Có metrics, logs, traces và alerts.
-- Có kiến trúc triển khai trên AWS.
-- Có tài liệu hướng dẫn triển khai, kiểm thử và clean-up.
+- Provide a centralized platform for Candidates and HR.
+- Manage companies, jobs, applications, and documents.
+- Store CVs and documents securely.
+- Support realtime chat.
+- Support AI analysis for CVs and Job Descriptions.
+- Process long-running tasks with workers.
+- Control repeated requests and concurrent updates.
+- Run with Docker Compose and Kubernetes.
+- Provide a CI/CD pipeline.
+- Provide metrics, logs, traces, and alerts.
+- Provide an AWS deployment architecture.
+- Provide documentation for deployment, testing, and cleanup.
 
-### Giá trị lâu dài
+### Long-Term Value
 
-Project có thể tiếp tục phát triển thành một hệ thống hoàn chỉnh với các chức năng:
+The project can continue evolving into a more complete system with:
 
-- Gửi email hoặc notification khi trạng thái application thay đổi.
-- Đặt lịch phỏng vấn.
-- Tạo cover letter bằng AI.
-- Sinh câu hỏi phỏng vấn dựa trên CV và Job Description.
-- Đề xuất công việc phù hợp với hồ sơ Candidate.
-- Dashboard phân tích hiệu quả tuyển dụng.
-- Tích hợp calendar và email.
-- Cải thiện explainability cho AI matching.
-- Xây dựng mobile application.
-- Mở rộng cho nhiều trường đại học và doanh nghiệp.
+- Email or notification when application status changes.
+- Interview scheduling.
+- AI-generated cover letters.
+- Interview questions generated from CVs and Job Descriptions.
+- Job recommendations based on Candidate profiles.
+- Recruitment analytics dashboard.
+- Calendar and email integration.
+- Improved explainability for AI matching.
+- Mobile application support.
+- Expansion to multiple universities and companies.
 
-Ngoài giá trị sản phẩm, project còn cung cấp một tài liệu tham khảo về cách xây dựng hệ thống Cloud-native nhiều dịch vụ có tích hợp AI, realtime communication, asynchronous processing, Kubernetes, observability và CI/CD.
+Beyond product value, the project also provides a reference for building a Cloud-native multi-service system with AI integration, realtime communication, asynchronous processing, Kubernetes, observability, and CI/CD.

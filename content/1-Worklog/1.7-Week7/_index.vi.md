@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Nhật ký tuần 7"
 date: 2024-01-01
 weight: 7
@@ -33,7 +33,7 @@ pre: " <b> 1.7. </b> "
 - Metrics, logs, traces, dashboards và alert rules được chuẩn bị.
 
 <!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
+Evidence required: Add screenshots, commits, test results, or deployment evidence for this week.
 Expected image directory:
 static/images/worklog/week-7/
 -->

@@ -61,7 +61,7 @@ Minh chứng cá nhân cần bổ sung:
 - Ghi chú cá nhân được thực hiện trong quá trình theo dõi sự kiện.
 
 <!--
-TODO: Thêm ảnh minh chứng tham gia:
+Evidence required: Add participation evidence image:
 static/images/events/event-2/participation-evidence.png
 -->
 
