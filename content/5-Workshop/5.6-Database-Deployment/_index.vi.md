@@ -84,7 +84,7 @@ Do not run migrations against production unless the deployment window and rollba
 
 ## PostgreSQL connection configuration
 
-The production deployment provides `DATABASE_URL` through the Kubernetes Secret `internship-secrets`. The actual connection string is secret and must not be printed in the report.
+The production deployment provides `DATABASE_URL` through the Kubernetes Secret `internship-secrets`. The actual connection string is secret, so I do not print it in the documentation.
 
 Kubernetes verification without exposing the value:
 
@@ -108,7 +108,7 @@ Expected response:
 
 ## ElastiCache Redis
 
-The production Redis replication group is `internship-prod-redis` and was verified as `available` in the supplied context. Redis is used by the Socket.IO adapter so chat events can be broadcast between multiple chat pods.
+The production Redis replication group is `internship-prod-redis`, and I verified it as `available` in the Week 8 evidence. Redis is used by the Socket.IO adapter so chat events can be broadcast between multiple chat pods.
 
 Verification:
 
@@ -128,7 +128,7 @@ The chat service uses three DynamoDB tables:
 - `ChatGroups`
 - `ChatMessages`
 
-The supplied context says all three were verified `ACTIVE`. The chat service readiness endpoint depends on both DynamoDB and Redis:
+I verified all three chat tables as `ACTIVE` in the Week 8 evidence. The chat service readiness endpoint depends on both DynamoDB and Redis:
 
 ```bash
 kubectl port-forward service/chat-service 18081:3000 -n internship

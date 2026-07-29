@@ -13,7 +13,7 @@ This chapter explains the final AWS architecture and the main runtime flows of t
 
 ## Scope
 
-The architecture is based on the supplied production context, the Report repository notes, and the current application repository. Runtime evidence takes priority over older manifests. The most important current correction is that the frontend is hosted by S3 and CloudFront, not by EKS.
+This architecture is based on the final production evidence, the project documentation notes, and the current application repository. I treat runtime evidence as the source of truth when it differs from older manifests. The most important current correction is that the frontend is hosted by S3 and CloudFront, not by EKS.
 
 ## Architecture context
 

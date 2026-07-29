@@ -30,19 +30,19 @@ The infrastructure supports a hybrid edge and container architecture:
 | Area | Resource | Status |
 |---|---|---|
 | Account and region | Project AWS account, `ap-southeast-1` | Account ID redacted |
-| EKS | `internship-prod` | Verified from supplied context and workflow |
+| EKS | `internship-prod` | Verified from Week 8 evidence and workflow |
 | Namespace | `internship` | Verified from manifests |
-| ALB | `k8s-internshippublic-48101b50ad-85486086.ap-southeast-1.elb.amazonaws.com` | Verified from supplied context |
+| ALB | `k8s-internshippublic-48101b50ad-85486086.ap-southeast-1.elb.amazonaws.com` | Verified from Week 8 evidence |
 | Frontend bucket | `internship-prod-frontend-<AWS_ACCOUNT_ID>` | Account suffix redacted |
 | Upload/archive bucket | `internship-prod-uploads-<AWS_ACCOUNT_ID>` | Account suffix redacted |
-| CloudFront | Distribution `EQIGYNECXDYL8` | Verified from supplied context |
-| RDS | `internship-prod-postgres` | Verified from supplied context |
-| Redis | `internship-prod-redis`, status `available` | Verified from supplied context |
-| DynamoDB | `ChatUsers`, `ChatGroups`, `ChatMessages`, `InternshipLambdaEventDedupe` | Verified from supplied context |
-| SQS | `internship-prod-outbox`, `internship-prod-outbox-dlq` | Verified from supplied context |
-| SageMaker | Endpoint `internship-qwen3-4b` | Verified from supplied context |
-| Lambda | `internship-outbox-handler` | Verified from supplied context |
-| IAM roles | `internship-github-deploy`, `internship-eks-runtime`, `internship-sagemaker-execution`, `internship-eks-node-role`, `internship-lambda-outbox-role`, `AmazonEKSLoadBalancerControllerRole` | Verified from supplied context |
+| CloudFront | Distribution `EQIGYNECXDYL8` | Verified from Week 8 evidence |
+| RDS | `internship-prod-postgres` | Verified from Week 8 evidence |
+| Redis | `internship-prod-redis`, status `available` | Verified from Week 8 evidence |
+| DynamoDB | `ChatUsers`, `ChatGroups`, `ChatMessages`, `InternshipLambdaEventDedupe` | Verified from Week 8 evidence |
+| SQS | `internship-prod-outbox`, `internship-prod-outbox-dlq` | Verified from Week 8 evidence |
+| SageMaker | Endpoint `internship-qwen3-4b` | Verified from Week 8 evidence |
+| Lambda | `internship-outbox-handler` | Verified from Week 8 evidence |
+| IAM roles | `internship-github-deploy`, `internship-eks-runtime`, `internship-sagemaker-execution`, `internship-eks-node-role`, `internship-lambda-outbox-role`, `AmazonEKSLoadBalancerControllerRole` | Verified from deployment configuration and Week 8 evidence |
 
 ## Network foundation
 
@@ -198,7 +198,7 @@ aws lambda list-event-source-mappings --function-name internship-outbox-handler 
 aws dynamodb describe-table --table-name InternshipLambdaEventDedupe --region ap-southeast-1
 ```
 
-Conflict to record: repository scripts `scripts/aws/provision-outbox-sqs.sh` and `.ps1` default to `internship-outbox-events` with visibility timeout `60`, while the supplied current runtime queue is `internship-prod-outbox` with visibility timeout `120`. Use runtime evidence for the deployed resource and update scripts only in the application repository if a future implementation task requests it.
+I recorded one naming conflict: repository scripts `scripts/aws/provision-outbox-sqs.sh` and `.ps1` default to `internship-outbox-events` with visibility timeout `60`, while the current runtime queue is `internship-prod-outbox` with visibility timeout `120`. I use runtime evidence for the deployed resource and would update the scripts only in the application repository as a separate implementation task.
 
 ## SageMaker resources
 

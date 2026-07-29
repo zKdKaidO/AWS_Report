@@ -29,12 +29,12 @@ The platform processes user accounts, CVs, job applications, chat messages, AI a
 | ALB route control | ALB routes only API/chat/socket paths to services | Implemented in Ingress |
 | RDS private access | PostgreSQL should not be publicly exposed | Evidence required |
 | Redis private access | ElastiCache should not be publicly exposed | Evidence required |
-| SQS SSE | Main queue and DLQ use server-side encryption | Verified from supplied context |
+| SQS SSE | Main queue and DLQ use server-side encryption | Verified from Week 8 evidence |
 | DynamoDB encryption | DynamoDB tables use AWS-managed encryption by default unless configured otherwise | Evidence required for final table settings |
 | RDS encryption | Must be verified with `describe-db-instances` | Evidence required |
 | Encryption in transit | CloudFront HTTPS; internal service and database TLS settings require evidence | Partially evidenced |
 | Secret handling | No `.env`, token, key, password, or database URL should be committed | Required control |
-| DLQ | SQS DLQ isolates failed consumer messages | Verified from supplied context |
+| DLQ | SQS DLQ isolates failed consumer messages | Verified from Week 8 evidence |
 | Idempotency | PostgreSQL idempotency, outbox, chat `clientMessageId`, and Lambda DynamoDB dedupe | Implemented; Lambda smoke verified |
 | Backup and PITR | RDS backup and DynamoDB PITR settings require exported evidence | Evidence required |
 | Direct ALB access hardening | Restricting ALB origin to CloudFront is recommended | Optional hardening |
@@ -74,22 +74,22 @@ aws sqs get-queue-attributes --queue-url <OUTBOX_QUEUE_URL> --attribute-names Al
 aws rds describe-db-instances --db-instance-identifier internship-prod-postgres --region ap-southeast-1
 ```
 
-Do not print or paste secret values from Kubernetes, GitHub, or AWS into the report.
+I do not print or paste secret values from Kubernetes, GitHub, or AWS into the documentation.
 
 ## Cost evidence source
 
-Cost data in this report follows the Week 8 AWS cost evidence. The evidence reports July 1-28, 2026 month-to-date spend and a Billing and Cost Management credits screenshot. The finalized monthly bill and AWS Pricing Calculator estimate remain pending.
+I report cost data from the Week 8 AWS cost evidence. The evidence records July 1-28, 2026 month-to-date spend and a Billing and Cost Management credits screenshot. The finalized monthly bill and AWS Pricing Calculator estimate remain pending.
 
 | Cost evidence | Observed value | Interpretation |
 |---|---|---:|---|
 | July 1-28, 2026 total spend | Current month-to-date cost | `$94.92` | Source-of-truth Week 8 cost summary |
-| Highest daily spend | July 28, 2026 | `$31.83` | Largest daily spend in the supplied period |
+| Highest daily spend | July 28, 2026 | `$31.83` | Largest daily spend in the July 1-28 period |
 | Credits total amount used | Billing credits | `$27.90` | Billing credits screenshot |
 | Credits total estimated amount used | Billing credits | `$140.65` | Billing credits screenshot |
 | Credits total amount remaining | Billing credits | `$172.10` | Billing credits screenshot |
 | Credits total estimated amount remaining | Billing credits | `$59.35` | Billing credits screenshot |
 
-These values are billing evidence for the supplied period only. They should not be treated as the finalized monthly bill or steady-state production estimate until AWS Bills and AWS Pricing Calculator evidence are attached.
+These values cover the July 1-28 period only. I do not treat them as the finalized monthly bill or steady-state production estimate until AWS Bills and AWS Pricing Calculator evidence are attached.
 
 ## Observed Week 8 service cost
 
@@ -117,10 +117,10 @@ Exact future monthly cost still requires AWS Pricing Calculator or a representat
 | RDS PostgreSQL | Two private, encrypted PostgreSQL `db.t4g.micro` instances, 20 GiB each, Single-AZ | Backup storage, additional I/O, representative runtime |
 | ElastiCache / Valkey | One available replication group with encryption at rest and in transit | Node type, node count, data transfer |
 | Application Load Balancer | One active internet-facing ALB | ALB runtime hours and LCU usage |
-| CloudFront | Two deployed distributions, including the application distribution and the report distribution | Request count, data transfer out, invalidations |
-| S3 | Frontend, upload/archive, report, and support buckets in AWS evidence | Storage GB, PUT/GET requests, lifecycle policy |
-| DynamoDB | Chat and Lambda dedupe tables use on-demand billing; table sizes are near zero in the snapshot | Read/write request volume, storage, PITR if enabled |
-| SQS | Main queue and DLQ had zero visible messages in the snapshot | Request volume and payload size |
+| CloudFront | Application distribution plus report distribution evidence | Request count, data transfer out, invalidations, behavior export |
+| S3 | Frontend bucket object evidence plus upload/archive/report bucket context | Storage GB, PUT/GET requests, lifecycle policy |
+| DynamoDB | Chat and Lambda dedupe tables use on-demand billing in the Week 8 screenshot | Read/write request volume, storage, PITR if enabled |
+| SQS | Main queue and DLQ had zero visible messages in the Week 8 screenshot | Request volume and payload size |
 | Lambda | Outbox handler is Active, 256 MB memory, 20 second timeout | Invocations, average duration, errors/retries |
 | SageMaker | Real-time endpoint is `InService` with one production variant | Instance type, endpoint uptime, data processed |
 | CloudWatch | Logs and metrics are enabled through AWS and Kubernetes services | Log ingestion, retention, custom metrics, alarms |
@@ -135,10 +135,10 @@ Exact future monthly cost still requires AWS Pricing Calculator or a representat
 | Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup and I/O | Two private encrypted instances verified; Week 8 cost summary reports `$29.69` |
 | Amazon ElastiCache / Valkey | Node hourly price times node count plus data transfer | Replication group verified; node type/count still needed |
 | Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; target health still needs final healthy evidence |
-| Amazon CloudFront | Requests plus data transfer out and invalidations | Runtime screenshot still pending |
-| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Runtime screenshot still pending |
-| Amazon DynamoDB | On-demand read/write requests plus storage | Runtime screenshot still pending |
-| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ runtime screenshot still pending |
+| Amazon CloudFront | Requests plus data transfer out and invalidations | Monitoring screenshot available; behavior/origin export still required |
+| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Frontend bucket object screenshot available |
+| Amazon DynamoDB | On-demand read/write requests plus storage | Table status screenshot available |
+| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ screenshot available |
 | AWS Lambda | Request count plus GB-seconds | Function exists; invocation and trigger health still pending |
 | Amazon SES | Email send count and attachments if any | Service planned through Lambda notification path |
 | Amazon ECR | Image storage GB and data transfer if applicable | Not separated in the Week 8 top-driver table |
@@ -149,9 +149,9 @@ Exact future monthly cost still requires AWS Pricing Calculator or a representat
 
 ## Evidence hygiene
 
-Before using any AWS evidence image or log in the report, redact AWS account IDs, access keys, secret keys, database passwords, connection strings, Kubernetes Secret values, GitHub tokens, presigned URLs, and logs containing credentials.
+Before I use any AWS evidence image or log in the documentation, I redact AWS account IDs, access keys, secret keys, database passwords, connection strings, Kubernetes Secret values, GitHub tokens, presigned URLs, and logs containing credentials.
 
-The evidence scan did not find obvious access keys or GitHub tokens, but `02-eks/pod-logs-tail.txt` contains a Redis connection URL with an embedded credential from chat-service startup logs. Do not upload or paste that raw file. Use only a summary or replace the whole value with `<REDACTED_REDIS_CONNECTION_STRING>`.
+My evidence scan did not find obvious access keys or GitHub tokens, but `02-eks/pod-logs-tail.txt` contains a Redis connection URL with an embedded credential from chat-service startup logs. I do not upload or paste that raw file. I use only a summary or replace the whole value with `<REDACTED_REDIS_CONNECTION_STRING>`.
 
 ## Largest cost drivers
 
@@ -184,7 +184,7 @@ The Week 8 evidence shows that cost is no longer near zero. SageMaker, RDS, VPC/
 
 ## Expected result
 
-The security and cost section is complete when it identifies implemented controls, marks missing evidence clearly, avoids secret exposure, and gives a concrete cost-estimation method without inventing live AWS prices.
+I consider the security and cost section complete when it identifies implemented controls, marks missing evidence clearly, avoids secret exposure, and gives a concrete cost-estimation method without inventing live AWS prices.
 
 ## Common errors
 

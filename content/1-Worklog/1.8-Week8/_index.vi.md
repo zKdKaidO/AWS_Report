@@ -10,9 +10,9 @@ pre: " <b> 1.8. </b> "
 
 ## Objectives
 
-Week 8 focused on the final production path for the Internship Application Tracker: building deployment images, running backend and chat workloads on Amazon EKS, exposing API and chat traffic through an Application Load Balancer, delivering the static frontend through the planned S3 and CloudFront architecture, validating AWS-managed data services, and recording which operational and cost evidence was still missing.
+During Week 8, I finalized the production deployment path for the Internship Application Tracker. I built and validated the deployment model for Amazon EKS workloads, Application Load Balancer routing, S3 and CloudFront frontend delivery, AWS-managed data services, event-driven processing, and cost tracking.
 
-The report update in this page is based on the Week 08 AWS evidence files listed in the runtime and cost evidence sections. Cost values are reported from the supplied July 1-28, 2026 AWS cost summary, the billing credits screenshot, and the Cost Explorer overview screenshot. The finalized monthly bill and Pricing Calculator estimate remain unavailable.
+I used the Week 08 AWS evidence directory as the source of truth for this section. The cost figures come from the July 1-28, 2026 AWS cost summary, the Billing credits screenshot, and the Cost Explorer overview screenshot. The finalized monthly bill and the AWS Pricing Calculator estimate are still unavailable.
 
 ## Tasks Completed
 
@@ -25,14 +25,14 @@ The report update in this page is based on the Week 08 AWS evidence files listed
 | Completed | Verified the SageMaker endpoint runtime status from AWS CLI screenshot evidence. | `sagemaker-health.png`. |
 | Partially completed | Verified EKS workloads and ALB runtime state from AWS CLI screenshots. | EKS workloads were running, but the ALB target health screenshot showed mixed unhealthy targets. |
 | Completed | Added CloudFront, S3, DynamoDB, and SQS runtime evidence. | Sanitized screenshots: `Cloudfront-evidence.png`, `S3-evidenc.png`, `DynamoDB-evidenc.png`, `SQS-evidence.png`. |
-| Partially completed | Added AWS cost evidence for July 1-28, 2026. | Supplied cost summary, `total-cost-july.png`, and `Cost-evidence.png`; Pricing Calculator remains blocked. |
+| Partially completed | Added AWS cost evidence for July 1-28, 2026. | July cost summary, `total-cost-july.png`, and `Cost-evidence.png`; Pricing Calculator remains blocked. |
 
 ## Technical Implementation
 
 The final deployment model separates static frontend hosting from long-running service workloads. Backend, chat, worker, and AI services run on EKS. Static browser assets are intended to be served through S3 and CloudFront, while API, chat, and Socket.IO paths route through the ALB.
 
-```mermaid
-flowchart LR
+{{< mermaid >}}
+graph LR
   Browser["User browser"] --> CF["CloudFront distribution"]
   CF --> S3["S3 frontend bucket"]
   CF --> ALB["ALB for /api, /chat, /socket.io"]
@@ -47,13 +47,13 @@ flowchart LR
   Backend --> Outbox["outbox dispatcher"]
   Outbox --> SQS["SQS queue"]
   SQS --> Lambda["Lambda notification handler"]
-```
+{{< /mermaid >}}
 
 The CI/CD workflow supports deployment modes including `validate`, `deploy-app`, `deploy-public`, `deploy-frontend`, `rollout`, and `full`. Backend, chat, and AI images are tagged with the GitHub commit SHA. The frontend deployment path builds the Vite app, publishes static files to S3, and invalidates CloudFront when frontend deployment is enabled.
 
 ## AWS Runtime Evidence
 
-The runtime evidence below uses only files that exist in the Week 08 AWS evidence directory. The reviewed files were:
+The runtime evidence below uses only files that I placed in the Week 08 AWS evidence directory. I reviewed the following files:
 
 - `ALB-target-health.png`
 - `ALB-target.png`
@@ -72,7 +72,7 @@ The runtime evidence below uses only files that exist in the Week 08 AWS evidenc
 - `SQS-evidence.png`
 - `total-cost-july.png`
 
-No `.txt`, `.log`, `.json`, `.yaml`, or `.yml` evidence file was available in this directory, so the report does not include long CLI log excerpts.
+I did not find `.txt`, `.log`, `.json`, `.yaml`, or `.yml` evidence files in this directory, so I did not include long CLI log excerpts.
 
 ### Runtime Evidence Summary
 
@@ -80,7 +80,7 @@ No `.txt`, `.log`, `.json`, `.yaml`, or `.yml` evidence file was available in th
 |---|---|---|---|
 | Amazon EKS | Available | Partially verified: nodes, pods, jobs, and deployments were healthy; cluster `ACTIVE` status was not directly captured | `eks-runtime-pods-2026-07-28.png`, `eks-deployment-rollout-success.png` |
 | Application Load Balancer | Available | Partially operational: load balancer was active and target groups existed, but target health was mixed and included unhealthy targets | `ALB-target-health.png`, `ALB-target.png` |
-| Amazon CloudFront | Available | Partially verified: monitoring screenshot shows requests, data transfer, and error-rate metrics for the distribution | `Cloudfront-evidence.png` |
+| Amazon CloudFront | Available | Partially verified: I captured monitoring metrics for requests, data transfer, and distribution error rates | `Cloudfront-evidence.png` |
 | Amazon S3 | Available | Verified frontend bucket objects after account-suffix redaction | `S3-evidenc.png` |
 | Amazon RDS | Available | Available | `RDS-health.png` |
 | Amazon ElastiCache | Available | Available | `REDIS-health.png` |
@@ -94,9 +94,9 @@ No `.txt`, `.log`, `.json`, `.yaml`, or `.yml` evidence file was available in th
 **Evidence status:** Available
 **Runtime status:** Partially verified
 
-The EKS screenshot evidence shows two Ready worker nodes, running application pods, completed migration/init jobs, and ready deployments in the `internship` namespace. The visible workloads include `ai-service`, `backend`, `backend-outbox-dispatcher`, `backend-processing-worker`, and `chat-service`.
+I verified two Ready worker nodes, running application pods, completed migration/init jobs, and ready deployments in the `internship` namespace. The visible workloads include `ai-service`, `backend`, `backend-outbox-dispatcher`, `backend-processing-worker`, and `chat-service`.
 
-The same evidence also shows deployment readiness:
+The same evidence confirms deployment readiness:
 
 - `ai-service`: 1/1 ready
 - `backend`: 2/2 ready
@@ -104,7 +104,7 @@ The same evidence also shows deployment readiness:
 - `backend-processing-worker`: 1/1 ready
 - `chat-service`: 2/2 ready
 
-The evidence does not include an `aws eks describe-cluster` output showing the EKS cluster status as `ACTIVE`. For that reason, this report marks EKS as partially verified instead of claiming the full cluster status was captured.
+I did not capture an `aws eks describe-cluster` output showing the EKS cluster status as `ACTIVE`. For that reason, I classify EKS as partially verified instead of claiming that full cluster-level evidence was captured.
 
 ![Amazon EKS runtime pods and services](/logs/worklog/week-08/aws/eks-runtime-pods-2026-07-28.png)
 
@@ -115,13 +115,13 @@ The evidence does not include an `aws eks describe-cluster` output showing the E
 **Evidence status:** Available
 **Runtime status:** Partially operational
 
-The ALB screenshot shows an internet-facing application load balancer with state `active`. However, the target health output in the same screenshot shows mixed target status:
+I captured an internet-facing Application Load Balancer in `active` state. However, the target health evidence still shows mixed target status:
 
 - One backend target on port `8000` was healthy.
 - Another backend target on port `8000` was unhealthy with failed health checks.
 - Chat targets on port `3000` were unhealthy with timeout or failed health-check reasons.
 
-Because of the unhealthy targets, the ALB is not reported as fully healthy. It was deployed and active, and the target groups existed, but the target groups still required follow-up validation and remediation.
+Because of the unhealthy targets, I do not classify the ALB as fully healthy. The load balancer was deployed, active, and associated with target groups, but the target groups still require follow-up validation and remediation.
 
 ![Application Load Balancer target health](/logs/worklog/week-08/aws/ALB-target-health.png)
 
@@ -132,9 +132,9 @@ Because of the unhealthy targets, the ALB is not reported as fully healthy. It w
 **Evidence status:** Available
 **Runtime status:** Partially verified
 
-The CloudFront screenshot shows monitoring metrics for distribution `EQIGYNECXDYL8`, including requests, data transfer, and error-rate graphs over the selected three-day window. This confirms the distribution was receiving telemetry.
+I captured CloudFront monitoring metrics for distribution `EQIGYNECXDYL8`, including requests, data transfer, and error-rate graphs over the selected three-day window. This confirms that the distribution was receiving telemetry.
 
-The S3 screenshot shows the frontend bucket object listing after the bucket name was redacted. The visible objects include `assets/`, `favicon.svg`, and `index.html`, which is enough to show that static frontend assets were present in S3.
+I captured the frontend S3 bucket object listing after redacting the bucket name. The visible objects include `assets/`, `favicon.svg`, and `index.html`, which verifies that static frontend assets were present in S3.
 
 These screenshots support frontend hosting evidence, but they do not replace a full CloudFront behavior/origin configuration export or a browser smoke test through the CloudFront URL.
 
@@ -147,7 +147,7 @@ These screenshots support frontend hosting evidence, but they do not replace a f
 **Evidence status:** Available
 **Runtime status:** Available
 
-The RDS screenshot shows the PostgreSQL database instance `internship-prod-postgres` in status `available`. The captured output also shows PostgreSQL engine metadata, encrypted storage, non-public accessibility, and allocated storage.
+I verified the PostgreSQL database instance `internship-prod-postgres` in status `available`. The captured output also includes PostgreSQL engine metadata, encrypted storage, non-public accessibility, and allocated storage.
 
 ![Amazon RDS PostgreSQL health](/logs/worklog/week-08/aws/RDS-health.png)
 
@@ -156,7 +156,7 @@ The RDS screenshot shows the PostgreSQL database instance `internship-prod-postg
 **Evidence status:** Available
 **Runtime status:** Available
 
-The ElastiCache screenshot shows the replication group `internship-prod-redis` with Valkey engine status `available`. The evidence also shows encryption at rest and in transit enabled.
+I verified the ElastiCache replication group `internship-prod-redis` with Valkey engine status `available`. The captured evidence also confirms encryption at rest and in transit.
 
 ![Amazon ElastiCache Valkey health](/logs/worklog/week-08/aws/REDIS-health.png)
 
@@ -165,14 +165,14 @@ The ElastiCache screenshot shows the replication group `internship-prod-redis` w
 **Evidence status:** Available
 **Runtime status:** Verified Active
 
-The DynamoDB screenshot shows four tables in `Active` status:
+I verified four DynamoDB tables in `Active` status:
 
 - `ChatGroups`
 - `ChatMessages`
 - `ChatUsers`
 - `InternshipLambdaEventDedupe`
 
-The screenshot also shows on-demand read and write capacity mode for the tables. This verifies that the AWS DynamoDB tables existed and were active at the time the evidence was captured.
+The captured table list also shows on-demand read and write capacity mode. This verifies that the AWS DynamoDB tables existed and were active at the time of evidence collection.
 
 ![DynamoDB table status evidence](/logs/worklog/week-08/aws/DynamoDB-evidenc.png)
 
@@ -181,12 +181,12 @@ The screenshot also shows on-demand read and write capacity mode for the tables.
 **Evidence status:** Available
 **Runtime status:** Verified available
 
-The SQS screenshot shows two standard queues:
+I verified two Amazon SQS standard queues:
 
 - `internship-prod-outbox`
 - `internship-prod-outbox-dlq`
 
-Both queues show zero visible messages and zero in-flight messages in the screenshot. Encryption is shown as Amazon SQS managed server-side encryption.
+Both queues had zero visible messages and zero in-flight messages in the captured evidence. The queues use Amazon SQS managed server-side encryption.
 
 ![SQS queue evidence](/logs/worklog/week-08/aws/SQS-evidence.png)
 
@@ -195,11 +195,11 @@ Both queues show zero visible messages and zero in-flight messages in the screen
 **Evidence status:** Available
 **Runtime status:** Partially verified
 
-The Lambda screenshot shows a function named `internship-outbox-handler` with a Python runtime and environment configuration. The screenshot confirms that a Lambda function existed in the selected AWS region.
+I verified a Lambda function named `internship-outbox-handler` with a Python runtime and environment configuration. This confirms that the function existed in the selected AWS region.
 
 The screenshot was sanitized before publication by redacting account-scoped ARNs, the IAM role ARN account segment, the bucket value containing an account identifier, and the sender email address.
 
-Additional Lambda screenshots show the function source view and a CloudWatch log group named `/aws/lambda/internship-outbox-handler`. These confirm that the function code view and log group existed. They do not prove a successful invocation, SQS trigger execution, or SES delivery result, so runtime invocation is still not marked as fully verified.
+Additional Lambda evidence captures the function source view and a CloudWatch log group named `/aws/lambda/internship-outbox-handler`. These items confirm that the function code view and log group existed. They do not prove a successful invocation, SQS trigger execution, or SES delivery result, so I keep Lambda runtime execution as partially verified.
 
 ![AWS Lambda function configuration](/logs/worklog/week-08/aws/lambda.png)
 
@@ -212,7 +212,7 @@ Additional Lambda screenshots show the function source view and a CloudWatch log
 **Evidence status:** Available
 **Runtime status:** InService
 
-The SageMaker screenshot shows endpoint `internship-qwen3-4b` with status `InService`. This is sufficient evidence that the SageMaker endpoint existed and was serving at the time the evidence was collected.
+I verified the SageMaker endpoint `internship-qwen3-4b` in status `InService`. This is sufficient to show that the endpoint existed and was serving at the time of evidence collection.
 
 ![Amazon SageMaker endpoint status](/logs/worklog/week-08/aws/sagemaker-health.png)
 
@@ -220,9 +220,9 @@ The SageMaker screenshot shows endpoint `internship-qwen3-4b` with status `InSer
 
 > **Status: Partially available**
 
-The July 1-28, 2026 AWS cost summary reported a month-to-date spend of **$94.92**. The report also includes a Billing and Cost Management credits screenshot stored as `total-cost-july.png` and a Cost Explorer overview screenshot stored as `Cost-evidence.png`.
+The July 1-28, 2026 AWS cost summary reported a month-to-date spend of **$94.92**. I also included a Billing and Cost Management credits screenshot stored as `total-cost-july.png` and a Cost Explorer overview screenshot stored as `Cost-evidence.png`.
 
-The credits screenshot shows AWS credits rather than a grouped Cost Explorer service chart. The Cost Explorer screenshot is useful as a billing-console overview, but it uses a different report configuration and is not a Pricing Calculator estimate. Therefore, the service-level cost breakdown below is still reported from the supplied July 1-28 cost summary.
+The credits screenshot records AWS credits rather than a grouped Cost Explorer service chart. The Cost Explorer screenshot is useful as a billing-console overview, but it uses a different report configuration and is not a Pricing Calculator estimate. Therefore, I keep the service-level cost breakdown tied to the July 1-28 cost summary.
 
 ![AWS Billing credits summary for July 2026](/logs/worklog/week-08/aws/total-cost-july.png)
 
@@ -290,12 +290,12 @@ Five active anomalies were reported around July 26-28 in `ap-southeast-1`:
 
 | Area | Result | Evidence |
 |---|---|---|
-| EKS workload rollout | Partially verified | Deployment rollout screenshot shows all listed deployments successfully rolled out. |
-| EKS runtime pods and services | Partially verified | Runtime screenshot shows Ready nodes, Running pods, Completed jobs, ready deployments, and services/ingress. |
-| ALB deployment | Partially operational | ALB screenshot shows state `active`, but target health includes unhealthy targets. |
-| RDS PostgreSQL | Verified available | RDS screenshot shows status `available`. |
-| ElastiCache Valkey | Verified available | ElastiCache screenshot shows status `available`. |
-| SageMaker endpoint | Verified InService | SageMaker screenshot shows endpoint status `InService`. |
+| EKS workload rollout | Partially verified | I captured successful rollout output for all listed deployments. |
+| EKS runtime pods and services | Partially verified | I captured Ready nodes, Running pods, Completed jobs, ready deployments, and services/ingress. |
+| ALB deployment | Partially operational | I captured ALB state `active`, but target health still includes unhealthy targets. |
+| RDS PostgreSQL | Verified available | I captured RDS status `available`. |
+| ElastiCache Valkey | Verified available | I captured ElastiCache status `available`. |
+| SageMaker endpoint | Verified InService | I captured SageMaker endpoint status `InService`. |
 | Lambda function listing | Partially verified | Screenshots confirm function configuration, source view, and CloudWatch log group; invocation and trigger health are not verified. |
 | CloudFront and S3 frontend delivery | Partially verified | CloudFront monitoring and S3 object listing screenshots are available; full behavior/origin export and browser smoke proof remain pending. |
 | DynamoDB and SQS | Verified available | DynamoDB tables are Active; SQS main queue and DLQ are listed with zero messages and SSE-SQS. |
@@ -306,13 +306,13 @@ Five active anomalies were reported around July 26-28 in `ap-southeast-1`:
 ### ALB target groups were not fully healthy
 
 **Problem:**
-The ALB evidence showed the load balancer in `active` state, but target health included unhealthy backend and chat targets.
+I captured the load balancer in `active` state, but target health still included unhealthy backend and chat targets.
 
 **Impact:**
 API or chat traffic through the public ALB could fail intermittently or return gateway errors until every required target group becomes healthy.
 
 **Current resolution:**
-The report marks ALB as partially operational rather than fully healthy.
+I classify the ALB as partially operational rather than fully healthy.
 
 **Next action:**
 Collect updated target health evidence after fixing health-check failures or deployment readiness issues.
@@ -323,21 +323,21 @@ Collect updated target health evidence after fixing health-check failures or dep
 A July 1-28 cost summary and credits screenshot are available, but the evidence set still does not include a finalized monthly bill or AWS Pricing Calculator estimate.
 
 **Impact:**
-The report can show the July 1-28 month-to-date spend and major cost drivers, but it cannot conclude the final monthly bill or steady-state monthly cost.
+I can show the July 1-28 month-to-date spend and major cost drivers, but I cannot conclude the final monthly bill or steady-state monthly cost yet.
 
 **Current resolution:**
-The report marks cost evidence as partially available, reports only the supplied July 1-28 figures, and keeps monthly estimate fields pending.
+I classify cost evidence as partially available, report only the July 1-28 figures, and keep monthly estimate fields pending.
 
 **Next action:**
 Collect the finalized AWS Bills view and build an AWS Pricing Calculator estimate for the production architecture.
 
-### Runtime evidence was added for several AWS services
+### I added runtime evidence for several AWS services
 
 **Problem:**
 The first Week 8 evidence set did not include CloudFront, S3, DynamoDB, or SQS screenshots.
 
 **Impact:**
-Without screenshots or sanitized CLI output, those services could not be marked as runtime evidenced in the report.
+Without screenshots or sanitized CLI output, I could not classify those services as runtime evidenced.
 
 **Current resolution:**
 Sanitized screenshots were added for CloudFront monitoring, the S3 frontend bucket object list, DynamoDB table status, and SQS queue status.
@@ -354,7 +354,7 @@ The Lambda screenshot contained account-scoped ARNs, an IAM role ARN, a bucket n
 Embedding the screenshot directly would publish sensitive or semi-sensitive operational values.
 
 **Current resolution:**
-The screenshot was sanitized and embedded as Lambda deployment evidence. It confirms the function listing/configuration, but not invocation success.
+I sanitized and embedded the screenshot as Lambda deployment evidence. It confirms the function listing/configuration, but not invocation success.
 
 **Next action:**
 Collect a separate invocation, trigger, or CloudWatch event-detail screenshot if Lambda runtime execution must be marked fully verified.
@@ -364,14 +364,14 @@ Collect a separate invocation, trigger, or CloudWatch event-detail screenshot if
 Week 8 produced meaningful AWS runtime evidence for the core compute and data path:
 
 - EKS workloads were running and deployments had rolled out.
-- RDS PostgreSQL was available.
-- ElastiCache Valkey was available.
+- I verified RDS PostgreSQL as available.
+- I verified ElastiCache Valkey as available.
 - CloudFront monitoring and S3 frontend object evidence were added.
 - DynamoDB tables and SQS queues were verified from AWS console screenshots.
 - SageMaker endpoint evidence showed `InService`.
-- Sanitized Lambda evidence confirms that the function, source view, and CloudWatch log group existed, while invocation proof remains pending.
+- Sanitized Lambda evidence confirms the function, source view, and CloudWatch log group, while invocation proof remains pending.
 
-The report also identifies important remaining gaps: ALB target health was not fully healthy, CloudFront behavior/origin export and browser smoke proof are still pending, and cost evidence still needs a finalized bill and Pricing Calculator estimate.
+I also keep the remaining gaps explicit: ALB target health was not fully healthy, CloudFront behavior/origin export and browser smoke proof are still pending, and cost evidence still needs a finalized bill and Pricing Calculator estimate.
 
 ## Remaining Work
 

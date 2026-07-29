@@ -6,8 +6,6 @@ chapter: false
 pre: " <b> 4.4. </b> "
 ---
 
-# Event 4: AWS Knowledge Sharing Event: Certification, Security, and Monitoring
-
 ## Event Overview
 
 Event 4 was an intensive AWS knowledge-sharing event consisting of three complementary technical sessions designed to empower practitioners across different stages of cloud adopting and system management. The gathering integrated foundational certification roadmap guidance, cutting-edge AI-assisted application security workflows, and real-world system operational monitoring methodologies. Together, these three educational sessions seamlessly covered the complete engineering lifecycle of cloud systems: learning the foundational cloud platform, securing application architectures and source code against emerging threat vectors, and monitoring operational deployments to ensure authentic user satisfaction.

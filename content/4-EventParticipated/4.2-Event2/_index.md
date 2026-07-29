@@ -6,8 +6,6 @@ chapter: false
 pre: " <b> 4.2. </b> "
 ---
 
-# Event 2: Enterprise Cloud Architectures and Industry Applications
-
 ## Event Name
 
 AWS Study Tour: Enterprise Cloud Architectures and Industry Applications featuring Cloud Kinetics and Renova Cloud

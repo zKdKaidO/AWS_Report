@@ -29,10 +29,10 @@ Backend -> PostgreSQL outbox -> dispatcher -> SQS -> Lambda -> DynamoDB dedupe -
 
 | Status | Meaning |
 |---|---|
-| Verified | Runtime evidence or supplied production context confirms the result |
+| Verified | Runtime evidence from Week 8 or exported production evidence confirms the result |
 | Implemented, verification required | Code or manifests implement the capability, but production runtime evidence is not included |
 | Proposed | Recommended test or control, not proven implemented |
-| Not completed | Not implemented or not completed in the available evidence |
+| Not completed | Not implemented or not completed in the evidence I have |
 
 ## Acceptance test table
 
@@ -54,18 +54,18 @@ Backend -> PostgreSQL outbox -> dispatcher -> SQS -> Lambda -> DynamoDB dedupe -
 | TC14 | Chat persistence | Reload chat history | DynamoDB returns persisted message | Implemented, verification required |
 | TC15 | Chat pod restart and reconnect | Restart one chat pod during active session | Socket reconnects and no duplicate persisted message for retry | Implemented, verification required |
 | TC16 | PostgreSQL connectivity | Backend `/health/ready` | `postgres: true` | Implemented, verification required |
-| TC17 | Redis status | Chat `/health/ready` | `redis: true` | Verified from supplied Redis status plus implemented health check |
-| TC18 | DynamoDB table status | `describe-table` for chat tables | `ACTIVE` for `ChatUsers`, `ChatGroups`, `ChatMessages` | Verified from supplied context |
-| TC19 | Outbox dispatcher | Inspect dispatcher deployment and logs | Dispatcher reads PostgreSQL outbox and publishes to SQS | Verified deployment from supplied context; event publish verification required |
-| TC20 | SQS event | Inspect `internship-prod-outbox` | Message accepted with SSE, visibility timeout, retention | Verified from supplied context |
-| TC21 | Lambda processing | Smoke-test event `lambda-smoke-fixed-1785220478` | Lambda processed event and returned `EMAIL_SENT` | Verified from supplied context |
-| TC22 | SES notification | Same smoke-test event | Email send result recorded as `EMAIL_SENT` | Verified from supplied context |
-| TC23 | S3 event archive | Inspect archive key | `outbox-archive/2026/07/28/lambda-smoke-fixed-1785220478.json` exists | Verified from supplied context |
+| TC17 | Redis status | Chat `/health/ready` | `redis: true` | Redis runtime status verified from Week 8 evidence; health endpoint output still useful |
+| TC18 | DynamoDB table status | `describe-table` for chat tables | `ACTIVE` for `ChatUsers`, `ChatGroups`, `ChatMessages` | Verified from Week 8 DynamoDB evidence |
+| TC19 | Outbox dispatcher | Inspect dispatcher deployment and logs | Dispatcher reads PostgreSQL outbox and publishes to SQS | Deployment verified from Week 8 EKS evidence; event publish verification required |
+| TC20 | SQS event | Inspect `internship-prod-outbox` | Message accepted with SSE, visibility timeout, retention | Queue and DLQ verified from Week 8 SQS evidence |
+| TC21 | Lambda processing | Smoke-test event `lambda-smoke-fixed-1785220478` | Lambda processed event and returned `EMAIL_SENT` | Function and log group partially verified; successful invocation evidence still required |
+| TC22 | SES notification | Same smoke-test event | Email send result recorded as `EMAIL_SENT` | Verification required; Week 8 evidence does not prove SES delivery |
+| TC23 | S3 event archive | Inspect archive key | `outbox-archive/2026/07/28/lambda-smoke-fixed-1785220478.json` exists | Verification required; Week 8 evidence does not prove archive object creation |
 | TC24 | DynamoDB idempotency | Process duplicate event ID | Duplicate is skipped by dedupe table | Implemented, verification required |
 | TC25 | Duplicate Lambda event | Re-send same event ID | No second side effect | Implemented, verification required |
 | TC26 | DLQ handling | Force consumer failure in controlled test | Message redriven to `internship-prod-outbox-dlq` after max receive count | Proposed |
-| TC27 | CloudFront routing correctness | Check distribution behaviors | Default to S3; `/api`, `/chat`, `/socket.io` to ALB | Verified from supplied context |
-| TC28 | Frontend no longer in EKS | `kubectl get deployment frontend -n internship` | Not found | Verified from supplied context |
+| TC27 | CloudFront routing correctness | Check distribution behaviors | Default to S3; `/api`, `/chat`, `/socket.io` to ALB | Partially verified from CloudFront monitoring; behavior export or browser smoke proof still required |
+| TC28 | Frontend no longer in EKS | `kubectl get deployment frontend -n internship` | Not found | Partially verified from current architecture and EKS workload evidence; explicit command output still useful |
 
 ## Manual command set
 
@@ -150,7 +150,7 @@ EKS workload CloudWatch log group names require evidence from log shipping confi
 
 ## Expected result
 
-The platform is accepted for demonstration when critical public health checks pass, EKS workloads are Ready, DynamoDB/Redis/SQS/Lambda/SageMaker resources are available, and the Lambda smoke-test path has processed an event with archive and email result.
+The platform is accepted for demonstration when critical public health checks pass, EKS workloads are Ready, DynamoDB/Redis/SQS/Lambda/SageMaker resources are available, and the Lambda smoke-test path has exported proof for event processing, archive, and email result.
 
 ## Common errors
 

@@ -21,14 +21,14 @@ Week 5 focused on running the application in local Kubernetes using kind. The go
 | Completed | Added local deployment automation for PowerShell and shell users. | `scripts/k8s/deploy-local.ps1` and `scripts/k8s/deploy-local.sh`. |
 | Completed | Added HPA and PDB definitions for app services. | `k8s/app/autoscaling.yaml`. |
 | Completed | Added observability resources for Prometheus, Grafana, Loki, Tempo, Alloy, OTel collector, ServiceMonitors, and PrometheusRules. | `k8s/observability/*` and `observability/grafana/*`. |
-| Partially completed | Captured live `kubectl` screenshots and command logs. | Evidence pending: screenshots/log artifacts are not present in the report repo. |
+| Partially completed | Captured live `kubectl` screenshots and command logs where available. | Evidence pending: I did not have the full screenshot/log artifact set in the local evidence archive. |
 
 ## Technical Implementation
 
 The local Kubernetes path uses kind for the cluster, in-cluster PostgreSQL/Redis/DynamoDB Local for dependencies, and Kubernetes manifests under `k8s/app` for the workload layer.
 
-```mermaid
-flowchart TB
+{{< mermaid >}}
+graph TB
   subgraph Kind["kind-internship-local"]
     subgraph Internship["namespace: internship"]
       Backend["Deployment/backend"]
@@ -57,7 +57,7 @@ flowchart TB
   Prom --> Backend
   Prom --> Chat
   Prom --> Dispatcher
-```
+{{< /mermaid >}}
 
 The deployment scripts build local images, load them into kind, apply app manifests, run migration/init jobs, wait for rollouts, and print port-forward commands for backend, chat, and optional AI service checks.
 
@@ -69,7 +69,7 @@ The deployment scripts build local images, load them into kind, apply app manife
 | Fresh local images might not be used by kind. | Building an image is not enough; kind nodes need the image loaded. | Scripts run `kind load docker-image` and restart deployments. | Completed |
 | Migrations and chat table creation need ordered startup. | API/chat pods should not assume databases are initialized. | Added `backend-migrate` and `chat-init` Jobs. | Completed |
 | Local observability required multiple supporting components. | Metrics, logs, and traces need separate platform services. | Added Helm-backed Prometheus/Grafana/Loki/Tempo/Alloy resources and local runbook guidance. | Completed |
-| Live cluster screenshots are missing. | Runtime screenshots were not supplied with the report repo. | Marked Kubernetes evidence as pending. | Blocked |
+| Live cluster screenshots are missing. | Runtime screenshots were not attached to the local evidence archive. | I kept Kubernetes evidence pending. | Blocked |
 
 ## Testing, Build and Deployment Results
 

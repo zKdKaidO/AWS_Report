@@ -21,14 +21,14 @@ Week 7 focused on the production AWS runtime: EKS, managed databases, runtime IA
 | Completed | Added EKS deployment script behavior for secrets, config, migration/init jobs, rollouts, health checks, and optional AI service. | `scripts/k8s/deploy-eks.sh`. |
 | Completed | Added rollout-only workflow mode for existing workloads. | Commits `51bceee` and `f81e086`. |
 | Completed | Hardened public ingress deployment around AWS Load Balancer Controller readiness and ALB health checks. | Commits `036a516` and `8272c4a`. |
-| Partially completed | Attached AWS console and CLI evidence for RDS, Redis, SQS, EKS, and service account status. | Evidence pending: live AWS screenshots/logs are not stored in the report repo. |
+| Partially completed | Attached AWS console and CLI evidence for RDS, Redis, SQS, EKS, and service account status where available. | Evidence pending: I did not have the full live AWS screenshot/log set in the local evidence archive. |
 
 ## Technical Implementation
 
 The target production environment is centered on EKS namespace `internship`. Backend and chat are long-running Kubernetes Deployments. PostgreSQL, Redis, DynamoDB, SQS, S3, CloudFront, and SageMaker are managed AWS services outside the cluster.
 
-```mermaid
-flowchart TB
+{{< mermaid >}}
+graph TB
   CF["CloudFront"] --> ALB["Public ALB Ingress"]
   ALB --> API["backend service :8000"]
   ALB --> Chat["chat-service :3000"]
@@ -39,7 +39,7 @@ flowchart TB
   Chat --> DDB["DynamoDB chat tables"]
   Worker["backend-processing-worker"] --> AI["ai-service / SageMaker"]
   Dispatcher["backend-outbox-dispatcher"] --> SQS
-```
+{{< /mermaid >}}
 
 Runtime variables such as `DATABASE_URL`, `REDIS_URL`, `OUTBOX_QUEUE_URL`, and `AWS_REGION` are treated as deployment inputs or Kubernetes secret/config values. The report does not include their secret values.
 
@@ -51,7 +51,7 @@ Runtime variables such as `DATABASE_URL`, `REDIS_URL`, `OUTBOX_QUEUE_URL`, and `
 | AWS Load Balancer Controller may not be ready when ingress is applied. | Webhook endpoints can be unavailable during controller rollout. | Public ingress script waits and retries before applying ingress. | Completed |
 | Health checks can fail briefly while target groups converge. | ALB registration and pod readiness are eventually consistent. | Public deploy script retries ALB health checks. | Completed |
 | EKS rollout may run with limited permissions. | IAM/RBAC permissions may not allow every optional inspection command. | Rollout script tolerates selected limited-permission cases without hiding actual failures. | Completed |
-| Exact live managed-service evidence is missing from report files. | AWS CLI/console artifacts were not supplied locally. | Marked EKS/RDS/Redis/SQS screenshots and logs as pending. | Blocked |
+| Exact live managed-service evidence is missing from report files. | AWS CLI/console artifacts were not attached locally. | I kept EKS/RDS/Redis/SQS screenshots and logs pending. | Blocked |
 
 ## Testing, Build and Deployment Results
 

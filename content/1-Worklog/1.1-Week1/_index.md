@@ -34,8 +34,8 @@ The source repository is a monorepo with separate service responsibilities:
 
 Initial architecture baseline:
 
-```mermaid
-flowchart LR
+{{< mermaid >}}
+graph LR
   User["Candidate / HR browser"] --> Frontend["React / Vite frontend"]
   Frontend --> Backend["FastAPI backend"]
   Frontend --> Chat["Node.js Socket.IO chat service"]
@@ -44,7 +44,7 @@ flowchart LR
   Backend --> AI["AI service"]
   Chat --> Redis["Redis pub/sub"]
   Chat --> DynamoDB["DynamoDB chat tables"]
-```
+{{< /mermaid >}}
 
 The baseline also identified the first cloud migration direction: keep long-running backend and chat services containerized, move durable relational data to PostgreSQL/RDS, use DynamoDB for chat records, use Redis for realtime fan-out, and prepare the application for containerization and CI/CD.
 
@@ -55,7 +55,7 @@ The baseline also identified the first cloud migration direction: keep long-runn
 | The first source snapshot contained broad application code and generated dependency content. | The initial commit added the complete baseline in one large commit. | Later work separated documentation, scripts, and runtime responsibilities into clearer paths. | Completed |
 | The project originally contained Prisma-related Node database artifacts while the backend used SQLAlchemy/PostgreSQL. | Database strategy changed toward FastAPI, SQLAlchemy, Alembic, and PostgreSQL. | Commit `ab60f7d` removed Prisma artifacts and documented the EC2/RDS direction. | Completed |
 | Local startup needed to support more than one developer workflow. | A single startup command was useful for demos, but separate terminal commands were easier for debugging. | Commits `d3c1168` and `e43cc04` documented both startup approaches. | Completed |
-| Architecture screenshots were not stored in the report repository. | Evidence files were not supplied with the source repo. | Marked screenshot evidence as pending instead of creating fake screenshots. | Blocked |
+| I did not have architecture screenshots in the local evidence archive. | I did not have the original screenshot artifacts in the source repo. | I kept screenshot evidence pending instead of creating fake screenshots. | Blocked |
 
 ## Testing, Build and Deployment Results
 

@@ -7,7 +7,7 @@ chapter: false
 
 # Internship Report
 
-This report documents the Internship Application Tracker, an AI-integrated internship application management platform deployed on AWS.
+This internship report presents the Internship Application Tracker, an AI-integrated internship application management platform that I documented, validated, and prepared for AWS deployment.
 
 ![Student profile](/images/avatar.png)
 

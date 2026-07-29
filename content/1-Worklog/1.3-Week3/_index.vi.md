@@ -28,7 +28,7 @@ Week 3 focused on separating committed business changes from downstream side eff
 
 The outbox design keeps domain mutation and event creation in the same PostgreSQL transaction. If the business write fails, no event is inserted. If the API pod dies after commit, the outbox row remains `PENDING` and can be claimed later by the dispatcher.
 
-```mermaid
+{{< mermaid >}}
 sequenceDiagram
   participant API as FastAPI backend
   participant DB as PostgreSQL
@@ -47,7 +47,7 @@ sequenceDiagram
   end
   C->>SQS: consume message
   C->>C: deduplicate by eventId
-```
+{{< /mermaid >}}
 
 Asynchronous processing uses a separate database-backed queue because document parsing and AI matching are user-visible jobs with status, retry behavior, source-version guards, and result payloads. The worker claims jobs, applies lease-based retry logic, and persists results back to PostgreSQL.
 
@@ -59,7 +59,7 @@ Asynchronous processing uses a separate database-backed queue because document p
 | SQS Standard can redeliver or reorder messages. | Standard queues provide at-least-once delivery, not exactly-once delivery. | The event envelope includes `eventId`; consumers must deduplicate by `eventId`. | Completed |
 | Dispatcher failure can leave events half-processed. | A worker can die after claiming or publishing an event. | Lease expiry, retry counters, `DEAD` status, and admin requeue/cleanup commands were added. | Completed |
 | AI and document work can take too long for API request latency. | Parsing CVs, extracting text, and reranking candidates are long-running operations. | Added `async_processing_jobs` and `backend-processing-worker`. | Completed |
-| Real downstream consumers were not part of this implementation slice. | The week focused on producer reliability and the consumer contract. | Marked downstream consumers as future work unless later runtime evidence is supplied. | Partially completed |
+| Real downstream consumers were not part of this implementation slice. | I focused the week on producer reliability and the consumer contract. | I kept downstream consumers as future work until runtime evidence is added. | Partially completed |
 
 ## Testing, Build and Deployment Results
 

@@ -44,7 +44,7 @@ cd AWS-Internship
 git status --short --branch
 ```
 
-Do not publish private tokens, clone credentials, or secret-bearing remote URLs in the report.
+I do not publish private tokens, clone credentials, or secret-bearing remote URLs in the documentation.
 
 ## Review branch and workflow state
 

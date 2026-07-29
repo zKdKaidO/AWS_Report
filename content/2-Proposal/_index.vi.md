@@ -102,15 +102,15 @@ For the development team, the project provides an opportunity to apply full-stac
 
 ## Solution Architecture
 
-The original proposal expected a multi-service AWS architecture with Kubernetes for containerized services, managed databases, object storage, realtime chat, observability, and CI/CD. The final implementation keeps that direction but adjusts two important areas based on deployment evidence:
+The original proposal targeted a multi-service AWS architecture with Kubernetes for containerized services, managed databases, object storage, realtime chat, observability, and CI/CD. In the final implementation, I kept that direction and adjusted two important areas after completing the deployment work:
 
 - The React frontend is no longer a Kubernetes workload. It is built with Vite, stored in a private S3 bucket, and delivered by CloudFront.
 - Backend, chat, worker, outbox dispatcher, and the SageMaker adapter remain on EKS because they are long-running processes or need Kubernetes rollout, health check, and scaling controls.
 
 ### Final implemented architecture
 
-```mermaid
-flowchart LR
+{{< mermaid >}}
+graph LR
     User["Candidate / HR browser"]
     CF["Amazon CloudFront<br/>dhm2rz5nmsibj.cloudfront.net"]
     S3Frontend["Private S3 frontend bucket<br/>internship-prod-frontend-account-redacted"]
@@ -159,7 +159,7 @@ flowchart LR
     GitHub --> EKS
     GitHub --> S3Frontend
     GitHub --> CF
-```
+{{< /mermaid >}}
 
 ### Architecture explanation
 
@@ -176,8 +176,8 @@ The EKS cluster hosts only services that need long-running runtime behavior: bac
 | Component | Final responsibility | Implementation evidence |
 |---|---|---|
 | React/Vite frontend | Candidate and HR user interface, built to static assets | `frontend/package.json`, `scripts/ci/deploy-frontend.sh` |
-| CloudFront | HTTPS public entry point and route dispatcher | `scripts/aws/ensure-cloudfront.sh`, supplied distribution `EQIGYNECXDYL8` |
-| Frontend S3 bucket | Private storage for `frontend/dist` assets | Supplied private frontend bucket; account suffix redacted |
+| CloudFront | HTTPS public entry point and route dispatcher | `scripts/aws/ensure-cloudfront.sh`, Week 8 distribution `EQIGYNECXDYL8` |
+| Frontend S3 bucket | Private storage for `frontend/dist` assets | Private frontend bucket from the Week 8 deployment evidence; account suffix redacted |
 | Application Load Balancer | Public routing to EKS services | `k8s/eks/ingress-alb-no-domain.yaml` |
 | FastAPI backend | Auth, jobs, applications, uploads, dashboards, processing job APIs | `backend/app/main.py`, backend routers |
 | Chat service | REST chat APIs and Socket.IO realtime channel | `chat-service/server.js` |
@@ -185,10 +185,10 @@ The EKS cluster hosts only services that need long-running runtime behavior: bac
 | Outbox dispatcher | Publishes committed PostgreSQL outbox events to SQS | `backend/app/workers/outbox_dispatcher.py`, ADR-001 |
 | AI service | Stable worker-facing adapter for SageMaker | `ai_service/app.py`, `k8s/app/ai-service.yaml` |
 | RDS PostgreSQL | Transactional business data and reliable worker queues | Alembic migrations through `0008_async_processing_jobs.py` |
-| DynamoDB | Chat persistence and Lambda event deduplication | Chat table names in Kubernetes config and supplied runtime context |
+| DynamoDB | Chat persistence and Lambda event deduplication | Chat table names in Kubernetes config and Week 8 runtime evidence |
 | Redis | Socket.IO pub/sub between chat pods | `chat-service/lib/redis.js`, Kubernetes config |
-| SQS and DLQ | At-least-once event delivery and failed-message isolation | ADR-001, supplied queue evidence |
-| Lambda and SES | Event notification, archive, and email delivery | Supplied runtime smoke-test context |
+| SQS and DLQ | At-least-once event delivery and failed-message isolation | ADR-001 and Week 8 queue evidence |
+| Lambda and SES | Event notification, archive, and email delivery | Lambda configuration and CloudWatch evidence from Week 8 |
 | GitHub Actions OIDC | CI/CD without long-lived AWS access keys | `.github/workflows/cicd.yml` |
 
 ### Design rationale
@@ -212,7 +212,7 @@ The transactional outbox is used because committing application data and publish
 | AI runtime | AI service expected | EKS `ai-service` adapter invokes SageMaker endpoint `internship-qwen3-4b` |
 | Event processing | Asynchronous events expected | PostgreSQL outbox, SQS, Lambda, DynamoDB dedupe, S3 archive and SES |
 | Deployment | CI/CD expected | GitHub Actions workflow dispatch modes with OIDC and ECR image verification |
-| Runtime proof | Design-stage assumption | Runtime evidence supplied for CloudFront, EKS workloads, RDS, Redis, DynamoDB, SQS, Lambda smoke test, and SageMaker endpoint |
+| Runtime proof | Design-stage assumption | I collected runtime evidence for CloudFront, EKS workloads, RDS, Redis, DynamoDB, SQS, Lambda configuration, and the SageMaker endpoint |
 
 ### AWS Services Used
 
@@ -273,7 +273,7 @@ The system collects metrics for performance and health monitoring, logs for even
 | 4. Reliability improvements | Build processing workers, retry, lease, idempotency, optimistic concurrency, transactional outbox, validation, and error handling |
 | 5. Containerization and Kubernetes | Write Dockerfiles, build Docker Compose, create a local Kubernetes cluster with kind, deploy Deployment, Service, Ingress, HPA, PDB, health probes, and migration jobs |
 | 6. Observability and CI/CD | Collect metrics, logs, and traces, build dashboards, set up alerts, build GitHub Actions, run automated tests, smoke tests, and security scans |
-| 7. AWS deployment and completion | Build images, push to Amazon ECR, deploy workloads on Amazon EKS, connect RDS, DynamoDB, ElastiCache, and S3, deploy frontend on S3/CloudFront, run end-to-end tests, and complete the report |
+| 7. AWS deployment and completion | Build images, push to Amazon ECR, deploy workloads on Amazon EKS, connect RDS, DynamoDB, ElastiCache, and S3, deploy frontend on S3/CloudFront, run end-to-end tests, and complete the documentation |
 
 ### Technical Requirements
 
@@ -297,7 +297,7 @@ The system collects metrics for performance and health monitoring, logs for even
 
 ## Timeline and Milestones
 
-The plan is adjusted to 8 weeks, from 08/06/2026 to 30/07/2026, to stay consistent with the Worklog section of the report.
+I adjusted the plan to 8 weeks, from 08/06/2026 to 30/07/2026, to match the worklog timeline.
 
 | Week | Time | Milestone | Expected deliverable |
 |---|---|---|---|
@@ -321,7 +321,7 @@ The Week 8 evidence reports July 1-28, 2026 month-to-date AWS spend and a Billin
 | Cost evidence | Observed value | Interpretation |
 |---|---:|---|
 | July 1-28, 2026 total spend | `$94.92` | Current month-to-date spend from the Week 8 cost summary |
-| Highest daily spend | `$31.83` on July 28 | Largest daily cost in the supplied July 1-28 period |
+| Highest daily spend | `$31.83` on July 28 | Largest daily cost in the July 1-28 period |
 | Credits total amount used | `$27.90` | Billing credits screenshot evidence |
 | Credits total estimated amount used | `$140.65` | Billing credits screenshot evidence |
 | Credits total amount remaining | `$172.10` | Billing credits screenshot evidence |
@@ -361,10 +361,10 @@ The top Week 8 cost drivers are Amazon RDS (`$29.69`), Amazon SageMaker (`$23.45
 | Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup/I/O | Two private encrypted instances verified; Week 8 cost summary reports `$29.69` |
 | Amazon ElastiCache / Valkey | Node hourly price times node count, plus data transfer | Replication group verified; node type/count needed |
 | Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; included in networking/runtime cost checks |
-| Amazon CloudFront | Requests, transfer out, and invalidations | Runtime screenshot still pending |
-| Amazon S3 | Storage GB, PUT/GET requests, lifecycle transitions | Runtime screenshot still pending |
-| Amazon DynamoDB | On-demand read/write requests plus storage | Runtime screenshot still pending |
-| Amazon SQS | Standard queue requests and payload volume | Runtime screenshot still pending |
+| Amazon CloudFront | Requests, transfer out, and invalidations | Monitoring screenshot available; behavior/origin export still required |
+| Amazon S3 | Storage GB, PUT/GET requests, lifecycle transitions | Frontend bucket object screenshot available |
+| Amazon DynamoDB | On-demand read/write requests plus storage | Table status screenshot available |
+| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ screenshot available |
 | AWS Lambda | Requests plus GB-seconds | Function exists; invocation cost and trigger health still pending |
 | Amazon SES | Email send count and attachments if any | Used by notification path |
 | Amazon ECR | Image storage and transfer if applicable | Not separated in the Week 8 top-driver table |

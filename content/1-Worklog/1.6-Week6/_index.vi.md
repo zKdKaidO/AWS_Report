@@ -21,14 +21,14 @@ Week 6 focused on preparing the AWS deployment foundation: AWS region, GitHub OI
 | Completed | Added ECR build and push workflow for application images. | Commit `9f9fcf3`. |
 | Completed | Aligned AWS deployment workflow with production architecture. | Commit `7eb1a76`. |
 | Completed | Added EKS access smoke test workflow. | Commit `bfacd3a`. |
-| Partially completed | Captured IAM policy simulation, ECR digest, and GitHub Actions screenshots. | Evidence pending: runtime screenshots/logs are not stored in the report repo. |
+| Partially completed | Captured IAM policy simulation, ECR digest, and GitHub Actions screenshots where available. | Evidence pending: I did not have the full runtime screenshot/log set in the local evidence archive. |
 
 ## Technical Implementation
 
 The CI/CD path uses GitHub Actions OIDC to assume the AWS deployment role instead of storing long-lived AWS access keys. ECR image URIs are based on AWS account, region, repository name, and immutable Git SHA tags.
 
-```mermaid
-flowchart LR
+{{< mermaid >}}
+graph LR
   GitHub["GitHub Actions"] --> OIDC["GitHub OIDC token"]
   OIDC --> IAM["IAM role: internship-github-deploy"]
   IAM --> ECR["Amazon ECR"]
@@ -36,9 +36,9 @@ flowchart LR
   ECR --> BackendImage["internship-backend:<github.sha>"]
   ECR --> ChatImage["internship-chat:<github.sha>"]
   EKS --> Deploy["scripts/k8s/deploy-eks.sh"]
-```
+{{< /mermaid >}}
 
-The source repository includes deployment scripts for both EKS application deployment and frontend deployment. Sensitive runtime values such as `DATABASE_URL`, `REDIS_URL`, and `SECRET_KEY` are passed through environment variables or Kubernetes Secrets and are not written into the report.
+The source repository includes deployment scripts for both EKS application deployment and frontend deployment. I keep sensitive runtime values such as `DATABASE_URL`, `REDIS_URL`, and `SECRET_KEY` in environment variables or Kubernetes Secrets, not in published documentation.
 
 ## Problems and Solutions
 
@@ -48,7 +48,7 @@ The source repository includes deployment scripts for both EKS application deplo
 | ECR push requires authorization permissions. | The GitHub deployment role needs ECR token and repository permissions. | ECR build/push workflow and later permission verification commits were added. | Partially completed |
 | Deployment needs deterministic image names. | Manually passing image URIs is error-prone. | Workflow builds/pushes SHA-tagged images and deployment scripts consume those values. | Completed |
 | EKS access can be blocked by limited permissions. | Deployment role may lack cluster or Kubernetes RBAC permissions. | EKS access smoke workflow and later rollout tolerance were added. | Partially completed |
-| Digest and policy screenshots are missing. | AWS console/CLI evidence was not provided locally. | Marked AWS evidence as pending. | Blocked |
+| Digest and policy screenshots are missing. | AWS console/CLI evidence was not attached locally. | I kept AWS evidence pending. | Blocked |
 
 ## Testing, Build and Deployment Results
 
@@ -57,7 +57,7 @@ The source repository includes deployment scripts for both EKS application deplo
 | OIDC workflow | Implemented | `.github/workflows/aws-oidc-smoke-test.yml` existed in commit `2777b56`; later consolidated into CI/CD. |
 | ECR build/push workflow | Implemented | Commit `9f9fcf3` added AWS ECR build/push workflow. |
 | Production deploy workflow | Implemented | Commit `7eb1a76` added `scripts/ci/deploy-eks-pipeline.sh` and `scripts/ci/deploy-frontend.sh`. |
-| AWS CLI/runtime logs | Partially completed | No local `aws sts`, `aws ecr`, or policy simulation output was found in the report repo. |
+| AWS CLI/runtime logs | Partially completed | I did not find local `aws sts`, `aws ecr`, or policy simulation output in the local evidence archive. |
 
 ## Evidence
 
@@ -104,7 +104,7 @@ The project gained a cloud deployment identity model and image delivery foundati
 
 ## Lessons Learned
 
-AWS CI/CD work depends on both IAM and runtime evidence. A workflow file can be correct structurally, but the report should only mark authentication, image push, or cluster access as verified when the corresponding AWS/Actions log is available.
+AWS CI/CD work depends on both IAM and runtime evidence. A workflow file can be correct structurally, but I only mark authentication, image push, or cluster access as verified when the corresponding AWS/Actions log is available.
 
 ## Next Week Plan
 

@@ -21,7 +21,7 @@ Week 2 focused on making write operations safe when several backend or chat pods
 | Completed | Added database-backed idempotency for candidate apply requests. | `backend/app/services/idempotency_service.py`, `backend/app/routers/jobs.py`, and migration `0004_idempotency_records.py`. |
 | Completed | Added version-gated workflow commands using `expectedVersion`. | `backend/app/services/optimistic_concurrency.py`, `backend/app/services/workflow_commands.py`, and HR/Candidate routers. |
 | Completed | Hardened chat writes against duplicate retry behavior. | `chat-service/repositories/chatRepository.js` and `chat-service/tests/chatRepository.concurrency.test.js`. |
-| Partially completed | Attached visible API screenshots and CI logs. | Evidence pending: no screenshot or GitHub Actions log artifact was available in the report repo. |
+| Partially completed | Attached visible API screenshots and CI logs where available. | Evidence pending: I did not have a screenshot or GitHub Actions log artifact in the local evidence archive. |
 
 ## Technical Implementation
 
@@ -37,7 +37,7 @@ Concurrency control was implemented at the database and API-contract level:
 
 Conflict flow:
 
-```mermaid
+{{< mermaid >}}
 sequenceDiagram
   participant C as Client
   participant API as FastAPI backend pod
@@ -54,7 +54,7 @@ sequenceDiagram
   else payload mismatch or duplicate business conflict
     API-->>C: 409 Conflict
   end
-```
+{{< /mermaid >}}
 
 ## Problems and Solutions
 
@@ -64,7 +64,7 @@ sequenceDiagram
 | Candidate apply can be retried by browser/network clients. | A second request may reach another backend pod before the first response is received. | Scoped idempotency records persist request hash and response data. | Completed |
 | HR workflow updates can become stale when two users act on the same job/application. | Plain updates do not know whether the client saw the latest row version. | Commands require `expectedVersion` and use conditional updates. | Completed |
 | Chat retries can duplicate realtime messages. | Socket retries and REST retries can re-send the same logical message. | Chat repository uses deterministic message identity and skips duplicate broadcast on replay. | Completed |
-| Public evidence for a `409` screenshot is missing. | The source repo contains tests and docs, but no screenshot artifact. | Marked screenshot evidence as pending. | Blocked |
+| Public evidence for a `409` screenshot is missing. | The source repo contains tests and docs, but no screenshot artifact. | I kept screenshot evidence pending. | Blocked |
 
 ## Testing, Build and Deployment Results
 

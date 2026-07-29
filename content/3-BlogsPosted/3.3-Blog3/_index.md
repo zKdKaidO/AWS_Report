@@ -10,7 +10,7 @@ pre: " <b> 3.3. </b> "
 
 ## Publication status
 
-The third blog has not been completed or published in the available evidence.
+I have not completed or published the third blog yet.
 
 | Field | Value |
 |---|---|
