@@ -113,7 +113,7 @@ The original proposal expected a multi-service AWS architecture with Kubernetes 
 flowchart LR
     User["Candidate / HR browser"]
     CF["Amazon CloudFront<br/>dhm2rz5nmsibj.cloudfront.net"]
-    S3Frontend["Private S3 frontend bucket<br/>internship-prod-frontend-587953673860"]
+    S3Frontend["Private S3 frontend bucket<br/>internship-prod-frontend-account-redacted"]
     ALB["Application Load Balancer<br/>internet-facing"]
     EKS["Amazon EKS<br/>internship-prod / namespace internship"]
     Backend["FastAPI backend<br/>Deployment/backend :8000"]
@@ -124,7 +124,7 @@ flowchart LR
     RDS["Amazon RDS PostgreSQL<br/>internship-prod-postgres"]
     Redis["Amazon ElastiCache Redis<br/>internship-prod-redis"]
     DDBChat["DynamoDB chat tables<br/>ChatUsers / ChatGroups / ChatMessages"]
-    S3Uploads["S3 uploads and archive bucket<br/>internship-prod-uploads-587953673860"]
+    S3Uploads["S3 uploads and archive bucket<br/>internship-prod-uploads-account-redacted"]
     SQS["Amazon SQS<br/>internship-prod-outbox"]
     DLQ["SQS DLQ<br/>internship-prod-outbox-dlq"]
     Lambda["AWS Lambda<br/>internship-outbox-handler"]
@@ -177,7 +177,7 @@ The EKS cluster hosts only services that need long-running runtime behavior: bac
 |---|---|---|
 | React/Vite frontend | Candidate and HR user interface, built to static assets | `frontend/package.json`, `scripts/ci/deploy-frontend.sh` |
 | CloudFront | HTTPS public entry point and route dispatcher | `scripts/aws/ensure-cloudfront.sh`, supplied distribution `EQIGYNECXDYL8` |
-| Frontend S3 bucket | Private storage for `frontend/dist` assets | Supplied bucket `internship-prod-frontend-587953673860` |
+| Frontend S3 bucket | Private storage for `frontend/dist` assets | Supplied private frontend bucket; account suffix redacted |
 | Application Load Balancer | Public routing to EKS services | `k8s/eks/ingress-alb-no-domain.yaml` |
 | FastAPI backend | Auth, jobs, applications, uploads, dashboards, processing job APIs | `backend/app/main.py`, backend routers |
 | Chat service | REST chat APIs and Socket.IO realtime channel | `chat-service/server.js` |
@@ -312,51 +312,68 @@ The plan is adjusted to 8 weeks, from 08/06/2026 to 30/07/2026, to stay consiste
 
 ## Budget Estimation
 
-Exact monthly cost must be calculated with AWS Pricing Calculator or current billing data for account `587953673860` in region `ap-southeast-1`. This proposal therefore records the cost method and known configuration instead of inventing prices.
+Exact monthly cost should be calculated with AWS Pricing Calculator and then compared with representative Cost Explorer billing data for the project AWS account in `ap-southeast-1`. The current evidence folder includes Cost Explorer exports, but the values are near zero and should be treated as observed billing evidence, not as the final steady-state monthly estimate.
+
+### Observed Cost Explorer evidence
+
+The evidence folder `aws-evidence-2026-07-29/01-cost` contains Cost Explorer `UnblendedCost` exports for the previous month and the current month-to-date period.
+
+| Billing period | Observed total | Interpretation |
+|---|---:|---|
+| 2026-06-01 to 2026-07-01 | `-0.0000001996 USD` | Effectively zero; includes tiny credits or rounding adjustments |
+| 2026-07-01 to 2026-07-30 | `0.0000000871 USD` | Effectively zero for the captured month-to-date window |
+
+The current month-to-date service breakdown shows `EC2 - Other` at `0.0293361372 USD` and `AWS Data Transfer` at `-0.0293422518 USD`, which nearly cancel each other. Other observed service lines are tiny or zero, including EKS, DynamoDB, ElastiCache, Lambda, SageMaker, SQS, SES, and CloudFront. This means the billing window was not yet representative of a continuously running production environment.
 
 ### Cost assumptions
 
-| Area | Assumption used for estimation | Evidence status |
+| Area | Evidence-based assumption | Estimate status |
 |---|---|---|
-| Environment | Production environment in `ap-southeast-1` | Verified from supplied context and workflow defaults |
-| Public traffic | CloudFront distribution `EQIGYNECXDYL8` fronts all browser traffic | Verified from supplied context |
-| Frontend | Static assets in S3 bucket `internship-prod-frontend-587953673860` | Verified from supplied context and deploy script |
-| Kubernetes | EKS cluster `internship-prod`, namespace `internship` | Verified from supplied context and workflow |
-| Backend/chat | 2 replicas each, HPA min 2/max 5 | Verified from manifests |
-| Worker/dispatcher | Dispatcher 1 replica; processing worker can be disabled until AI is ready | Verified from manifests and deploy script |
-| AI | SageMaker endpoint `internship-qwen3-4b` | Verified from supplied context |
-| SQS | Main queue `internship-prod-outbox`, DLQ `internship-prod-outbox-dlq` | Verified from supplied runtime context; repository provisioning script still defaults to older queue names |
-| Lambda | `internship-outbox-handler` consumes SQS and sends SES email | Verified from supplied runtime context |
+| Environment | Production deployment in `ap-southeast-1` | Verified |
+| Public traffic | CloudFront fronts browser traffic and routes API/chat traffic to ALB | Verified |
+| Frontend | Static assets are stored in a private S3 bucket and delivered by CloudFront | Verified |
+| Kubernetes | One EKS cluster runs backend, chat, worker, dispatcher, and AI adapter workloads | Verified |
+| Worker nodes | Two Ready Kubernetes worker nodes were captured in the evidence snapshot | Instance type and EBS size still required |
+| RDS PostgreSQL | Two private, encrypted PostgreSQL `db.t4g.micro` instances with 20 GiB storage each | Verified |
+| ElastiCache / Valkey | One available Redis-compatible replication group with encryption at rest and in transit | Node type/count still required |
+| DynamoDB | Chat and Lambda dedupe tables use on-demand billing and are near empty in the snapshot | Verified |
+| SQS | Main outbox queue and DLQ have zero visible messages in the snapshot | Verified |
+| Lambda | Outbox handler is Active, 256 MB memory, 20 second timeout | Verified |
+| SageMaker | Real-time endpoint is `InService` with one production variant | Instance type and expected uptime still required |
+| CloudWatch | Logs and metrics exist through AWS and Kubernetes services | Retention and ingestion volume still required |
 
 ### Cost-estimation methodology
 
-1. Open AWS Pricing Calculator for `ap-southeast-1`.
-2. Add each production service in the table below.
-3. Enter the real deployed configuration: instance type, storage size, request count, data transfer, retention period, and runtime hours.
-4. Export the Pricing Calculator estimate and attach it as evidence before replacing `Pricing evidence required`.
-5. Compare with AWS Cost Explorer after the environment has run for a representative period.
+1. Use AWS Pricing Calculator for `ap-southeast-1`.
+2. Enter the observed deployed resources from the evidence folder.
+3. Add missing runtime inputs: node instance type, EBS size, Redis node type/count, SageMaker instance type, monthly runtime hours, data transfer, request volume, and CloudWatch log retention.
+4. Export the Pricing Calculator estimate as the forecast.
+5. Compare the forecast with Cost Explorer after the environment has run for a representative period.
 
-| Service | Known configuration or input required | Cost field |
+| Service | Monthly estimate method | Current evidence status |
 |---|---|---|
-| Amazon EKS | One production cluster, `internship-prod` | Pricing evidence required |
-| EC2 worker nodes | Managed node group instance type, node count, EBS volumes, runtime hours | Pricing evidence required |
-| NAT Gateway | Private subnet egress, NAT hourly charge and processed data | Pricing evidence required |
-| Amazon ECR | Backend, chat, and AI images tagged by Git SHA | Pricing evidence required |
-| Amazon RDS PostgreSQL | Instance class, allocated storage, Multi-AZ status, backup retention | Pricing evidence required |
-| Amazon ElastiCache Redis | Replication group `internship-prod-redis`, node type and node count required | Pricing evidence required |
-| Amazon DynamoDB | ChatUsers, ChatGroups, ChatMessages, InternshipLambdaEventDedupe capacity mode and request volume | Pricing evidence required |
-| Amazon S3 | Frontend assets, uploads, event archive, storage GB, PUT/GET volume, lifecycle policy | Pricing evidence required |
-| Amazon CloudFront | Requests, regional data transfer, invalidations beyond free tier if any | Pricing evidence required |
-| Application Load Balancer | One internet-facing ALB, LCU usage and runtime hours | Pricing evidence required |
-| Amazon SQS | Standard queue and DLQ request volume, retention, SSE | Pricing evidence required |
-| AWS Lambda | SQS-triggered `internship-outbox-handler`, invocations, memory, duration | Pricing evidence required |
-| Amazon SES | Email send volume and region-specific SES pricing | Pricing evidence required |
-| Amazon SageMaker | Real-time endpoint instance type and uptime for `internship-qwen3-4b` | Pricing evidence required |
-| Amazon CloudWatch | Log ingestion, storage retention, metrics, alarms | Pricing evidence required |
-| Data transfer | CloudFront egress, NAT processing, ALB traffic, inter-AZ traffic if applicable | Pricing evidence required |
-| Total | Sum exported from AWS Pricing Calculator | Pricing evidence required |
+| Amazon EKS | Cluster hourly price times monthly runtime | Deployed; current Cost Explorer line is zero |
+| EC2 worker nodes | Node hourly price times two nodes, plus EBS storage | Nodes verified; instance type/EBS size needed |
+| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup/I/O | Two private encrypted instances verified |
+| Amazon ElastiCache / Valkey | Node hourly price times node count, plus data transfer | Replication group verified; node type/count needed |
+| Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; tiny current Cost Explorer line |
+| Amazon CloudFront | Requests, transfer out, and invalidations | Distributions verified; current Cost Explorer line is zero |
+| Amazon S3 | Storage GB, PUT/GET requests, lifecycle transitions | Buckets verified; tiny current Cost Explorer line |
+| Amazon DynamoDB | On-demand read/write requests plus storage | Tables verified; current Cost Explorer line is zero |
+| Amazon SQS | Standard queue requests and payload volume | Queue/DLQ verified; current Cost Explorer line is zero |
+| AWS Lambda | Requests plus GB-seconds | Function verified; current Cost Explorer line is zero |
+| Amazon SES | Email send count and attachments if any | Used by notification path |
+| Amazon ECR | Image storage and transfer if applicable | Tiny current Cost Explorer line |
+| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint verified `InService`; current Cost Explorer line is zero |
+| Amazon CloudWatch | Log ingestion, storage retention, metrics, alarms | Tiny current Cost Explorer line |
+| Data transfer | CloudFront egress, ALB traffic, NAT processing, cross-AZ traffic | Adjustment observed; traffic breakdown needed |
+| Total | Pricing Calculator forecast, then Cost Explorer comparison | Current observed total is effectively zero |
 
-The largest likely cost drivers are the EKS control plane, EC2 worker nodes, NAT Gateway, RDS, Redis, ALB, CloudFront data transfer, and especially the SageMaker real-time endpoint. If the SageMaker endpoint uses GPU-backed instances and remains online continuously, AI uptime may dominate the total monthly cost.
+The largest likely future cost drivers are SageMaker endpoint uptime, EKS control plane, EC2 worker nodes, RDS, Redis, ALB, CloudFront/data transfer, and CloudWatch logs. If the SageMaker endpoint remains online continuously, AI inference can dominate monthly cost even when the Cost Explorer snapshot currently shows zero.
+
+### Evidence hygiene for cost materials
+
+No raw screenshots or logs should expose account IDs, access keys, secret keys, database passwords, connection strings, Kubernetes Secret values, GitHub tokens, presigned URLs, or login-related logs. The pod log evidence must be summarized or sanitized before publication because the raw `02-eks/pod-logs-tail.txt` file contains a Redis connection URL with an embedded credential.
 
 ### Cost Optimization
 
@@ -370,7 +387,7 @@ The largest likely cost drivers are the EKS control plane, EC2 worker nodes, NAT
 - Use DynamoDB on-demand while traffic is still unstable.
 - Configure AWS Budget and Billing Alarm.
 - Delete unused Load Balancers, public IPv4 addresses, snapshots, and volumes.
-- Avoid creating a NAT Gateway if the workshop architecture does not require it.
+- Confirm whether NAT Gateway is required before leaving it running.
 
 ## Risk Assessment
 

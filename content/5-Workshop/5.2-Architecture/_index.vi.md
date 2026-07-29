@@ -34,7 +34,7 @@ The architecture is based on the supplied production context, the Report reposit
 flowchart LR
     User["Candidate / HR browser"]
     CF["CloudFront<br/>dhm2rz5nmsibj.cloudfront.net"]
-    S3Frontend["S3 frontend bucket<br/>internship-prod-frontend-587953673860"]
+    S3Frontend["S3 frontend bucket<br/>internship-prod-frontend-account-redacted"]
     ALB["Application Load Balancer<br/>internet-facing"]
     EKS["EKS cluster<br/>internship-prod"]
     Backend["backend<br/>FastAPI :8000"]
@@ -45,7 +45,7 @@ flowchart LR
     RDS["RDS PostgreSQL<br/>internship-prod-postgres"]
     DDB["DynamoDB<br/>ChatUsers / ChatGroups / ChatMessages"]
     Redis["ElastiCache Redis<br/>internship-prod-redis"]
-    Uploads["S3 uploads/archive bucket<br/>internship-prod-uploads-587953673860"]
+    Uploads["S3 uploads/archive bucket<br/>internship-prod-uploads-account-redacted"]
     SQS["SQS queue<br/>internship-prod-outbox"]
     DLQ["SQS DLQ<br/>internship-prod-outbox-dlq"]
     Lambda["Lambda<br/>internship-outbox-handler"]
@@ -219,7 +219,7 @@ The workflow supports `validate`, `deploy`, `rollout`, `restore-compute`, `deplo
 | Component | Responsibility | Verification command |
 |---|---|---|
 | CloudFront | Public HTTPS entry point and routing | `aws cloudfront get-distribution --id EQIGYNECXDYL8` |
-| S3 frontend bucket | Static frontend assets | `aws s3 ls s3://internship-prod-frontend-587953673860/` |
+| S3 frontend bucket | Static frontend assets | `aws s3 ls s3://internship-prod-frontend-<AWS_ACCOUNT_ID>/` |
 | ALB | Routes API/chat/socket traffic to EKS services | `kubectl get ingress internship-public -n internship` |
 | Backend | FastAPI business API and health endpoints | `kubectl rollout status deployment/backend -n internship` |
 | Chat service | Socket.IO and chat REST API | `kubectl rollout status deployment/chat-service -n internship` |

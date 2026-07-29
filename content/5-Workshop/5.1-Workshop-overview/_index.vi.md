@@ -16,7 +16,7 @@ The target production environment is:
 | Item | Value |
 |---|---|
 | Project | Internship Application Tracker |
-| AWS account | `587953673860` |
+| AWS account | Project AWS account, ID redacted |
 | Region | `ap-southeast-1` |
 | Environment | `production` |
 | EKS cluster | `internship-prod` |

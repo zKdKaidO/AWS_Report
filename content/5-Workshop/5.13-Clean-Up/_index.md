@@ -30,7 +30,7 @@ Cleanup must follow dependency order. Deleting shared networking or IAM first ca
 - [ ] Export any required S3 event archive objects.
 - [ ] Confirm no production users depend on the deployment.
 - [ ] Confirm backups or snapshots are either retained or intentionally deleted.
-- [ ] Confirm the active AWS account is `587953673860`.
+- [ ] Confirm the active AWS account is the intended project account.
 - [ ] Confirm the active region is `ap-southeast-1`.
 
 Verification:
@@ -242,17 +242,17 @@ aws dynamodb delete-table --table-name InternshipLambdaEventDedupe --region ap-s
 Inspect first:
 
 ```bash
-aws s3 ls s3://internship-prod-frontend-587953673860 --recursive --summarize
-aws s3 ls s3://internship-prod-uploads-587953673860 --recursive --summarize
+aws s3 ls s3://internship-prod-frontend-<AWS_ACCOUNT_ID> --recursive --summarize
+aws s3 ls s3://internship-prod-uploads-<AWS_ACCOUNT_ID> --recursive --summarize
 ```
 
 Empty and delete after approval:
 
 ```bash
-aws s3 rm s3://internship-prod-frontend-587953673860 --recursive
-aws s3 rb s3://internship-prod-frontend-587953673860
-aws s3 rm s3://internship-prod-uploads-587953673860 --recursive
-aws s3 rb s3://internship-prod-uploads-587953673860
+aws s3 rm s3://internship-prod-frontend-<AWS_ACCOUNT_ID> --recursive
+aws s3 rb s3://internship-prod-frontend-<AWS_ACCOUNT_ID>
+aws s3 rm s3://internship-prod-uploads-<AWS_ACCOUNT_ID> --recursive
+aws s3 rb s3://internship-prod-uploads-<AWS_ACCOUNT_ID>
 ```
 
 If versioning is enabled, delete object versions and delete markers before removing the bucket.

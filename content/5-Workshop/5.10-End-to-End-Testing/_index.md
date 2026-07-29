@@ -129,13 +129,13 @@ kubectl logs deployment/backend-outbox-dispatcher -n internship --tail=100
 Frontend bucket:
 
 ```bash
-aws s3 ls s3://internship-prod-frontend-587953673860/ --region ap-southeast-1
+aws s3 ls s3://internship-prod-frontend-<AWS_ACCOUNT_ID>/ --region ap-southeast-1
 ```
 
 Event archive:
 
 ```bash
-aws s3 ls s3://internship-prod-uploads-587953673860/outbox-archive/2026/07/28/ --region ap-southeast-1
+aws s3 ls s3://internship-prod-uploads-<AWS_ACCOUNT_ID>/outbox-archive/2026/07/28/ --region ap-southeast-1
 ```
 
 ## CloudWatch log checks

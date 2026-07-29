@@ -29,12 +29,12 @@ The infrastructure supports a hybrid edge and container architecture:
 
 | Area | Resource | Status |
 |---|---|---|
-| Account and region | `587953673860`, `ap-southeast-1` | Verified from supplied context |
+| Account and region | Project AWS account, `ap-southeast-1` | Account ID redacted |
 | EKS | `internship-prod` | Verified from supplied context and workflow |
 | Namespace | `internship` | Verified from manifests |
 | ALB | `k8s-internshippublic-48101b50ad-85486086.ap-southeast-1.elb.amazonaws.com` | Verified from supplied context |
-| Frontend bucket | `internship-prod-frontend-587953673860` | Verified from supplied context |
-| Upload/archive bucket | `internship-prod-uploads-587953673860` | Verified from supplied context |
+| Frontend bucket | `internship-prod-frontend-<AWS_ACCOUNT_ID>` | Account suffix redacted |
+| Upload/archive bucket | `internship-prod-uploads-<AWS_ACCOUNT_ID>` | Account suffix redacted |
 | CloudFront | Distribution `EQIGYNECXDYL8` | Verified from supplied context |
 | RDS | `internship-prod-postgres` | Verified from supplied context |
 | Redis | `internship-prod-redis`, status `available` | Verified from supplied context |
@@ -160,7 +160,7 @@ aws elbv2 describe-target-groups --region ap-southeast-1
 
 Frontend deployment uses:
 
-- private bucket `internship-prod-frontend-587953673860`
+- private bucket `internship-prod-frontend-<AWS_ACCOUNT_ID>`
 - CloudFront distribution `EQIGYNECXDYL8`
 - CloudFront Origin Access Control
 - default behavior to S3
@@ -170,7 +170,7 @@ Frontend deployment uses:
 Verification:
 
 ```bash
-aws s3api get-public-access-block --bucket internship-prod-frontend-587953673860
+aws s3api get-public-access-block --bucket internship-prod-frontend-<AWS_ACCOUNT_ID>
 aws cloudfront get-distribution --id EQIGYNECXDYL8
 aws cloudfront list-invalidations --distribution-id EQIGYNECXDYL8
 ```
@@ -185,7 +185,7 @@ Implemented current runtime:
 | SQS DLQ | `internship-prod-outbox-dlq`, retention 14 days, `maxReceiveCount` 5 |
 | Lambda | `internship-outbox-handler`, SQS trigger |
 | Dedupe table | `InternshipLambdaEventDedupe` |
-| Archive location | `s3://internship-prod-uploads-587953673860/outbox-archive/...` |
+| Archive location | `s3://internship-prod-uploads-<AWS_ACCOUNT_ID>/outbox-archive/...` |
 | Email service | Amazon SES |
 
 Verification:

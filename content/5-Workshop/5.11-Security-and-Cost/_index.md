@@ -69,85 +69,125 @@ aws iam get-role --role-name internship-github-deploy
 aws iam get-role --role-name internship-eks-runtime
 kubectl get serviceaccount internship-app -n internship -o yaml
 kubectl describe secret internship-secrets -n internship
-aws s3api get-public-access-block --bucket internship-prod-frontend-587953673860
+aws s3api get-public-access-block --bucket <FRONTEND_BUCKET_NAME>
 aws sqs get-queue-attributes --queue-url <OUTBOX_QUEUE_URL> --attribute-names All --region ap-southeast-1
 aws rds describe-db-instances --db-instance-identifier internship-prod-postgres --region ap-southeast-1
 ```
 
 Do not print or paste secret values from Kubernetes, GitHub, or AWS into the report.
 
+## Cost evidence source
+
+Cost data was exported from Cost Explorer in the evidence folder `aws-evidence-2026-07-29/01-cost`. The command used the Cost Explorer API endpoint in `us-east-1`, while the deployed workload evidence is for `ap-southeast-1`.
+
+| Billing period | Cost Explorer metric | Observed total | Interpretation |
+|---|---|---:|---|
+| 2026-06-01 to 2026-07-01 | UnblendedCost | `-0.0000001996 USD` | Effectively zero; includes tiny credits or rounding adjustments |
+| 2026-07-01 to 2026-07-30 | UnblendedCost | `0.0000000871 USD` | Effectively zero for the captured month-to-date window |
+
+These values are billing evidence for the exported period only. They should not be treated as a steady-state monthly production estimate because the AWS resources were recently created, several services show zero or tiny usage, and credits or negative adjustments can cancel gross charges.
+
+## Observed current-month service cost
+
+The current month-to-date Cost Explorer export shows the following service-level values.
+
+| Service | Current month-to-date UnblendedCost |
+|---|---:|
+| EC2 - Other | `0.0293361372 USD` |
+| AWS Data Transfer | `-0.0293422518 USD` |
+| Amazon Elastic Compute Cloud - Compute | `0.0000028030 USD` |
+| AWS CloudShell | `0.0000015348 USD` |
+| Elastic Load Balancing | `0.0000012880 USD` |
+| Amazon Simple Storage Service | `0.0000004694 USD` |
+| Amazon Relational Database Service | `0.0000000584 USD` |
+| AWS Secrets Manager | `0.0000000376 USD` |
+| Amazon Elastic Container Registry Public | `0.0000000071 USD` |
+| Amazon CloudWatch | `0.0000000034 USD` |
+| Amazon DynamoDB | `0.0000000000 USD` |
+| Amazon ElastiCache | `0.0000000000 USD` |
+| Amazon Elastic Container Service for Kubernetes | `0.0000000000 USD` |
+| AWS Lambda | `0.0000000000 USD` |
+| Amazon SageMaker | `0.0000000000 USD` |
+| Amazon Simple Queue Service | `0.0000000000 USD` |
+| Amazon Simple Email Service | `0.0000000000 USD` |
+
+The largest observed gross line items are `EC2 - Other` and the negative `AWS Data Transfer` adjustment, which nearly cancel each other. The zero entries are useful evidence that the Cost Explorer export did not yet capture meaningful billable usage for those services; they are not proof that those services are free in normal operation.
+
 ## Cost assumptions
 
-Exact prices must come from AWS Pricing Calculator or Cost Explorer for `ap-southeast-1`. This section records the configuration and pricing inputs to gather.
+Exact future monthly cost still requires AWS Pricing Calculator or a representative Cost Explorer period. The deployed configuration observed in the evidence folder is:
 
-| Cost driver | Known configuration | Pricing evidence required |
+| Cost driver | Observed configuration | Monthly estimate input still required |
 |---|---|---|
-| EKS control plane | One cluster `internship-prod` | Monthly control-plane charge |
-| EC2 worker nodes | Managed node group, type/count not in report evidence | Instance type, count, EBS volume size, runtime hours |
-| NAT Gateway | Required for private subnet egress; blackhole incident confirms NAT route dependency | Hourly charge, data processing GB |
-| RDS PostgreSQL | `internship-prod-postgres` | DB class, storage, IOPS if any, backup storage, Multi-AZ |
-| ElastiCache Redis | `internship-prod-redis` | Node type, node count, data transfer |
-| ALB | One internet-facing ALB | Runtime hours and LCU usage |
-| CloudFront | Distribution `EQIGYNECXDYL8` | Requests, transfer out, invalidations |
-| S3 frontend | `internship-prod-frontend-587953673860` | Storage GB, PUT/GET requests |
-| S3 uploads/archive | `internship-prod-uploads-587953673860` | Storage GB, requests, lifecycle settings |
-| DynamoDB | Chat and dedupe tables | Capacity mode, reads/writes, storage, PITR |
-| SQS | Main queue and DLQ | Request count, payload volume |
-| Lambda | `internship-outbox-handler` | Invocations, memory, duration |
-| SES | Email notifications | Send count |
-| ECR | Backend/chat/AI images | Storage GB and image lifecycle policy |
-| SageMaker | Endpoint `internship-qwen3-4b` | Instance type, endpoint uptime, data processed |
-| CloudWatch | Logs, metrics, alarms | Log ingestion, retention, custom metrics, alarms |
-| Data transfer | CloudFront egress, NAT, ALB, cross-AZ if any | GB by path |
+| EKS control plane | One production cluster in `ap-southeast-1` | Cluster runtime hours and current regional EKS hourly price |
+| EC2 worker nodes | Two Ready Kubernetes worker nodes | Node instance type, EBS size, runtime hours |
+| RDS PostgreSQL | Two private, encrypted PostgreSQL `db.t4g.micro` instances, 20 GiB each, Single-AZ | Backup storage, additional I/O, representative runtime |
+| ElastiCache / Valkey | One available replication group with encryption at rest and in transit | Node type, node count, data transfer |
+| Application Load Balancer | One active internet-facing ALB | ALB runtime hours and LCU usage |
+| CloudFront | Two deployed distributions, including the application distribution and the report distribution | Request count, data transfer out, invalidations |
+| S3 | Frontend, upload/archive, report, and support buckets in AWS evidence | Storage GB, PUT/GET requests, lifecycle policy |
+| DynamoDB | Chat and Lambda dedupe tables use on-demand billing; table sizes are near zero in the snapshot | Read/write request volume, storage, PITR if enabled |
+| SQS | Main queue and DLQ had zero visible messages in the snapshot | Request volume and payload size |
+| Lambda | Outbox handler is Active, 256 MB memory, 20 second timeout | Invocations, average duration, errors/retries |
+| SageMaker | Real-time endpoint is `InService` with one production variant | Instance type, endpoint uptime, data processed |
+| CloudWatch | Logs and metrics are enabled through AWS and Kubernetes services | Log ingestion, retention, custom metrics, alarms |
+| Data transfer | Cost Explorer shows data transfer adjustment in the captured period | CloudFront egress, ALB traffic, NAT processing, cross-AZ traffic |
 
 ## Cost estimation table
 
-| Service | Estimation method | Current value |
+| Service | Estimation method | Current evidence status |
 |---|---|---|
-| Amazon EKS | Add one cluster for region `ap-southeast-1` in AWS Pricing Calculator | Pricing evidence required |
-| EC2 worker nodes | Multiply node instance hourly price by node count and monthly runtime | Pricing evidence required |
-| NAT Gateway | NAT hourly charge plus data processing | Pricing evidence required |
-| Amazon RDS PostgreSQL | Instance hourly price, storage, backup, Multi-AZ if enabled | Pricing evidence required |
-| Amazon ElastiCache Redis | Node hourly price times node count | Pricing evidence required |
-| Application Load Balancer | ALB hourly charge plus LCU usage | Pricing evidence required |
-| Amazon CloudFront | Requests plus data transfer out | Pricing evidence required |
-| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Pricing evidence required |
-| Amazon DynamoDB | On-demand or provisioned read/write requests plus storage | Pricing evidence required |
-| Amazon SQS | Standard queue requests | Pricing evidence required |
-| AWS Lambda | Request count plus GB-seconds | Pricing evidence required |
-| Amazon SES | Email sends and attachments if any | Pricing evidence required |
-| Amazon ECR | Image storage GB and data transfer if applicable | Pricing evidence required |
-| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Pricing evidence required |
-| Amazon CloudWatch | Log ingestion, retention, custom metrics, alarms | Pricing evidence required |
-| Total | Sum of AWS Pricing Calculator export | Pricing evidence required |
+| Amazon EKS | Cluster hourly charge multiplied by runtime hours | Deployed; current Cost Explorer line is zero in captured window |
+| EC2 worker nodes | Node hourly price times two nodes plus EBS storage | Nodes verified; instance type and volume size still needed |
+| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup and I/O | Two private encrypted instances verified |
+| Amazon ElastiCache / Valkey | Node hourly price times node count plus data transfer | Replication group verified; node type/count still needed |
+| Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; tiny current Cost Explorer line |
+| Amazon CloudFront | Requests plus data transfer out and invalidations | Distributions verified; current Cost Explorer line is zero |
+| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Buckets verified; tiny current Cost Explorer line |
+| Amazon DynamoDB | On-demand read/write requests plus storage | Tables verified; current Cost Explorer line is zero |
+| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ verified; current Cost Explorer line is zero |
+| AWS Lambda | Request count plus GB-seconds | Function verified; current Cost Explorer line is zero |
+| Amazon SES | Email send count and attachments if any | Service planned through Lambda notification path |
+| Amazon ECR | Image storage GB and data transfer if applicable | Tiny current Cost Explorer line |
+| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint verified `InService`; current Cost Explorer line is zero |
+| Amazon CloudWatch | Log ingestion, retention, metrics, alarms | Tiny current Cost Explorer line |
+| Data transfer | CloudFront egress, ALB traffic, NAT, and cross-AZ traffic | Adjustment observed; traffic breakdown still needed |
+| Total | Use Pricing Calculator for forecast, then compare with representative Cost Explorer | Current MTD observed total is effectively zero |
+
+## Evidence hygiene
+
+Before using any AWS evidence image or log in the report, redact AWS account IDs, access keys, secret keys, database passwords, connection strings, Kubernetes Secret values, GitHub tokens, presigned URLs, and logs containing credentials.
+
+The evidence scan did not find obvious access keys or GitHub tokens, but `02-eks/pod-logs-tail.txt` contains a Redis connection URL with an embedded credential from chat-service startup logs. Do not upload or paste that raw file. Use only a summary or replace the whole value with `<REDACTED_REDIS_CONNECTION_STRING>`.
 
 ## Largest cost drivers
 
-The highest-risk cost areas are:
+The highest-risk future cost areas are:
 
-- SageMaker real-time endpoint uptime, especially if GPU-backed.
+- SageMaker real-time endpoint uptime, especially if the selected endpoint instance is GPU-backed.
 - EKS control plane and EC2 worker nodes running continuously.
-- NAT Gateway hourly and data processing charges.
 - RDS and Redis always-on managed capacity.
 - ALB hourly and LCU usage.
+- CloudFront and data transfer when traffic grows.
 - CloudWatch log ingestion and retention if verbose logs are kept.
 
-SageMaker GPU uptime may dominate the total cost. If the endpoint is needed only for demos or batch processing, schedule or delete it when not used.
+The current Cost Explorer export is near zero, but a continuously running production environment will still accrue normal service charges. SageMaker should be stopped or deleted when demos finish if real-time inference is not required.
 
 ## Cost optimization options
 
 | Option | Effect |
 |---|---|
 | Delete or schedule SageMaker endpoint when idle | Reduces likely largest AI cost driver |
-| Keep processing worker disabled until AI is ready | Avoids wasted worker runtime and failed retries |
+| Keep processing worker disabled when AI testing is not active | Avoids unnecessary retries and worker runtime |
 | Right-size EKS node group | Reduces EC2 and EBS cost |
-| Scale non-production workloads to zero | Reduces always-on compute |
-| Reduce NAT data processing | Use VPC endpoints where appropriate and minimize private subnet egress |
+| Scale non-production workloads down after demos | Reduces always-on compute |
+| Confirm whether NAT Gateway is required | Avoids NAT hourly and data-processing charges if private egress is not needed |
+| Add VPC endpoints where appropriate | Reduces NAT data processing for AWS service traffic |
 | S3 lifecycle rules | Move old uploads/archives to cheaper storage or expire test artifacts |
-| ECR lifecycle policy | Delete old SHA images after retention window |
+| ECR lifecycle policy | Delete old SHA images after the retention window |
 | CloudWatch retention | Avoid indefinite high-volume log storage |
 | DynamoDB on-demand during unstable traffic | Avoids over-provisioning early |
-| Serverless or asynchronous inference | Consider for workloads where real-time SageMaker endpoint uptime is unnecessary |
+| AWS Budget and billing alert | Detects unexpected charges before they become large |
 
 ## Expected result
 

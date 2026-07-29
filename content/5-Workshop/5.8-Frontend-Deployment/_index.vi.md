@@ -74,7 +74,7 @@ Required variables:
 | Variable | Purpose |
 |---|---|
 | `FRONTEND_DEPLOY_ENABLED` | Must be `true` |
-| `FRONTEND_BUCKET` | Target bucket, default `internship-prod-frontend-587953673860` |
+| `FRONTEND_BUCKET` | Target bucket, for example `internship-prod-frontend-<AWS_ACCOUNT_ID>` |
 | `CLOUDFRONT_DISTRIBUTION_ID` | Distribution to invalidate |
 | `VITE_API_BASE_URL` | `/api` |
 | `VITE_CHAT_API_BASE_URL` | empty string |
@@ -83,7 +83,7 @@ The script keeps the bucket private:
 
 ```bash
 aws s3api put-public-access-block \
-  --bucket internship-prod-frontend-587953673860 \
+  --bucket internship-prod-frontend-<AWS_ACCOUNT_ID> \
   --public-access-block-configuration \
   BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 ```
@@ -91,7 +91,7 @@ aws s3api put-public-access-block \
 Static assets are uploaded with long cache headers:
 
 ```bash
-aws s3 sync frontend/dist s3://internship-prod-frontend-587953673860 \
+aws s3 sync frontend/dist s3://internship-prod-frontend-<AWS_ACCOUNT_ID> \
   --delete \
   --exclude index.html \
   --cache-control public,max-age=31536000,immutable
@@ -100,7 +100,7 @@ aws s3 sync frontend/dist s3://internship-prod-frontend-587953673860 \
 `index.html` is uploaded separately with no-cache semantics:
 
 ```bash
-aws s3 cp frontend/dist/index.html s3://internship-prod-frontend-587953673860/index.html \
+aws s3 cp frontend/dist/index.html s3://internship-prod-frontend-<AWS_ACCOUNT_ID>/index.html \
   --cache-control no-cache \
   --content-type text/html
 ```
@@ -162,7 +162,7 @@ Check S3 bucket privacy:
 
 ```bash
 aws s3api get-public-access-block \
-  --bucket internship-prod-frontend-587953673860
+  --bucket internship-prod-frontend-<AWS_ACCOUNT_ID>
 ```
 
 Check distribution:

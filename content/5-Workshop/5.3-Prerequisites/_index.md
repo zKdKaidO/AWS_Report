@@ -19,7 +19,7 @@ This project uses GitHub Actions and AWS OIDC for production deployment. Local t
 
 | Access area | Requirement |
 |---|---|
-| AWS account | Authorized access to account `587953673860` |
+| AWS account | Authorized access to the project AWS account; account ID redacted |
 | AWS region | `ap-southeast-1` |
 | GitHub repository | Access to `https://github.com/Temp-orgo/AWS-Internship` |
 | GitHub Actions environment | Production environment secrets and variables |
@@ -50,8 +50,8 @@ This project uses GitHub Actions and AWS OIDC for production deployment. Local t
 |---|---|
 | EKS cluster | `internship-prod` |
 | Kubernetes namespace | `internship` |
-| Frontend bucket | `internship-prod-frontend-587953673860` |
-| Upload/archive bucket | `internship-prod-uploads-587953673860` |
+| Frontend bucket | `internship-prod-frontend-<AWS_ACCOUNT_ID>` |
+| Upload/archive bucket | `internship-prod-uploads-<AWS_ACCOUNT_ID>` |
 | CloudFront distribution | `EQIGYNECXDYL8` |
 | ALB DNS | `k8s-internshippublic-48101b50ad-85486086.ap-southeast-1.elb.amazonaws.com` |
 | RDS PostgreSQL | `internship-prod-postgres` |
@@ -88,7 +88,7 @@ The workflow reads deployment values from GitHub environment variables and secre
 | Variable | Purpose |
 |---|---|
 | `AWS_REGION` | Target region, default `ap-southeast-1` |
-| `AWS_ACCOUNT_ID` | Target account, default `587953673860` |
+| `AWS_ACCOUNT_ID` | Target account ID, set from the project AWS account |
 | `EKS_CLUSTER_NAME` | EKS cluster, default `internship-prod` |
 | `K8S_NAMESPACE` | Namespace, default `internship` |
 | `EKS_DEPLOY_ENABLED` | Must be `true` for app deployment |
@@ -147,7 +147,7 @@ hugo version
 
 ## Expected result
 
-- The AWS account ID is `587953673860`.
+- The AWS account ID is the project account ID and should be redacted from published screenshots or logs.
 - The active region is `ap-southeast-1`.
 - `kubectl` can inspect the `internship` namespace.
 - GitHub Actions can assume the deploy role through OIDC.
