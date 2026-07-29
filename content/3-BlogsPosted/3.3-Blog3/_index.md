@@ -8,28 +8,28 @@ pre: " <b> 3.3. </b> "
 
 # Blog 3
 
-{{% notice warning %}}
-⚠️ **Note:** The information below is for reference purposes only. Please **do not copy verbatim** for your report, including this warning.
-{{% /notice %}}
+## Publication status
 
-# ...
+The third blog has not been completed or published in the available evidence.
 
-The third blog has not been completed yet. This page keeps the same format as the sample and will be updated when the topic, publication date, and public link are available.
+| Field | Value |
+|---|---|
+| Topic | Evidence required: final Blog 3 topic |
+| Publication date | Evidence required: publication date |
+| Platform | AWS Study Groups |
+| Public link | Evidence required: public URL after publishing |
+| Status | Not completed in the available report evidence |
 
-Key points to know:
+## Planned content
 
-- Topic: TODO
-- Publication date: TODO
-- Platform: AWS Study Groups
-- Public link: TODO
-- Status: TODO: Complete and publish the third blog.
+The final Blog 3 page should be updated after publication with:
 
-…Image…
+- a concise topic summary
+- key technical points
+- the public article link
+- screenshots or evidence of publication
+- a reflection on how the article relates to the Internship Application Tracker project
 
-…Link…
+## Current note
 
-TODO
-
-…Guide…
-
-TODO: Add the summary, key points, public link, and related notes after publishing the third blog.
+This page intentionally avoids inventing a topic, link, date, or publication result. Official publication evidence is required before this page can be marked as complete.

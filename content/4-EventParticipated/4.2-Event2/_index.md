@@ -61,7 +61,7 @@ Personal evidence to be added:
 - Personal notes created while watching the event.
 
 <!--
-TODO: Add participation evidence image:
+Evidence required: Add participation evidence image:
 static/images/events/event-2/participation-evidence.png
 -->
 

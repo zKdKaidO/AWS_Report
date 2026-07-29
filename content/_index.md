@@ -7,45 +7,55 @@ chapter: false
 
 # Internship Report
 
-TODO: Replace with actual project information.
+This report documents the Internship Application Tracker, an AI-integrated internship application management platform deployed on AWS.
 
-![Student profile](/images/profile/student-profile.png)
+![Student profile](/images/avatar.png)
 
 ## Student Information
 
 | Field | Value |
 |---|---|
-| Student name | `[STUDENT_NAME]` |
-| University | `[UNIVERSITY]` |
-| Major | `[MAJOR]` |
-| Internship position | `[INTERNSHIP_POSITION]` |
+| Student name | Evidence required: student name |
+| University | Evidence required: university name |
+| Major | Evidence required: major |
+| Internship position | Cloud / AWS internship project participant |
 
 ## Internship Organization
 
 | Field | Value |
 |---|---|
 | Program or organization | First Cloud AI Journey / FCAJ |
-| Team members | `[TEAM_MEMBERS]` |
+| Team members | Evidence required: official team member list |
 
 ## Internship Period
 
-`[START_DATE] - [END_DATE]`
+08/06/2026 - 30/07/2026
 
 ## Project
 
 | Field | Value |
 |---|---|
-| Project name | `[PROJECT_NAME]` |
-| Project description | `[PROJECT_DESCRIPTION]` |
-| Personal contribution | `[PERSONAL_CONTRIBUTION]` |
-| Public deployment URL | `[DEPLOYMENT_URL]` |
+| Project name | Internship Application Tracker |
+| Project description | A Candidate and HR platform for internship job posting, application tracking, CV/document upload, realtime chat, asynchronous AI processing, and event-driven notification on AWS. |
+| Personal contribution | Architecture documentation, AWS deployment report, workshop steps, troubleshooting record, security/cost analysis, and evidence-based final report preparation. |
+| Public deployment URL | https://dhm2rz5nmsibj.cloudfront.net |
 
 ## Main AWS Services
 
-- `[AWS_SERVICE_1]`
-- `[AWS_SERVICE_2]`
-- `[AWS_SERVICE_3]`
-- AWS Region: `[AWS_REGION]`
+- Amazon CloudFront
+- Amazon S3
+- Amazon EKS
+- Application Load Balancer
+- Amazon RDS PostgreSQL
+- Amazon DynamoDB
+- Amazon ElastiCache Redis
+- Amazon SQS
+- AWS Lambda
+- Amazon SES
+- Amazon SageMaker
+- Amazon ECR
+- AWS IAM and GitHub OIDC
+- AWS Region: `ap-southeast-1`
 
 ## Report Sections
 

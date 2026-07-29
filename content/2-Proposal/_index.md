@@ -102,46 +102,117 @@ For the development team, the project provides an opportunity to apply full-stac
 
 ## Solution Architecture
 
-The system is designed as a multi-service architecture to separate functional areas, improve maintainability, and support independent scaling.
+The original proposal expected a multi-service AWS architecture with Kubernetes for containerized services, managed databases, object storage, realtime chat, observability, and CI/CD. The final implementation keeps that direction but adjusts two important areas based on deployment evidence:
 
-```text
-Candidate / HR
-       |
-       v
-React Frontend
-       |
-       v
-Amazon CloudFront
-       |
-       +-------------------------------+
-       v                               v
-Application Load Balancer       Amazon S3
-       |                       Frontend assets
-       v
-Amazon EKS
-+-- FastAPI Backend
-+-- Processing Worker
-+-- Outbox Dispatcher
-+-- Chat Service
-+-- AI Service / AI Client
-       |
-       +-- Amazon RDS PostgreSQL
-       +-- Amazon DynamoDB
-       +-- Amazon ElastiCache
-       +-- Amazon S3
-       +-- Amazon SQS
-       +-- Amazon SageMaker
+- The React frontend is no longer a Kubernetes workload. It is built with Vite, stored in a private S3 bucket, and delivered by CloudFront.
+- Backend, chat, worker, outbox dispatcher, and the SageMaker adapter remain on EKS because they are long-running processes or need Kubernetes rollout, health check, and scaling controls.
 
-Metrics / Logs / Traces
-       |
-       v
-CloudWatch / Prometheus / Grafana / Loki / Tempo
+### Final implemented architecture
+
+```mermaid
+flowchart LR
+    User["Candidate / HR browser"]
+    CF["Amazon CloudFront<br/>dhm2rz5nmsibj.cloudfront.net"]
+    S3Frontend["Private S3 frontend bucket<br/>internship-prod-frontend-account-redacted"]
+    ALB["Application Load Balancer<br/>internet-facing"]
+    EKS["Amazon EKS<br/>internship-prod / namespace internship"]
+    Backend["FastAPI backend<br/>Deployment/backend :8000"]
+    Chat["Node.js Socket.IO chat<br/>Deployment/chat-service :3000"]
+    Dispatcher["Outbox dispatcher<br/>Deployment/backend-outbox-dispatcher"]
+    Worker["Processing worker<br/>Deployment/backend-processing-worker"]
+    AI["AI service adapter<br/>Deployment/ai-service :8010"]
+    RDS["Amazon RDS PostgreSQL<br/>internship-prod-postgres"]
+    Redis["Amazon ElastiCache Redis<br/>internship-prod-redis"]
+    DDBChat["DynamoDB chat tables<br/>ChatUsers / ChatGroups / ChatMessages"]
+    S3Uploads["S3 uploads and archive bucket<br/>internship-prod-uploads-account-redacted"]
+    SQS["Amazon SQS<br/>internship-prod-outbox"]
+    DLQ["SQS DLQ<br/>internship-prod-outbox-dlq"]
+    Lambda["AWS Lambda<br/>internship-outbox-handler"]
+    Dedupe["DynamoDB dedupe table<br/>InternshipLambdaEventDedupe"]
+    SES["Amazon SES"]
+    SageMaker["SageMaker endpoint<br/>internship-qwen3-4b"]
+    GitHub["GitHub Actions OIDC"]
+    ECR["Amazon ECR images"]
+
+    User --> CF
+    CF -->|"Default *"| S3Frontend
+    CF -->|"/api/*"| ALB
+    CF -->|"/chat/*"| ALB
+    CF -->|"/socket.io/*"| ALB
+    ALB --> Backend
+    ALB --> Chat
+    Backend --> RDS
+    Backend --> S3Uploads
+    Backend --> Dispatcher
+    Backend --> Worker
+    Chat --> Redis
+    Chat --> DDBChat
+    Worker --> AI
+    AI --> SageMaker
+    Dispatcher --> SQS
+    SQS --> Lambda
+    SQS --> DLQ
+    Lambda --> Dedupe
+    Lambda --> S3Uploads
+    Lambda --> SES
+    GitHub --> ECR
+    GitHub --> EKS
+    GitHub --> S3Frontend
+    GitHub --> CF
 ```
 
-<!--
-TODO: Add the real architecture diagram when available:
-static/images/proposal/internship-platform-architecture.png
--->
+### Architecture explanation
+
+CloudFront is the single public entry point for users. Static assets use the default CloudFront behavior and are read from the private frontend S3 bucket through CloudFront Origin Access Control. Dynamic API and realtime routes are sent to the public Application Load Balancer:
+
+- `/api/*` is rewritten by the ALB Ingress and routed to the FastAPI backend.
+- `/chat/*` is rewritten and routed to the chat service.
+- `/socket.io/*` is routed to the chat service for Socket.IO transport.
+
+The EKS cluster hosts only services that need long-running runtime behavior: backend, chat, outbox dispatcher, processing worker, and the AI adapter. PostgreSQL is the transactional database for users, jobs, applications, workflow state, async processing jobs, outbox records, and idempotency records. DynamoDB stores permanent chat entities and Lambda event deduplication state. Redis is used only for Socket.IO pub/sub between chat replicas. SQS decouples committed business events from notification processing, and Lambda performs short event-driven work such as deduplication, S3 archive, and SES email delivery.
+
+### Component responsibility table
+
+| Component | Final responsibility | Implementation evidence |
+|---|---|---|
+| React/Vite frontend | Candidate and HR user interface, built to static assets | `frontend/package.json`, `scripts/ci/deploy-frontend.sh` |
+| CloudFront | HTTPS public entry point and route dispatcher | `scripts/aws/ensure-cloudfront.sh`, supplied distribution `EQIGYNECXDYL8` |
+| Frontend S3 bucket | Private storage for `frontend/dist` assets | Supplied private frontend bucket; account suffix redacted |
+| Application Load Balancer | Public routing to EKS services | `k8s/eks/ingress-alb-no-domain.yaml` |
+| FastAPI backend | Auth, jobs, applications, uploads, dashboards, processing job APIs | `backend/app/main.py`, backend routers |
+| Chat service | REST chat APIs and Socket.IO realtime channel | `chat-service/server.js` |
+| Processing worker | Claims asynchronous processing jobs and writes results | `backend/app/workers/processing_worker.py`, `k8s/app/backend-processing-worker.yaml` |
+| Outbox dispatcher | Publishes committed PostgreSQL outbox events to SQS | `backend/app/workers/outbox_dispatcher.py`, ADR-001 |
+| AI service | Stable worker-facing adapter for SageMaker | `ai_service/app.py`, `k8s/app/ai-service.yaml` |
+| RDS PostgreSQL | Transactional business data and reliable worker queues | Alembic migrations through `0008_async_processing_jobs.py` |
+| DynamoDB | Chat persistence and Lambda event deduplication | Chat table names in Kubernetes config and supplied runtime context |
+| Redis | Socket.IO pub/sub between chat pods | `chat-service/lib/redis.js`, Kubernetes config |
+| SQS and DLQ | At-least-once event delivery and failed-message isolation | ADR-001, supplied queue evidence |
+| Lambda and SES | Event notification, archive, and email delivery | Supplied runtime smoke-test context |
+| GitHub Actions OIDC | CI/CD without long-lived AWS access keys | `.github/workflows/cicd.yml` |
+
+### Design rationale
+
+The frontend was moved from EKS to S3 and CloudFront because it is static after build time. This reduces Kubernetes workload count, removes the need for a frontend Deployment, Service, HPA and PDB, and lets CloudFront handle caching and SPA delivery.
+
+The backend and chat service remain in EKS because they are long-running APIs with health probes, replicas, HPA, PDB, and rolling deployment needs. The processing worker also remains in EKS because CV parsing, job parsing, and matching jobs can run longer than a short Lambda-style task and need queue leases, retries, and controlled concurrency.
+
+The AI service isolates SageMaker-specific inference logic from the worker contract. The worker continues to call stable routes such as `/parse-job`, `/parse-cv`, and `/match-applications`, while the AI adapter handles SageMaker endpoint invocation, timeout, retry, and response normalization.
+
+The transactional outbox is used because committing application data and publishing an event are separate failure domains. Events are first inserted in PostgreSQL in the same transaction as the business mutation. A dispatcher later sends them to SQS. This provides at-least-once delivery, and Lambda uses DynamoDB conditional writes to deduplicate `eventId`.
+
+### Proposal vs final implementation
+
+| Area | Original proposal | Final implemented architecture |
+|---|---|---|
+| Frontend hosting | Could be served through Kubernetes or AWS static hosting | Implemented as private S3 plus CloudFront |
+| Public entry point | ALB and/or CloudFront expected | CloudFront is the user-facing entry point; ALB is an origin for API/chat/socket paths |
+| Backend runtime | Kubernetes on EKS | EKS Deployment `backend`, 2 replicas, HPA 2-5 |
+| Chat runtime | Node.js and Socket.IO with Redis/DynamoDB | EKS Deployment `chat-service`, 2 replicas, ALB stickiness, Redis pub/sub |
+| AI runtime | AI service expected | EKS `ai-service` adapter invokes SageMaker endpoint `internship-qwen3-4b` |
+| Event processing | Asynchronous events expected | PostgreSQL outbox, SQS, Lambda, DynamoDB dedupe, S3 archive and SES |
+| Deployment | CI/CD expected | GitHub Actions workflow dispatch modes with OIDC and ECR image verification |
+| Runtime proof | Design-stage assumption | Runtime evidence supplied for CloudFront, EKS workloads, RDS, Redis, DynamoDB, SQS, Lambda smoke test, and SageMaker endpoint |
 
 ### AWS Services Used
 
@@ -241,24 +312,72 @@ The plan is adjusted to 8 weeks, from 08/06/2026 to 30/07/2026, to stay consiste
 
 ## Budget Estimation
 
-Actual cost depends on Region, instance type, runtime, stored data, network traffic, and request volume. Fixed cost values should not be entered before the real resources are configured in AWS Pricing Calculator.
+Exact monthly cost should be calculated with AWS Pricing Calculator and then compared with representative billing data for the project AWS account in `ap-southeast-1`. For this report, the Week 8 AWS evidence is treated as the source of truth for current cost status.
 
-| Service | Planned configuration | Estimated monthly cost |
-|---|---|---:|
-| Amazon EKS | One cluster | TBD |
-| EC2 worker nodes | Actual instance type and node count | TBD |
-| Amazon ECR | Container image storage | TBD |
-| Amazon RDS PostgreSQL | Instance class, storage, and backup | TBD |
-| Amazon DynamoDB | On-demand or provisioned capacity | TBD |
-| Amazon ElastiCache | Node type and number of nodes | TBD |
-| Amazon S3 | CVs, documents, and frontend assets | TBD |
-| Amazon CloudFront | Data transfer and requests | TBD |
-| Application Load Balancer | Runtime hours and traffic | TBD |
-| Amazon SQS | Number of messages | TBD |
-| Amazon SageMaker | Endpoint type and active runtime | TBD |
-| Amazon CloudWatch | Log ingestion, retention, and metrics | TBD |
-| Data transfer | Outbound traffic | TBD |
-| Total |  | TBD |
+### Week 8 AWS cost evidence
+
+The Week 8 evidence reports July 1-28, 2026 month-to-date AWS spend and a Billing and Cost Management credits screenshot. The finalized monthly bill and AWS Pricing Calculator estimate are still pending.
+
+| Cost evidence | Observed value | Interpretation |
+|---|---:|---|
+| July 1-28, 2026 total spend | `$94.92` | Current month-to-date spend from the Week 8 cost summary |
+| Highest daily spend | `$31.83` on July 28 | Largest daily cost in the supplied July 1-28 period |
+| Credits total amount used | `$27.90` | Billing credits screenshot evidence |
+| Credits total estimated amount used | `$140.65` | Billing credits screenshot evidence |
+| Credits total amount remaining | `$172.10` | Billing credits screenshot evidence |
+| Credits total estimated amount remaining | `$59.35` | Billing credits screenshot evidence |
+
+The top Week 8 cost drivers are Amazon RDS (`$29.69`), Amazon SageMaker (`$23.45`), Amazon VPC (`$14.11`), Amazon EC2 - Compute (`$12.42`), EC2 - Other (`$7.68`), and Amazon EKS (`$5.64`). Together they account for approximately 98% of the reported July 1-28 spend.
+
+### Cost assumptions
+
+| Area | Evidence-based assumption | Estimate status |
+|---|---|---|
+| Environment | Production deployment in `ap-southeast-1` | Verified |
+| Public traffic | CloudFront fronts browser traffic and routes API/chat traffic to ALB | Verified |
+| Frontend | Static assets are stored in a private S3 bucket and delivered by CloudFront | Verified |
+| Kubernetes | One EKS cluster runs backend, chat, worker, dispatcher, and AI adapter workloads | Verified |
+| Worker nodes | Two Ready Kubernetes worker nodes were captured in the evidence snapshot | Instance type and EBS size still required |
+| RDS PostgreSQL | Two private, encrypted PostgreSQL `db.t4g.micro` instances with 20 GiB storage each | Verified |
+| ElastiCache / Valkey | One available Redis-compatible replication group with encryption at rest and in transit | Node type/count still required |
+| DynamoDB | Chat and Lambda dedupe tables use on-demand billing and are near empty in the snapshot | Verified |
+| SQS | Main outbox queue and DLQ have zero visible messages in the snapshot | Verified |
+| Lambda | Outbox handler is Active, 256 MB memory, 20 second timeout | Verified |
+| SageMaker | Real-time endpoint is `InService` with one production variant | Instance type and expected uptime still required |
+| CloudWatch | Logs and metrics exist through AWS and Kubernetes services | Retention and ingestion volume still required |
+
+### Cost-estimation methodology
+
+1. Use AWS Pricing Calculator for `ap-southeast-1`.
+2. Enter the observed deployed resources from the evidence folder.
+3. Add missing runtime inputs: node instance type, EBS size, Redis node type/count, SageMaker instance type, monthly runtime hours, data transfer, request volume, and CloudWatch log retention.
+4. Export the Pricing Calculator estimate as the forecast.
+5. Compare the forecast with Cost Explorer after the environment has run for a representative period.
+
+| Service | Monthly estimate method | Current evidence status |
+|---|---|---|
+| Amazon EKS | Cluster hourly price times monthly runtime | Deployed; Week 8 cost summary reports `$5.64` |
+| EC2 worker nodes | Node hourly price times two nodes, plus EBS storage | Nodes verified; EC2 Compute reports `$12.42`, EC2 - Other reports `$7.68` |
+| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup/I/O | Two private encrypted instances verified; Week 8 cost summary reports `$29.69` |
+| Amazon ElastiCache / Valkey | Node hourly price times node count, plus data transfer | Replication group verified; node type/count needed |
+| Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; included in networking/runtime cost checks |
+| Amazon CloudFront | Requests, transfer out, and invalidations | Runtime screenshot still pending |
+| Amazon S3 | Storage GB, PUT/GET requests, lifecycle transitions | Runtime screenshot still pending |
+| Amazon DynamoDB | On-demand read/write requests plus storage | Runtime screenshot still pending |
+| Amazon SQS | Standard queue requests and payload volume | Runtime screenshot still pending |
+| AWS Lambda | Requests plus GB-seconds | Function exists; invocation cost and trigger health still pending |
+| Amazon SES | Email send count and attachments if any | Used by notification path |
+| Amazon ECR | Image storage and transfer if applicable | Not separated in the Week 8 top-driver table |
+| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint verified `InService`; Week 8 cost summary reports `$23.45` |
+| Amazon CloudWatch | Log ingestion, storage retention, metrics, alarms | Retention and ingestion volume still required |
+| Amazon VPC and data transfer | CloudFront egress, ALB traffic, NAT processing, cross-AZ traffic | Week 8 cost summary reports Amazon VPC at `$14.11`; traffic breakdown still needed |
+| Total | Pricing Calculator forecast, then billing comparison | Week 8 July 1-28 spend reports `$94.92`; finalized bill and steady-state estimate pending |
+
+The largest current and future cost drivers are RDS, SageMaker endpoint uptime, VPC/NAT-related networking, EC2 worker nodes and EBS, EKS control plane, Redis, ALB, CloudFront/data transfer, and CloudWatch logs. If the SageMaker endpoint remains online continuously, AI inference can become one of the dominant monthly costs.
+
+### Evidence hygiene for cost materials
+
+No raw screenshots or logs should expose account IDs, access keys, secret keys, database passwords, connection strings, Kubernetes Secret values, GitHub tokens, presigned URLs, or login-related logs. The pod log evidence must be summarized or sanitized before publication because the raw `02-eks/pod-logs-tail.txt` file contains a Redis connection URL with an embedded credential.
 
 ### Cost Optimization
 
@@ -272,7 +391,7 @@ Actual cost depends on Region, instance type, runtime, stored data, network traf
 - Use DynamoDB on-demand while traffic is still unstable.
 - Configure AWS Budget and Billing Alarm.
 - Delete unused Load Balancers, public IPv4 addresses, snapshots, and volumes.
-- Avoid creating a NAT Gateway if the workshop architecture does not require it.
+- Confirm whether NAT Gateway is required before leaving it running.
 
 ## Risk Assessment
 

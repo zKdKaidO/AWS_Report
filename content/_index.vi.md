@@ -5,58 +5,68 @@ weight: 1
 chapter: false
 ---
 
-# Báo cáo thực tập
+# Internship Report
 
-TODO: Replace with actual project information.
+This report documents the Internship Application Tracker, an AI-integrated internship application management platform deployed on AWS.
 
-![Student profile](/images/profile/student-profile.png)
+![Student profile](/images/avatar.png)
 
-## Thông tin sinh viên
+## Student Information
 
-| Trường thông tin | Giá trị |
+| Field | Value |
 |---|---|
-| Họ tên sinh viên | `[STUDENT_NAME]` |
-| Trường đại học | `[UNIVERSITY]` |
-| Chuyên ngành | `[MAJOR]` |
-| Vị trí thực tập | `[INTERNSHIP_POSITION]` |
+| Student name | Evidence required: student name |
+| University | Evidence required: university name |
+| Major | Evidence required: major |
+| Internship position | Cloud / AWS internship project participant |
 
-## Đơn vị thực tập
+## Internship Organization
 
-| Trường thông tin | Giá trị |
+| Field | Value |
 |---|---|
-| Chương trình hoặc đơn vị | First Cloud AI Journey / FCAJ |
-| Thành viên nhóm | `[TEAM_MEMBERS]` |
+| Program or organization | First Cloud AI Journey / FCAJ |
+| Team members | Evidence required: official team member list |
 
-## Thời gian thực tập
+## Internship Period
 
-`[START_DATE] - [END_DATE]`
+08/06/2026 - 30/07/2026
 
-## Dự án
+## Project
 
-| Trường thông tin | Giá trị |
+| Field | Value |
 |---|---|
-| Tên dự án | `[PROJECT_NAME]` |
-| Mô tả dự án | `[PROJECT_DESCRIPTION]` |
-| Đóng góp cá nhân | `[PERSONAL_CONTRIBUTION]` |
-| URL triển khai công khai | `[DEPLOYMENT_URL]` |
+| Project name | Internship Application Tracker |
+| Project description | A Candidate and HR platform for internship job posting, application tracking, CV/document upload, realtime chat, asynchronous AI processing, and event-driven notification on AWS. |
+| Personal contribution | Architecture documentation, AWS deployment report, workshop steps, troubleshooting record, security/cost analysis, and evidence-based final report preparation. |
+| Public deployment URL | https://dhm2rz5nmsibj.cloudfront.net |
 
-## Dịch vụ AWS chính
+## Main AWS Services
 
-- `[AWS_SERVICE_1]`
-- `[AWS_SERVICE_2]`
-- `[AWS_SERVICE_3]`
-- AWS Region: `[AWS_REGION]`
+- Amazon CloudFront
+- Amazon S3
+- Amazon EKS
+- Application Load Balancer
+- Amazon RDS PostgreSQL
+- Amazon DynamoDB
+- Amazon ElastiCache Redis
+- Amazon SQS
+- AWS Lambda
+- Amazon SES
+- Amazon SageMaker
+- Amazon ECR
+- AWS IAM and GitHub OIDC
+- AWS Region: `ap-southeast-1`
 
-## Các phần của báo cáo
+## Report Sections
 
-1. [Nhật ký công việc](1-Worklog/)
-2. [Đề xuất dự án](2-Proposal/)
+1. [Worklog](1-Worklog/)
+2. [Proposal](2-Proposal/)
 3. [Blogs Posted](3-BlogsPosted/)
 4. [Events Participated](4-EventParticipated/)
 5. [Workshop](5-Workshop/)
-6. [Tự đánh giá](6-Self-evaluation/)
-7. [Chia sẻ và phản hồi](7-Feedback/)
+6. [Self-evaluation](6-Self-evaluation/)
+7. [Sharing and Feedback](7-Feedback/)
 
-## Lưu ý bảo mật
+## Security Notice
 
-Không công khai secret, access key, password, token, database URL, private repository URL hoặc private source code trên website này.
+Do not publish secrets, access keys, passwords, tokens, database URLs, private repository URLs or private source code on this website.

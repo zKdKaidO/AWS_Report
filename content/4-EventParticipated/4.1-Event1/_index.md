@@ -90,7 +90,7 @@ Personal evidence to be added:
 - Personal technical notes recorded during the event.
 
 <!--
-TODO: Add participation evidence image:
+Evidence required: Add participation evidence image:
 static/images/events/event-1/participation-evidence.png
 -->
 

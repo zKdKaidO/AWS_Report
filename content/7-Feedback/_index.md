@@ -8,48 +8,65 @@ pre: " <b> 7. </b> "
 
 # Sharing and Feedback
 
-TODO: Replace with actual project information.
+## Supervisor information
 
-## Overall experience
+| Field | Value |
+|---|---|
+| Supervisor name | Official supervisor feedback required. |
+| Position | Official supervisor feedback required. |
+| Organization | Official supervisor feedback required. |
+| Feedback date | Official supervisor feedback required. |
+| Evaluation form or source | Official supervisor feedback required. |
 
-TODO
+## Technical feedback
 
-## Most valuable knowledge
+Official supervisor feedback required.
 
-TODO
+Suggested areas for official technical feedback:
 
-## Main challenges
+- AWS architecture design
+- EKS and Kubernetes deployment
+- CI/CD implementation with GitHub Actions and OIDC
+- Database, messaging, and event-driven design
+- Security and secret handling
+- AI service and SageMaker integration
+- Monitoring, troubleshooting, and evidence collection
+- Final report quality
 
-TODO
+## Working-attitude feedback
 
-## Mentor support
+Official supervisor feedback required.
 
-TODO
+Suggested areas for official working-attitude feedback:
 
-## Team and community support
+- responsibility and ownership
+- learning ability
+- communication
+- teamwork
+- discipline and deadline management
+- troubleshooting persistence
+- documentation habit
 
-TODO
+## Strengths
 
-## Program strengths
+Official supervisor feedback required.
 
-TODO
+Based on my own project reflection, the main strengths I demonstrated were evidence-led troubleshooting, willingness to learn unfamiliar AWS services, and the ability to connect application code with deployment and documentation.
 
 ## Areas for improvement
 
-TODO
+Official supervisor feedback required.
 
-## Suggestions
+Based on my own reflection, I should continue improving IAM policy design, AWS cost estimation, automated end-to-end testing, and production evidence collection.
 
-TODO
+## Overall assessment
 
-## Career impact
+Official supervisor feedback required.
 
-TODO
+No fake names, ratings, quotations, approval statements, or supervisor conclusions are included in this report.
 
-## Would I recommend the program?
+## Student response
 
-TODO
+This internship project helped me understand how a modern application becomes a real AWS system. I learned that successful deployment is not only about writing application code. It also requires networking, IAM, Kubernetes readiness, database reliability, asynchronous processing, logging, monitoring, cost control, and careful documentation.
 
-## Final message
-
-TODO
+The most valuable lesson for me was to verify before claiming. A manifest can show intended configuration, but runtime logs, AWS CLI outputs, and deployment evidence show what is actually running. I will continue improving by building stronger test evidence, documenting operational decisions more clearly, and practicing secure, cost-aware cloud deployment.

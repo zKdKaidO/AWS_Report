@@ -1,39 +1,112 @@
 ﻿---
-title: "Nhật ký tuần 1"
+title: "Nháº­t kÃ½ tuáº§n 1"
 date: 2024-01-01
 weight: 1
 chapter: false
 pre: " <b> 1.1. </b> "
 ---
 
-# Tuần 1 - Định hướng chương trình, kiến trúc và nền tảng backend
+# Week 1 - Project Analysis and Architecture Baseline
 
-### Mục tiêu tuần 1:
+## Objectives
 
-- Hiểu yêu cầu thực tập và quy định báo cáo project FCAJ.
-- Phân tích bài toán quản lý ứng tuyển thực tập và xác định các nhóm người dùng chính.
-- Khởi tạo nền tảng backend, database schema, authentication flow và role-based access.
+The first week focused on understanding the Internship Application Tracker source code, identifying the main service boundaries, and documenting the initial architecture before cloud deployment work began.
 
-### Các công việc thực hiện trong tuần:
+## Tasks Completed
 
-| Ngày | Công việc | Ngày bắt đầu | Ngày hoàn thành | Tài liệu tham khảo |
-|---|---|---|---|---|
-| 1 | Đọc quy định, cấu trúc workshop mẫu và yêu cầu project. | 08/06/2026 | 14/06/2026 | [FCAJ Project Requirements](https://cloudjourney.awsstudygroup.com/8-fcjworkforce/); [FCAJ Internship Report Sample](https://workshop-sample.awsfcaj.com) |
-| 2 | Phân tích vấn đề người dùng và xác định hai nhóm Candidate, HR/Company. | 08/06/2026 | 14/06/2026 | [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html); [FCAJ Project Requirements](https://cloudjourney.awsstudygroup.com/8-fcjworkforce/) |
-| 3 | Xác định authentication, jobs, applications, documents, chat và AI matching. | 08/06/2026 | 14/06/2026 | [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html) |
-| 4 | Khởi tạo FastAPI, database connection, models và Alembic migration. | 08/06/2026 | 14/06/2026 | [FastAPI Documentation - OAuth2 with JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/); [SQLAlchemy ORM Quick Start](https://docs.sqlalchemy.org/en/20/orm/quickstart.html); [Alembic Tutorial](https://alembic.sqlalchemy.org/en/latest/tutorial.html) |
-| 5 | Xây dựng registration, login, JWT handling, password hashing và protected endpoint checks. | 08/06/2026 | 14/06/2026 | [FastAPI Documentation - OAuth2 with JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/); [PostgreSQL Documentation](https://www.postgresql.org/docs/current/) |
+| Status | Task | Evidence basis |
+|---|---|---|
+| Completed | Reviewed the monorepo structure and identified the main runtime services. | Source tree, `README.md`, `docker-compose.yml`, and commit `4e939cf`. |
+| Completed | Mapped the frontend, FastAPI backend, chat service, AI service, PostgreSQL, Redis, and DynamoDB dependencies. | `backend/`, `frontend/`, `chat-service/`, `ai_service/`, Compose files, and service configuration. |
+| Completed | Reviewed the initial request flow between browser, API, chat, and storage layers. | Frontend API clients, backend routers, chat Socket.IO server, and backend storage services. |
+| Completed | Checked the local startup model and documented separate service startup commands. | Commits `d3c1168` and `e43cc04`. |
+| Partially completed | Collected screenshots for the first local architecture baseline. | Evidence pending: screenshots are not present in the Hugo image directory yet. |
 
-### Kết quả đạt được trong tuần:
+## Technical Implementation
 
-- Phạm vi project và các business flows chính được xác định.
-- Vai trò Candidate và HR/Company được làm rõ.
-- React/Vite, FastAPI, Node.js/Socket.IO và AI service được chọn cho hệ thống.
-- PostgreSQL, DynamoDB, Redis và S3 được ánh xạ với các nhu cầu dữ liệu khác nhau.
-- Nền tảng backend, authentication flow và migration ban đầu được chuẩn bị.
+The source repository is a monorepo with separate service responsibilities:
 
-<!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
-Expected image directory:
-static/images/worklog/week-1/
--->
+- `frontend/`: React and Vite application for Candidate and HR users.
+- `backend/`: FastAPI API, SQLAlchemy models, Alembic migrations, authentication, jobs, applications, documents, and AI orchestration routes.
+- `chat-service/`: Node.js, Express, Socket.IO, Redis adapter, and DynamoDB-backed chat persistence.
+- `ai_service/`: AI parsing, CV/job normalization, reranking, and later SageMaker adapter code.
+- `docker-compose.yml`: local dependencies and multi-service startup path.
+
+Initial architecture baseline:
+
+```mermaid
+flowchart LR
+  User["Candidate / HR browser"] --> Frontend["React / Vite frontend"]
+  Frontend --> Backend["FastAPI backend"]
+  Frontend --> Chat["Node.js Socket.IO chat service"]
+  Backend --> Postgres["PostgreSQL"]
+  Backend --> Storage["S3-compatible document storage"]
+  Backend --> AI["AI service"]
+  Chat --> Redis["Redis pub/sub"]
+  Chat --> DynamoDB["DynamoDB chat tables"]
+```
+
+The baseline also identified the first cloud migration direction: keep long-running backend and chat services containerized, move durable relational data to PostgreSQL/RDS, use DynamoDB for chat records, use Redis for realtime fan-out, and prepare the application for containerization and CI/CD.
+
+## Problems and Solutions
+
+| Problem | Root cause | Resolution | Status |
+|---|---|---|---|
+| The first source snapshot contained broad application code and generated dependency content. | The initial commit added the complete baseline in one large commit. | Later work separated documentation, scripts, and runtime responsibilities into clearer paths. | Completed |
+| The project originally contained Prisma-related Node database artifacts while the backend used SQLAlchemy/PostgreSQL. | Database strategy changed toward FastAPI, SQLAlchemy, Alembic, and PostgreSQL. | Commit `ab60f7d` removed Prisma artifacts and documented the EC2/RDS direction. | Completed |
+| Local startup needed to support more than one developer workflow. | A single startup command was useful for demos, but separate terminal commands were easier for debugging. | Commits `d3c1168` and `e43cc04` documented both startup approaches. | Completed |
+| Architecture screenshots were not stored in the report repository. | Evidence files were not supplied with the source repo. | Marked screenshot evidence as pending instead of creating fake screenshots. | Blocked |
+
+## Testing, Build and Deployment Results
+
+| Area | Result | Evidence |
+|---|---|---|
+| Source inspection | Completed | `git show --stat 4e939cf` shows backend, frontend, Docker, migrations, tests, and docs added in the first commit. |
+| Local startup | Partially completed | Startup scripts and README instructions exist in history, but no saved terminal log was found. |
+| Tests | Partially completed | Test files exist under `backend/tests`; no Week 1 test output artifact was found. |
+| Build | Partially completed | Dockerfiles and Vite project files exist; no Week 1 build log artifact was found. |
+| Deployment | Planned | Week 1 only defined the deployment direction; no AWS deployment was expected yet. |
+
+## Evidence
+
+### Screenshots
+
+Evidence pending: add architecture or local application screenshots under `/images/worklog/week-01/`, for example:
+
+- `/images/worklog/week-01/repository-structure.png`
+- `/images/worklog/week-01/local-backend-health.png`
+- `/images/worklog/week-01/architecture-baseline.png`
+
+### Commits and Pull Requests
+
+| Commit | Description | Evidence | Pull Request |
+|---|---|---|---|
+| `4e939cf` | Initial application baseline with backend, frontend, Docker Compose, migrations, and tests. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/4e939cf0313e73fd915380987cce1a5a7c9728a0) | Evidence pending |
+| `5ab2924` | Added AI CV matching and AWS RDS configuration. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/5ab2924ca69ed90f7ef5fe5a454578bfa888e9dc) | Evidence pending |
+| `ab60f7d` | Removed Prisma artifacts and documented EC2/RDS deployment direction. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/ab60f7d02c6c8fc73384198117625dea5973e24f) | Evidence pending |
+| `d3c1168` | Added one-command full-stack startup. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/d3c1168cea4521823febf32e1fd9714e928d0ddc) | Evidence pending |
+| `e43cc04` | Documented separate service startup commands. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/e43cc042d868b1ca5c18524d4735dca178f25043) | Evidence pending |
+
+### Test Logs
+
+Evidence pending: no saved Week 1 local or CI test log was found in the source repository.
+
+### Build Logs
+
+Evidence pending: no saved Week 1 Docker or frontend build log was found in the source repository.
+
+### Deployment Logs
+
+Not applicable for Week 1. Deployment planning started in this phase, but cloud deployment was planned for later weeks.
+
+## Weekly Results
+
+By the end of Week 1, the project had a clear service map, a baseline monorepo structure, a PostgreSQL-backed FastAPI backend, a React/Vite frontend, and an initial plan for containerization and AWS deployment.
+
+## Lessons Learned
+
+The main lesson was that deployment planning depends on clear runtime boundaries. Separating API, chat, AI, relational data, realtime pub/sub, and document storage early made later Docker, Kubernetes, and AWS work easier to reason about.
+
+## Next Week Plan
+
+The next week should focus on data integrity and concurrency: database constraints, duplicate request handling, idempotency keys, versioned workflow commands, and tests that prove concurrent writes return controlled conflicts instead of inconsistent data.

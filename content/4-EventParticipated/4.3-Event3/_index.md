@@ -424,12 +424,12 @@ Inspired by the multi-faceted technical depth experienced throughout this event,
 
 The catalog below aggregates the historical presentation slide reference URLs, technical architectural artifacts, professional community links, authentic participation evidence photography, and practical technical diagnostic notes assembled throughout our learning immersion across the four core focal pillars of this FCAJ Meetup:
 
-- **Data Analytics and MNC Culture Slides** *(Presented by Mr. Đạt Phạm & Mr. Cường Nguyễn)*: `(TODO: Presentation reference download links will be attached once publicly released by presenting speakers)`
-- **What Does a DevOps Engineer Really Do?** *(Presented by Mr. Trong H. Truong)*: `(TODO: Technical presentation reference deck to be updated upon repository synchronization)`
-- **From First Cloud AI Journey to AWS Partner** *(Presented by Mr. Danh Hoàng Hiếu Nghị)*: `(TODO: Community builder orientation reference links to be updated upon public release)`
-- **Scalable URL Shortening Service on AWS** *(Presented by Đinh Trung Kiên & Nguyễn Minh Thọ)*: `(TODO: Technical URL shortener cloud architecture diagram repository links to be updated)`
+- **Data Analytics and MNC Culture Slides** *(Presented by Mr. Đạt Phạm & Mr. Cường Nguyễn)*: `(Evidence pending: Presentation reference download links will be attached once publicly released by presenting speakers)`
+- **What Does a DevOps Engineer Really Do?** *(Presented by Mr. Trong H. Truong)*: `(Evidence pending: Technical presentation reference deck to be updated upon repository synchronization)`
+- **From First Cloud AI Journey to AWS Partner** *(Presented by Mr. Danh Hoàng Hiếu Nghị)*: `(Evidence pending: Community builder orientation reference links to be updated upon public release)`
+- **Scalable URL Shortening Service on AWS** *(Presented by Đinh Trung Kiên & Nguyễn Minh Thọ)*: `(Evidence pending: Technical URL shortener cloud architecture diagram repository links to be updated)`
 - **Event photos - Authentic on-site offline participation evidence photo of our engineering team during the Meetup gathering:**
 
 ![Event 3 offline participation evidence](/images/3-Events/Evidence_Events%203.jpg)
 
-- **Personal notes:** `(TODO: Hyperlinked access pointing toward personal diagnostic engineering notes and takeaway summaries will be synchronized soon)`
+- **Personal notes:** `(Evidence pending: Hyperlinked access pointing toward personal diagnostic engineering notes and takeaway summaries will be synchronized soon)`

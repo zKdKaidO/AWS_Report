@@ -16,12 +16,12 @@ Because this event is documented from presentation slides and practical session 
 
 | Metadata Field | Event Detail |
 |---|---|
-| **Official Event Name** | `[Placeholder: Official Event Name to be confirmed]` |
-| **Event Date** | `[Placeholder: Event Date to be confirmed]` |
-| **Organizer** | `[Placeholder: Organizer to be confirmed]` |
-| **Venue & Location** | `[Placeholder: Venue to be confirmed]` |
-| **Participation Format** | `[Placeholder: Online/Offline format to be confirmed]` |
-| **Participant Count** | `[Placeholder: Participant count to be confirmed]` |
+| **Official Event Name** | `[Evidence pending: Official Event Name to be confirmed]` |
+| **Event Date** | `[Evidence pending: Event Date to be confirmed]` |
+| **Organizer** | `[Evidence pending: Organizer to be confirmed]` |
+| **Venue & Location** | `[Evidence pending: Venue to be confirmed]` |
+| **Participation Format** | `[Evidence pending: Online/Offline format to be confirmed]` |
+| **Participant Count** | `[Evidence pending: Participant count to be confirmed]` |
 
 ## Why I Joined
 
@@ -77,9 +77,9 @@ This opening overview functioned strictly as a practical session summary rather 
 
 ## Session 2: Securing Web Applications with AWS Security Agent
 
-The second presentation focused on real-world engineering defensive workflows and software risk mitigation. The presenting speaker's name appeared inconsistently across different sections of the presentation slides as **Thinh Nguyen** and **Nguyen Tuan Thinh**; in adherence to project verification guidelines and to avoid unverified guessing, the attribution is documented here using a transparent presenter metadata placeholder:
+The second presentation focused on real-world engineering defensive workflows and software risk mitigation. The presenting speaker's name appeared inconsistently across different sections of the presentation slides as **Thinh Nguyen** and **Nguyen Tuan Thinh**; in adherence to project verification guidelines and to avoid unverified guessing, the attribution is documented here using a transparent evidence-pending presenter metadata note:
 
-*Presenter:* `[Placeholder: Presenter Name - Thinh Nguyen / Nguyen Tuan Thinh to be confirmed from official event records]`
+*Presenter:* `[Evidence pending: Presenter Name - Thinh Nguyen / Nguyen Tuan Thinh to be confirmed from official event records]`
 
 The speaker began by exposing four substantial operational security challenges that modern development teams routinely confront when securing rapidly evolving web applications:
 
@@ -225,20 +225,20 @@ Maintaining a grounded, professional internship perspective, I commit to taking 
 
 ## Evidence and Resources
 
-The catalog below organizes the presentation slide references, community learning path repositories, study diagnostic notes, and visual attendance records gathered throughout our learning immersion across the three AWS knowledge-sharing sessions. Where public URLs or digital certificates remain offline or currently awaiting release, standard placeholder syntax is preserved without generating fabricated web links:
+The catalog below organizes the presentation slide references, community learning path repositories, study diagnostic notes, and visual attendance records gathered throughout our learning immersion across the three AWS knowledge-sharing sessions. Where public URLs or digital certificates remain offline or currently awaiting release, standard evidence-pending syntax is preserved without generating fabricated web links:
 
-- **Inside the Exam: AWS Cloud Practitioner Slides** *(Presented by Ngo Le Tan Huy)*: <a href="#" data-placeholder="true">[Placeholder: Presentation slides deck to be updated upon official release]</a>
-- **Securing Your Web Apps With AWS Security Agent Slides** *(Presenter: Thinh Nguyen / Nguyen Tuan Thinh)*: <a href="#" data-placeholder="true">[Placeholder: Application security presentation slides deck to be updated]</a>
-- **SLA and Monitoring: From SLA to Monitoring What Really Matters Slides** *(Presented by Nguyễn Huỳnh Sơn)*: <a href="#" data-placeholder="true">[Placeholder: SLA and monitoring presentation slides deck to be updated]</a>
-- **Event Photos**: <a href="#" data-placeholder="true">[Placeholder: Link to official meetup photo album and livestream participation gallery]</a>
-- **Personal Notes**: <a href="#" data-placeholder="true">[Placeholder: Link to personal study notes, certification keyword mapping tables, and session takeaways]</a>
-- **Event Recap Article**: <a href="#" data-placeholder="true">[Placeholder: Link to community meetup recap and technical summary article]</a>
-- **Speaker and Event Resources**: <a href="#" data-placeholder="true">[Placeholder: Link to supplementary AWS architecture repositories and Skill Builder learning paths]</a>
-- **AWS Cloud Practitioner Certificate**: <a href="#" data-placeholder="true">[Placeholder: Personal certification examination verification badge, to be attached upon completing official CLF-C02 examination]</a>
+- **Inside the Exam: AWS Cloud Practitioner Slides** *(Presented by Ngo Le Tan Huy)*: <a href="#" data-evidence-status="pending">[Evidence pending: Presentation slides deck to be updated upon official release]</a>
+- **Securing Your Web Apps With AWS Security Agent Slides** *(Presenter: Thinh Nguyen / Nguyen Tuan Thinh)*: <a href="#" data-evidence-status="pending">[Evidence pending: Application security presentation slides deck to be updated]</a>
+- **SLA and Monitoring: From SLA to Monitoring What Really Matters Slides** *(Presented by Nguyễn Huỳnh Sơn)*: <a href="#" data-evidence-status="pending">[Evidence pending: SLA and monitoring presentation slides deck to be updated]</a>
+- **Event Photos**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to official meetup photo album and livestream participation gallery]</a>
+- **Personal Notes**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to personal study notes, certification keyword mapping tables, and session takeaways]</a>
+- **Event Recap Article**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to community meetup recap and technical summary article]</a>
+- **Speaker and Event Resources**: <a href="#" data-evidence-status="pending">[Evidence pending: Link to supplementary AWS architecture repositories and Skill Builder learning paths]</a>
+- **AWS Cloud Practitioner Certificate**: <a href="#" data-evidence-status="pending">[Evidence pending: Personal certification examination verification badge, to be attached upon completing official CLF-C02 examination]</a>
 
 ### Visual Participation Evidence
 
-<div class="image-placeholder" data-placeholder="true">
-  <p><strong>[Image Placeholder: Event 4 Knowledge Sharing Attendance Evidence]</strong></p>
+<div class="image-evidence-pending" data-evidence-status="pending">
+  <p><strong>[Image evidence pending: Event 4 Knowledge Sharing Attendance Evidence]</strong></p>
   <p><em>Caption: Screenshot of participation during the AWS Knowledge Sharing Event online broadcast, highlighting technical discussions on Cloud Practitioner exam preparation strategies, automated DevSecOps pull-request reviews, and custom CloudWatch business metric alerting loops. (Actual attendance screen capture to be embedded upon archival verification).</em></p>
 </div>

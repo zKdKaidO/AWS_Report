@@ -90,7 +90,7 @@ Minh chứng cá nhân cần bổ sung:
 - Ảnh ghi chú cá nhân về các nội dung kỹ thuật.
 
 <!--
-TODO: Thêm ảnh minh chứng tham gia:
+Evidence required: Add participation evidence image:
 static/images/events/event-1/participation-evidence.png
 -->
 

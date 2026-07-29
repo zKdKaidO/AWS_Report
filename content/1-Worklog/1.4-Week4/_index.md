@@ -6,34 +6,105 @@ chapter: false
 pre: " <b> 1.4. </b> "
 ---
 
-# Week 4 - Realtime Chat with Socket.IO, Redis, and DynamoDB
+# Week 4 - Containerization and CI Quality Gates
 
-### Week 4 Objectives:
+## Objectives
 
-- Build realtime communication between Candidate and HR.
-- Store chat data in DynamoDB.
-- Use Redis to support multiple chat-service instances.
+Week 4 focused on making the project repeatable: Dockerfiles, Docker Compose, GitHub Actions quality gates, local validation scripts, smoke tests, and security checks.
 
-### Tasks to be carried out this week:
+## Tasks Completed
 
-| Day | Task | Start Date | Completion Date | Reference Material |
-|---|---|---|---|---|
-| 1 | Initialize the chat service with Node.js, Express, and Socket.IO. | 29/06/2026 | 05/07/2026 | [Socket.IO Documentation](https://socket.io/docs/v4/) |
-| 2 | Build routes, controllers, and Socket.IO events. | 29/06/2026 | 05/07/2026 | [Socket.IO Documentation](https://socket.io/docs/v4/) |
-| 3 | Design ChatUsers, ChatGroups, and ChatMessages in DynamoDB. | 29/06/2026 | 05/07/2026 | [Amazon DynamoDB - Best Practices](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/best-practices.html); [AWS SDK for JavaScript - DynamoDB Examples](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/javascript_dynamodb_code_examples.html) |
-| 4 | Integrate the Redis Socket.IO adapter. | 29/06/2026 | 05/07/2026 | [Socket.IO Redis Adapter Documentation](https://socket.io/docs/v4/redis-adapter/); [Redis Pub/Sub Documentation](https://redis.io/docs/latest/develop/pubsub/) |
-| 5 | Integrate frontend Chat and run CORS/concurrency tests. | 29/06/2026 | 05/07/2026 | [Socket.IO Redis Adapter Documentation](https://socket.io/docs/v4/redis-adapter/); [Redis Pub/Sub Documentation](https://redis.io/docs/latest/develop/pubsub/) |
+| Status | Task | Evidence basis |
+|---|---|---|
+| Completed | Standardized Docker build paths for backend, chat, frontend, and AI service. | `backend/Dockerfile`, `chat-service/Dockerfile`, `frontend/Dockerfile`, and `Dockerfile.ai-service`. |
+| Completed | Kept local Compose as the parity environment for dependencies and smoke tests. | `docker-compose.yml`, `docker-compose.ai-service.yml`, and `scripts/ci/smoke-test.sh`. |
+| Completed | Consolidated GitHub Actions into the main CI/CD workflow. | `.github/workflows/cicd.yml` and commit `e09e84e`. |
+| Completed | Added required quality/security gates. | `scripts/ci/repository_quality.py`, `scripts/ci/infrastructure.py`, `scripts/ci/security_scan.py`, `.gitleaks.toml`, and `.pre-commit-config.yaml`. |
+| Completed | Fixed ShellCheck SC2155 in the smoke test script. | Commit `98f3420`. |
+| Partially completed | Attached GitHub Actions screenshots and full before/after logs. | Evidence pending: CI screenshots and full log artifacts are not stored in the report repo. |
 
-### Week 4 Achievements:
+## Technical Implementation
 
-- Candidate and HR can use realtime chat.
-- Messages and groups are stored in DynamoDB.
-- Redis synchronizes events across multiple instances.
-- The chat service provides health and metrics endpoints.
-- CORS and concurrency behavior are tested.
+The final CI workflow defines validation jobs for backend, chat service, frontend, Docker images, infrastructure, smoke checks, and security scanning. The workflow uses Python 3.12, Node.js 22, shell validation, Docker image builds, Trivy/Gitleaks images, and actionlint/kubeconform support through the infrastructure script.
 
-<!--
-TODO: Add screenshots, commits, test results, or deployment evidence for this week.
-Expected image directory:
-static/images/worklog/week-4/
--->
+Relevant workflow checks include:
+
+```bash
+python -m ruff format --check .
+python -m ruff check .
+python -m mypy app tests
+python -m pytest -m "not postgres"
+npm run check --prefix chat-service
+npm run lint --prefix chat-service
+npm run format:check --prefix chat-service
+npm run test:ci --prefix chat-service
+npm run test --prefix frontend
+npm run build --prefix frontend
+docker build -t internship-backend:ci ./backend
+docker build -t internship-chat:ci ./chat-service
+docker build -f Dockerfile.ai-service -t internship-ai:ci .
+```
+
+## Problems and Solutions
+
+| Problem | Root cause | Resolution | Status |
+|---|---|---|---|
+| Multiple workflows made the deployment path harder to control. | Separate CI/deploy workflows split validation and deployment behavior. | Consolidated workflows into `.github/workflows/cicd.yml`. | Completed |
+| ShellCheck flagged SC2155 in the smoke test script. | Assignment and command substitution were combined in a way ShellCheck warns about. | Commit `98f3420` split the logic to satisfy ShellCheck. | Completed |
+| `.env` files can contain UTF-8 BOM and break shell parsing. | Windows editors may add BOM at the beginning of files. | `scripts/ci/smoke-test.sh` strips the BOM when preparing smoke-test env input. | Completed |
+| Docker-based infra validation may hang or fail when Docker is unavailable. | Local Windows/Docker setups vary by machine. | Infrastructure scripts support local CLI binaries and bounded Docker fallback behavior. | Completed |
+| Full CI result screenshots are missing from the Hugo report. | GitHub Actions artifacts were not provided locally. | Marked CI log screenshots as pending. | Blocked |
+
+## Testing, Build and Deployment Results
+
+| Area | Result | Evidence |
+|---|---|---|
+| Backend CI commands | Implemented | Commands are defined in `.github/workflows/cicd.yml`. Current-run output is pending. |
+| Chat CI commands | Implemented | Commands are defined in `.github/workflows/cicd.yml` and `scripts/chat-service.sh`. Current-run output is pending. |
+| Frontend CI commands | Implemented | Commands are defined in `.github/workflows/cicd.yml` and `scripts/frontend.sh`. Current-run output is pending. |
+| Infrastructure/security checks | Implemented | `scripts/ci/infrastructure.py`, `scripts/check-infra.ps1`, `scripts/check-infra.sh`, and `scripts/ci/security_scan.py` exist. |
+| Compose smoke test | Implemented | `scripts/ci/smoke-test.sh` exists and ends with `Compose smoke test passed` on success. Current-run output is pending. |
+
+## Evidence
+
+### Screenshots
+
+Evidence pending: add screenshots under `/images/worklog/week-04/`, for example:
+
+- `/images/worklog/week-04/github-actions-validate.png`
+- `/images/worklog/week-04/shellcheck-before-after.png`
+- `/images/worklog/week-04/docker-builds.png`
+
+### Commits and Pull Requests
+
+| Commit | Description | Evidence | Pull Request |
+|---|---|---|---|
+| `b4ef947` | Added required pipeline gates, security scanning, pre-commit config, and infrastructure validation scripts. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/b4ef947551615e6f22ae4261c6c977b4019080a3) | Evidence pending |
+| `e09e84e` | Consolidated workflows into a single `cicd.yml` pipeline. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/e09e84ee423067eb5c2fa766133bd133b9f03a45) | Evidence pending |
+| `29de145` | Resolved CI failures for pytest, frontend build, and infrastructure checks. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/29de145dc5eca8036ee76aedd29db24953a32245) | Evidence pending |
+| `98f3420` | Fixed ShellCheck SC2155 in the smoke test script. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/98f34200147423960604f23a7f960a853c59cd0a) | Evidence pending |
+| `c2ad7cc` | Consolidated and optimized the GitHub Actions workflow. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/c2ad7cc72ed18a9f90441696675939f7b94154b6) | Evidence pending |
+
+### Test Logs
+
+Evidence pending: attach CI or local output for backend, chat, frontend, and smoke-test jobs.
+
+### Build Logs
+
+Evidence pending: attach Docker build and Vite build output from GitHub Actions or a local run.
+
+### Deployment Logs
+
+Not applicable for Week 4. This phase prepared deployable artifacts and gates, while AWS/EKS deployment continued in later weeks.
+
+## Weekly Results
+
+The project gained a single CI/CD backbone, repeatable quality gates, Docker build paths, smoke-test handling, and security/infrastructure validation scripts.
+
+## Lessons Learned
+
+CI should fail early on repeatable checks: formatting, typing, tests, build, security, shell syntax, Dockerfile quality, and infrastructure manifest validation. Making these checks explicit reduced the amount of manual inspection needed before deployment.
+
+## Next Week Plan
+
+Move from Docker Compose to local Kubernetes with kind, Kubernetes manifests, migration/init jobs, probes, HPA/PDB configuration, and observability resources.
