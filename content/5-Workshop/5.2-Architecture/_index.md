@@ -30,28 +30,28 @@ The architecture is based on the supplied production context, the Report reposit
 
 ## Diagram 1: Overall AWS architecture
 
-```mermaid
-flowchart LR
+{{< mermaid >}}
+graph LR
     User["Candidate / HR browser"]
-    CF["CloudFront<br/>dhm2rz5nmsibj.cloudfront.net"]
-    S3Frontend["S3 frontend bucket<br/>internship-prod-frontend-account-redacted"]
-    ALB["Application Load Balancer<br/>internet-facing"]
-    EKS["EKS cluster<br/>internship-prod"]
-    Backend["backend<br/>FastAPI :8000"]
-    Chat["chat-service<br/>Socket.IO :3000"]
+    CF["CloudFront (dhm2rz5nmsibj.cloudfront.net)"]
+    S3Frontend["Private S3 frontend bucket (internship-prod-frontend-account-redacted)"]
+    ALB["Application Load Balancer (internet-facing)"]
+    EKS["EKS cluster (internship-prod)"]
+    Backend["backend (FastAPI :8000)"]
+    Chat["chat-service (Socket.IO :3000)"]
     Dispatcher["backend-outbox-dispatcher"]
     Worker["backend-processing-worker"]
-    AI["ai-service<br/>:8010"]
-    RDS["RDS PostgreSQL<br/>internship-prod-postgres"]
-    DDB["DynamoDB<br/>ChatUsers / ChatGroups / ChatMessages"]
-    Redis["ElastiCache Redis<br/>internship-prod-redis"]
-    Uploads["S3 uploads/archive bucket<br/>internship-prod-uploads-account-redacted"]
-    SQS["SQS queue<br/>internship-prod-outbox"]
-    DLQ["SQS DLQ<br/>internship-prod-outbox-dlq"]
-    Lambda["Lambda<br/>internship-outbox-handler"]
-    Dedupe["DynamoDB<br/>InternshipLambdaEventDedupe"]
+    AI["ai-service (:8010)"]
+    RDS["RDS PostgreSQL (internship-prod-postgres)"]
+    DDB["DynamoDB chat tables (ChatUsers / ChatGroups / ChatMessages)"]
+    Redis["ElastiCache Redis (internship-prod-redis)"]
+    Uploads["S3 uploads and archive bucket (internship-prod-uploads-account-redacted)"]
+    SQS["SQS queue (internship-prod-outbox)"]
+    DLQ["SQS DLQ (internship-prod-outbox-dlq)"]
+    Lambda["Lambda (internship-outbox-handler)"]
+    Dedupe["DynamoDB dedupe table (InternshipLambdaEventDedupe)"]
     SES["Amazon SES"]
-    SM["SageMaker endpoint<br/>internship-qwen3-4b"]
+    SM["SageMaker endpoint (internship-qwen3-4b)"]
 
     User --> CF
     CF --> S3Frontend
@@ -74,36 +74,36 @@ flowchart LR
     Lambda --> Dedupe
     Lambda --> Uploads
     Lambda --> SES
-```
+{{< /mermaid >}}
 
 ## Diagram 2: CloudFront request-routing flow
 
-```mermaid
-flowchart TD
+{{< mermaid >}}
+graph TD
     Request["HTTPS request to CloudFront"]
     Match{"Path pattern"}
-    Frontend["Default behavior<br/>S3 frontend origin"]
-    API["/api/* behavior<br/>ALB origin"]
-    ChatRest["/chat/* behavior<br/>ALB origin"]
-    Socket["/socket.io/* behavior<br/>ALB origin"]
-    BackendSvc["Kubernetes Service/backend"]
-    ChatSvc["Kubernetes Service/chat-service"]
+    Frontend["Default behavior to S3 frontend origin"]
+    API["/api/* behavior to ALB origin"]
+    ChatRest["/chat/* behavior to ALB origin"]
+    Socket["/socket.io/* behavior to ALB origin"]
+    BackendSvc["Kubernetes Service: backend"]
+    ChatSvc["Kubernetes Service: chat-service"]
 
     Request --> Match
-    Match -->|"*"| Frontend
-    Match -->|"/api/*"| API
-    Match -->|"/chat/*"| ChatRest
-    Match -->|"/socket.io/*"| Socket
+    Match --> Frontend
+    Match --> API
+    Match --> ChatRest
+    Match --> Socket
     API --> BackendSvc
     ChatRest --> ChatSvc
     Socket --> ChatSvc
-```
+{{< /mermaid >}}
 
 The frontend bucket remains private. CloudFront handles HTTPS and SPA fallback. The ALB Ingress rewrites `/api` and `/chat` prefixes before forwarding to the backend and chat services.
 
 ## Diagram 3: CV upload and AI processing sequence
 
-```mermaid
+{{< mermaid >}}
 sequenceDiagram
     participant Candidate
     participant Frontend
@@ -127,11 +127,11 @@ sequenceDiagram
     Worker->>Postgres: Save parsed profile or matching results
     Frontend->>Backend: Poll processing job status
     Backend-->>Frontend: Processing result
-```
+{{< /mermaid >}}
 
 ## Diagram 4: Realtime chat sequence
 
-```mermaid
+{{< mermaid >}}
 sequenceDiagram
     participant UserA as User A browser
     participant CF as CloudFront
@@ -151,13 +151,13 @@ sequenceDiagram
     Redis->>Chat2: Broadcast event to subscribed pod
     Chat2->>UserB: Emit message:new
     Chat1-->>UserA: ACK after persistence
-```
+{{< /mermaid >}}
 
 DynamoDB is the permanent chat store. Redis is only the cross-pod pub/sub layer and does not replace persistent storage.
 
 ## Diagram 5: Transactional outbox, SQS, and Lambda sequence
 
-```mermaid
+{{< mermaid >}}
 sequenceDiagram
     participant API as FastAPI backend
     participant PG as RDS PostgreSQL
@@ -180,23 +180,23 @@ sequenceDiagram
     else Duplicate event
         Lambda-->>SQS: Treat as already processed
     end
-```
+{{< /mermaid >}}
 
 SQS delivery is at least once. Duplicate delivery is expected, so Lambda idempotency is required. The successful smoke-test event was `lambda-smoke-fixed-1785220478`, archived under `outbox-archive/2026/07/28/lambda-smoke-fixed-1785220478.json`.
 
 ## Diagram 6: Source-code change and CI/CD deployment flow
 
-```mermaid
-flowchart LR
+{{< mermaid >}}
+graph LR
     Dev["Developer change"]
-    GH["GitHub Actions<br/>workflow_dispatch mode"]
-    Validate["validate<br/>tests, lint, build, infra scan"]
-    Images["build-images<br/>ECR SHA tags"]
-    Restore["restore-compute<br/>EKS node group check"]
-    App["deploy-app<br/>kubectl apply workloads"]
-    Public["deploy-public<br/>ALB ingress"]
-    CF["ensure-cloudfront<br/>S3 private + OAC + behaviors"]
-    Frontend["deploy-frontend<br/>npm build + S3 sync + invalidation"]
+    GH["GitHub Actions (workflow_dispatch mode)"]
+    Validate["validate (tests, lint, build, infra scan)"]
+    Images["build-images (ECR SHA tags)"]
+    Restore["restore-compute (EKS node group check)"]
+    App["deploy-app (kubectl apply workloads)"]
+    Public["deploy-public (ALB ingress)"]
+    CF["ensure-cloudfront (S3 private + OAC + behaviors)"]
+    Frontend["deploy-frontend (npm build + S3 sync + invalidation)"]
     Summary["Production summary"]
 
     Dev --> GH
@@ -210,7 +210,7 @@ flowchart LR
     CF --> Frontend
     App --> Summary
     Frontend --> Summary
-```
+{{< /mermaid >}}
 
 The workflow supports `validate`, `deploy`, `rollout`, `restore-compute`, `deploy-app`, `deploy-public`, `deploy-frontend`, and `full`. GitHub Actions assumes an AWS role through OIDC; long-lived AWS access keys are not part of the deployment design.
 

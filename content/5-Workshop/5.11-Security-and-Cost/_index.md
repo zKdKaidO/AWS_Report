@@ -78,40 +78,33 @@ Do not print or paste secret values from Kubernetes, GitHub, or AWS into the rep
 
 ## Cost evidence source
 
-Cost data was exported from Cost Explorer in the evidence folder `aws-evidence-2026-07-29/01-cost`. The command used the Cost Explorer API endpoint in `us-east-1`, while the deployed workload evidence is for `ap-southeast-1`.
+Cost data in this report follows the Week 8 AWS cost evidence. The evidence reports July 1-28, 2026 month-to-date spend and a Billing and Cost Management credits screenshot. The finalized monthly bill and AWS Pricing Calculator estimate remain pending.
 
-| Billing period | Cost Explorer metric | Observed total | Interpretation |
+| Cost evidence | Observed value | Interpretation |
 |---|---|---:|---|
-| 2026-06-01 to 2026-07-01 | UnblendedCost | `-0.0000001996 USD` | Effectively zero; includes tiny credits or rounding adjustments |
-| 2026-07-01 to 2026-07-30 | UnblendedCost | `0.0000000871 USD` | Effectively zero for the captured month-to-date window |
+| July 1-28, 2026 total spend | Current month-to-date cost | `$94.92` | Source-of-truth Week 8 cost summary |
+| Highest daily spend | July 28, 2026 | `$31.83` | Largest daily spend in the supplied period |
+| Credits total amount used | Billing credits | `$27.90` | Billing credits screenshot |
+| Credits total estimated amount used | Billing credits | `$140.65` | Billing credits screenshot |
+| Credits total amount remaining | Billing credits | `$172.10` | Billing credits screenshot |
+| Credits total estimated amount remaining | Billing credits | `$59.35` | Billing credits screenshot |
 
-These values are billing evidence for the exported period only. They should not be treated as a steady-state monthly production estimate because the AWS resources were recently created, several services show zero or tiny usage, and credits or negative adjustments can cancel gross charges.
+These values are billing evidence for the supplied period only. They should not be treated as the finalized monthly bill or steady-state production estimate until AWS Bills and AWS Pricing Calculator evidence are attached.
 
-## Observed current-month service cost
+## Observed Week 8 service cost
 
-The current month-to-date Cost Explorer export shows the following service-level values.
+The Week 8 cost summary identifies the following top cost drivers for July 1-28, 2026.
 
-| Service | Current month-to-date UnblendedCost |
-|---|---:|
-| EC2 - Other | `0.0293361372 USD` |
-| AWS Data Transfer | `-0.0293422518 USD` |
-| Amazon Elastic Compute Cloud - Compute | `0.0000028030 USD` |
-| AWS CloudShell | `0.0000015348 USD` |
-| Elastic Load Balancing | `0.0000012880 USD` |
-| Amazon Simple Storage Service | `0.0000004694 USD` |
-| Amazon Relational Database Service | `0.0000000584 USD` |
-| AWS Secrets Manager | `0.0000000376 USD` |
-| Amazon Elastic Container Registry Public | `0.0000000071 USD` |
-| Amazon CloudWatch | `0.0000000034 USD` |
-| Amazon DynamoDB | `0.0000000000 USD` |
-| Amazon ElastiCache | `0.0000000000 USD` |
-| Amazon Elastic Container Service for Kubernetes | `0.0000000000 USD` |
-| AWS Lambda | `0.0000000000 USD` |
-| Amazon SageMaker | `0.0000000000 USD` |
-| Amazon Simple Queue Service | `0.0000000000 USD` |
-| Amazon Simple Email Service | `0.0000000000 USD` |
+| Rank | Service | July 1-28 cost | Share of total |
+|---:|---|---:|---:|
+| 1 | Amazon RDS | `$29.69` | 31.3% |
+| 2 | Amazon SageMaker | `$23.45` | 24.7% |
+| 3 | Amazon VPC | `$14.11` | 14.9% |
+| 4 | Amazon EC2 - Compute | `$12.42` | 13.1% |
+| 5 | EC2 - Other | `$7.68` | 8.1% |
+| 6 | Amazon EKS | `$5.64` | 5.9% |
 
-The largest observed gross line items are `EC2 - Other` and the negative `AWS Data Transfer` adjustment, which nearly cancel each other. The zero entries are useful evidence that the Cost Explorer export did not yet capture meaningful billable usage for those services; they are not proof that those services are free in normal operation.
+These six services account for approximately 98% of the July 1-28 reported spend. The July 28 daily cost spike indicates that new production infrastructure, SageMaker endpoint uptime, and VPC/NAT-related networking should be monitored closely.
 
 ## Cost assumptions
 
@@ -137,22 +130,22 @@ Exact future monthly cost still requires AWS Pricing Calculator or a representat
 
 | Service | Estimation method | Current evidence status |
 |---|---|---|
-| Amazon EKS | Cluster hourly charge multiplied by runtime hours | Deployed; current Cost Explorer line is zero in captured window |
-| EC2 worker nodes | Node hourly price times two nodes plus EBS storage | Nodes verified; instance type and volume size still needed |
-| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup and I/O | Two private encrypted instances verified |
+| Amazon EKS | Cluster hourly charge multiplied by runtime hours | Deployed; Week 8 cost summary reports `$5.64` |
+| EC2 worker nodes | Node hourly price times two nodes plus EBS storage | Nodes verified; EC2 Compute reports `$12.42`, EC2 - Other reports `$7.68` |
+| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup and I/O | Two private encrypted instances verified; Week 8 cost summary reports `$29.69` |
 | Amazon ElastiCache / Valkey | Node hourly price times node count plus data transfer | Replication group verified; node type/count still needed |
-| Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; tiny current Cost Explorer line |
-| Amazon CloudFront | Requests plus data transfer out and invalidations | Distributions verified; current Cost Explorer line is zero |
-| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Buckets verified; tiny current Cost Explorer line |
-| Amazon DynamoDB | On-demand read/write requests plus storage | Tables verified; current Cost Explorer line is zero |
-| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ verified; current Cost Explorer line is zero |
-| AWS Lambda | Request count plus GB-seconds | Function verified; current Cost Explorer line is zero |
+| Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; target health still needs final healthy evidence |
+| Amazon CloudFront | Requests plus data transfer out and invalidations | Runtime screenshot still pending |
+| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Runtime screenshot still pending |
+| Amazon DynamoDB | On-demand read/write requests plus storage | Runtime screenshot still pending |
+| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ runtime screenshot still pending |
+| AWS Lambda | Request count plus GB-seconds | Function exists; invocation and trigger health still pending |
 | Amazon SES | Email send count and attachments if any | Service planned through Lambda notification path |
-| Amazon ECR | Image storage GB and data transfer if applicable | Tiny current Cost Explorer line |
-| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint verified `InService`; current Cost Explorer line is zero |
-| Amazon CloudWatch | Log ingestion, retention, metrics, alarms | Tiny current Cost Explorer line |
-| Data transfer | CloudFront egress, ALB traffic, NAT, and cross-AZ traffic | Adjustment observed; traffic breakdown still needed |
-| Total | Use Pricing Calculator for forecast, then compare with representative Cost Explorer | Current MTD observed total is effectively zero |
+| Amazon ECR | Image storage GB and data transfer if applicable | Not separated in the Week 8 top-driver table |
+| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint verified `InService`; Week 8 cost summary reports `$23.45` |
+| Amazon CloudWatch | Log ingestion, retention, metrics, alarms | Retention and ingestion volume still required |
+| Amazon VPC and data transfer | CloudFront egress, ALB traffic, NAT, and cross-AZ traffic | Week 8 cost summary reports Amazon VPC at `$14.11`; traffic breakdown still needed |
+| Total | Use Pricing Calculator for forecast, then compare with representative billing evidence | Week 8 July 1-28 spend reports `$94.92`; finalized bill and steady-state estimate pending |
 
 ## Evidence hygiene
 
@@ -171,7 +164,7 @@ The highest-risk future cost areas are:
 - CloudFront and data transfer when traffic grows.
 - CloudWatch log ingestion and retention if verbose logs are kept.
 
-The current Cost Explorer export is near zero, but a continuously running production environment will still accrue normal service charges. SageMaker should be stopped or deleted when demos finish if real-time inference is not required.
+The Week 8 evidence shows that cost is no longer near zero. SageMaker, RDS, VPC/NAT-related networking, EC2 worker nodes, and EKS should be treated as active cost drivers. SageMaker should be stopped or deleted when demos finish if real-time inference is not required.
 
 ## Cost optimization options
 
