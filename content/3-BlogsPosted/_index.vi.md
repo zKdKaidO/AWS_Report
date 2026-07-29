@@ -26,6 +26,20 @@ Bài blog này giới thiệu cách thiết kế một hệ thống chat realtim
 **Trạng thái:** Pending  
 **Public link:** Blog 2
 
-### [Blog 3 - ...](3.3-Blog3/)
+### [Blog 3 - Một chút “thu hoạch” sau hành trình làm Software Engineer: từ viết code đến lúc tự tay làm hệ thống sập rồi tự cứu lại](3.3-Blog3/)
 
-Bài blog thứ ba chưa được hoàn thành. Nội dung sẽ được cập nhật sau khi chủ đề được chốt và bài viết được đăng.
+Bài viết chia sẻ hành trình trưởng thành từ một người chủ yếu tập trung vào viết code thành một Software Engineer hiểu toàn diện hơn về cách hệ thống vận hành, gặp sự cố và phục hồi. Qua quá trình làm việc với backend, frontend, Docker, Kubernetes, CI/CD, IAM, database, message queue và AWS, tác giả nhận ra rằng code chạy được ở local chưa đủ; một hệ thống ổn định còn phụ thuộc vào cấu hình, network, quyền truy cập, dữ liệu, hạ tầng và khả năng xử lý lỗi. Bài học lớn nhất là cần debug có hệ thống, kiểm tra đúng điểm gãy thay vì sửa ngẫu nhiên, đồng thời thiết kế để lỗi khó lặp lại hơn.
+
+**Ngày đăng:** July 28, 2026  
+**Nền tảng:** AWS Study Groups  
+**Trạng thái:** Pending  
+**Public link:** [Blog 3](https://www.facebook.com/groups/awsstudygroupfcj/permalink/2227122848052675/#)
+
+### [Blog 4 - AWS Networking Advanced: 3 kỹ thuật nâng cấp VPC chuẩn doanh nghiệp](3.4-Blog4/)
+
+Bài viết trình bày ba kỹ thuật giúp nâng cấp kiến trúc VPC cơ bản thành mô hình phù hợp hơn với hệ thống doanh nghiệp. Nội dung tập trung vào việc sử dụng VPC Endpoints để giảm lưu lượng qua NAT Gateway, triển khai hạ tầng Multi-AZ để tăng tính sẵn sàng và hạn chế chi phí truyền dữ liệu chéo AZ, đồng thời sử dụng AWS Transit Gateway để quản lý kết nối giữa nhiều VPC theo mô hình tập trung. Bài viết cho thấy việc tối ưu network architecture không chỉ cải thiện bảo mật và khả năng mở rộng mà còn giúp kiểm soát chi phí vận hành AWS hiệu quả hơn.
+
+**Ngày đăng:** July 29, 2026  
+**Nền tảng:** AWS Study Groups  
+**Trạng thái:** Published  
+**Public link:** [Blog 4](https://www.facebook.com/groups/awsstudygroupfcj/permalink/2225997548165205/#)

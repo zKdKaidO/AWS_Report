@@ -6,8 +6,6 @@ chapter: false
 pre: " <b> 4.2. </b> "
 ---
 
-# Sự kiện 2: Kiến trúc Cloud doanh nghiệp và ứng dụng trong thực tế
-
 ## Tên sự kiện
 
 AWS Study Tour: Enterprise Cloud Architectures and Industry Applications featuring Cloud Kinetics and Renova Cloud

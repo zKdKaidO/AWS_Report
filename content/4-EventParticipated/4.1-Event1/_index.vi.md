@@ -6,8 +6,6 @@ chapter: false
 pre: " <b> 4.1. </b> "
 ---
 
-# Sự kiện 1: FCAJ Community Day – June 2026
-
 ## Tên sự kiện
 
 FCAJ Community Day – June 2026: Data Driven, AI Risen
