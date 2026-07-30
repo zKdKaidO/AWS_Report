@@ -1,51 +1,51 @@
 ---
-title: "Frontend Deployment"
+title: "Triển khai frontend"
 date: 2024-01-01
 weight: 8
 chapter: false
 pre: " <b> 5.8. </b> "
 ---
-# Frontend Deployment
+# Triển khai frontend
 
-## Objective
+## Mục tiêu
 
-Build the React/Vite frontend, publish it to a private S3 bucket, and serve it through CloudFront.
+Thực hiện build mã nguồn frontend trên React/Vite, đăng tải bộ tệp đầu ra thẳng vào một S3 bucket riêng tư, và tổ chức phân phối an toàn thông qua CloudFront.
 
-## Architecture context
+## Bối cảnh kiến trúc
 
-The frontend is currently deployed as static files, not as an EKS workload. The old frontend Kubernetes Deployment, Service, HPA, PDB, and frontend ALB Ingress were removed so future EKS app deployments cannot recreate them.
+Hiện tại, frontend được triển khai theo quy chuẩn của các tệp tĩnh đơn thuần, loại trừ mọi yếu tố ràng buộc chạy như workload trên EKS. Những tài nguyên Kubernetes cũ mang tên frontend gồm Deployment, Service, HPA, PDB, đi kèm khối ALB Ingress cũ đã bị bóc tháo tiệt cọ, nhằm chặn đứng nguy cơ các đợt áp triển khai mã app vào EKS trong tương lai lầm lọt thi thoảng vô ý vác còi tự nặn sinh ra lại chúng.
 
-Current public entry point:
+Điểm truy cập công cộng hiện thời của người dùng:
 
 ```text
 https://dhm2rz5nmsibj.cloudfront.net
 ```
 
-Current CloudFront distribution:
+Mã số định danh cọ CloudFront distribution:
 
 ```text
 EQIGYNECXDYL8
 ```
 
-## Vite environment configuration
+## Cấu hình môi trường Vite
 
-The frontend production build uses:
+Quy chuỗi build tĩnh mạn production cho frontend sử dụng các tham mác:
 
-| Variable | Production value | Purpose |
+| Biến | Giá trị production | Mục đích |
 |---|---|---|
-| `VITE_API_BASE_URL` | `/api` | Makes backend API calls go through CloudFront and ALB |
-| `VITE_CHAT_API_BASE_URL` | empty string | Allows browser runtime to use `/chat` outside localhost |
+| `VITE_API_BASE_URL` | `/api` | Ép toàn bạo các lời gõ gọi backend API luân chảy trót lọt qua CloudFront cùng rãnh ALB |
+| `VITE_CHAT_API_BASE_URL` | chuỗi rỗng | Ban visa cho bộ máy runtime trình duyệt ung dung trút lời qua cung đường `/chat` ngoài cõi localhost |
 
-The frontend API client defaults to local development when not configured:
+Bộ gọi giao dịch API client phía frontend giữ nguyên thông số gán định ở chế độ lập trình tại chỗ khi khuyết thiếu tham số truyền cấu hình:
 
-- API default: `http://localhost:8001`
-- Chat default in local browser: `http://localhost:3000`
-- Chat default outside localhost: `/chat`
-- Socket.IO path: `/socket.io`
+- Chuỗi mặc định của API: `http://localhost:8001`
+- Chuỗi mặc định của Chat ở trình duyệt cá nhân tại chỗ: `http://localhost:3000`
+- Chuỗi mặc định của Chat ở thế giới ngoại localhost: `/chat`
+- Đường dẫn Socket.IO path: `/socket.io`
 
-## Build commands
+## Các lệnh build
 
-From the application repository:
+Ra lệnh thao tác thi thực tại gốc thư mục repo:
 
 ```bash
 cd frontend
@@ -53,33 +53,33 @@ npm ci
 VITE_API_BASE_URL=/api VITE_CHAT_API_BASE_URL= npm run build
 ```
 
-Expected output directory:
+Thư mục kết quả đầu ra theo kỳ vọng:
 
 ```text
 frontend/dist
 ```
 
-The deployment script detects `frontend/dist` or `frontend/build`, but the current Vite output is `frontend/dist`.
+Trình lệnh script bạt khai thâm kiểm tra tự dọn bãi nhận diện cả `frontend/dist` lẫn `frontend/build`, thế nhưng đầu ra sinh tệp mĩ mãn hiện hành do Vite ban xuất luôn nằm ngụ yên ổn tại con rãnh `frontend/dist`.
 
-## S3 publishing
+## Đăng tải lên S3
 
-The production helper is:
+Tập kịch bản chiêu xuất lực lượng cho môi trường production đóng lệnh:
 
 ```bash
 bash scripts/ci/deploy-frontend.sh
 ```
 
-Required variables:
+Các biến ràng buộc bắt buộc:
 
-| Variable | Purpose |
+| Biến | Mục đích |
 |---|---|
-| `FRONTEND_DEPLOY_ENABLED` | Must be `true` |
-| `FRONTEND_BUCKET` | Target bucket, for example `internship-prod-frontend-<AWS_ACCOUNT_ID>` |
-| `CLOUDFRONT_DISTRIBUTION_ID` | Distribution to invalidate |
-| `VITE_API_BASE_URL` | `/api` |
-| `VITE_CHAT_API_BASE_URL` | empty string |
+| `FRONTEND_DEPLOY_ENABLED` | Bất di bất dịch thi định giá trị `true` |
+| `FRONTEND_BUCKET` | Hòm S3 đích nhắm, chẳng hạn kiểu dạng `internship-prod-frontend-<AWS_ACCOUNT_ID>` |
+| `CLOUDFRONT_DISTRIBUTION_ID` | Mã định danh distribution phục vụ việc gõ xóa bộ đệm cache (invalidate) |
+| `VITE_API_BASE_URL` | Gán bằng `/api` |
+| `VITE_CHAT_API_BASE_URL` | Gán rỗng tuột |
 
-The script keeps the bucket private:
+Tập script tuân thủ cảnh giác khóa nhốt kiên kỵ ranh giới bucket ở tư thế vô danh bí hiểm riêng tư:
 
 ```bash
 aws s3api put-public-access-block \
@@ -88,7 +88,7 @@ aws s3api put-public-access-block \
   BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 ```
 
-Static assets are uploaded with long cache headers:
+Toàn thể dải tệp tĩnh (static assets) buông mình trôi thâu tải lên vân gắn kèm trường mác giữ cache dài hạn thọ sinh bền lâu:
 
 ```bash
 aws s3 sync frontend/dist s3://internship-prod-frontend-<AWS_ACCOUNT_ID> \
@@ -97,7 +97,7 @@ aws s3 sync frontend/dist s3://internship-prod-frontend-<AWS_ACCOUNT_ID> \
   --cache-control public,max-age=31536000,immutable
 ```
 
-`index.html` is uploaded separately with no-cache semantics:
+Riêng tệp `index.html` vinh hoa hưởng luồng nạp bồi cô lập, cắm rào kiêu sa chối cự việc bấu giữ trong cối nhớ tạm (no-cache semantics):
 
 ```bash
 aws s3 cp frontend/dist/index.html s3://internship-prod-frontend-<AWS_ACCOUNT_ID>/index.html \
@@ -105,25 +105,25 @@ aws s3 cp frontend/dist/index.html s3://internship-prod-frontend-<AWS_ACCOUNT_ID
   --content-type text/html
 ```
 
-## CloudFront configuration
+## Cấu hình CloudFront
 
-The helper `scripts/aws/ensure-cloudfront.sh` validates or creates the distribution. The current design uses:
+Trình kịch bản giúp tay `scripts/aws/ensure-cloudfront.sh` sắm vóc dáng uyên thâm đảm nhận rà thẩm hoặc tác sinh ra tài nguyên distribution mới. Thiết lập kiến trúc hiện hành được nạp dải:
 
-| Behavior | Origin | Notes |
+| Behavior | Origin | Ghi chú |
 |---|---|---|
-| Default `*` | S3 frontend bucket | Static frontend and SPA assets |
-| `/api/*` | ALB | Backend API |
-| `/chat/*` | ALB | Chat REST API |
-| `/socket.io/*` | ALB | Socket.IO traffic |
+| Mặc định `*` | S3 frontend bucket | Giao diện tĩnh của frontend cùng các tệp nền cho SPA |
+| `/api/*` | ALB | Dữ liệu REST API backend |
+| `/chat/*` | ALB | REST API thuộc về dịch vụ chat |
+| `/socket.io/*` | ALB | Giao thông luân chuyển cho Socket.IO |
 
-CloudFront also configures SPA fallback:
+CloudFront khôn ngoan giêu thiết lập cơ chế cứu rỗi điều bẻ dự phòng cho SPA (SPA fallback):
 
-| Error | Response path | Response code |
+| Lỗi (Error) | Đường dẫn phản hồi | Mã phản hồi |
 |---|---|---|
 | 403 | `/index.html` | 200 |
 | 404 | `/index.html` | 200 |
 
-CloudFront invalidation:
+Ra lệnh xóa bỏ nội dung bộ nhớ đệm cũ kỹ lạc hậu (CloudFront invalidation):
 
 ```bash
 aws cloudfront create-invalidation \
@@ -131,26 +131,26 @@ aws cloudfront create-invalidation \
   --paths "/*"
 ```
 
-## GitHub Actions frontend deployment
+## Triển khai frontend qua GitHub Actions
 
-Use workflow dispatch mode:
+Ra tay gõ chọn điều rũ thực thi chế độ workflow dispatch theo mô hình:
 
 ```text
 GitHub -> Actions -> CI/CD -> Run workflow -> mode: deploy-frontend
 ```
 
-The `deploy-frontend` job:
+Quy tắc bước nhảy của thợ job `deploy-frontend`:
 
-1. Configures AWS credentials through OIDC.
-2. Sets Node.js from workflow `NODE_VERSION`.
-3. Verifies ALB health at `/api/health/ready` and `/chat/health/ready`.
-4. Runs `scripts/ci/deploy-frontend.sh`.
-5. Uploads frontend files to S3.
-6. Creates a CloudFront invalidation.
+1. Tiến hành ủy quyền và nạp định danh tài khoản AWS credentials cẩn kỵ thông qua luồng an ninh OIDC.
+2. Thiết định môi trường máy Node.js bám theo giá trị ghi ở biến workflow `NODE_VERSION`.
+3. Thẩm định cẩn mật sức khỏe đường rẽ cọc ALB tại điểm trạm `/api/health/ready` lẫn `/chat/health/ready`.
+4. Gọi khởi nháy tệp lệnh `scripts/ci/deploy-frontend.sh`.
+5. Đẩy tút mượt chuỗi tập tin giao diện tĩnh của frontend an trú vào lòng hòm S3.
+6. Phát đi trát thi thoảng xóa bạt tàn nhẫn cọc dữ liệu đệm cũ qua lệnh CloudFront invalidation.
 
-## Verification
+## Kiểm chứng
 
-Check CloudFront:
+Khảo rà tình hình CDN CloudFront:
 
 ```bash
 curl -I https://dhm2rz5nmsibj.cloudfront.net/
@@ -158,52 +158,52 @@ curl -fsS https://dhm2rz5nmsibj.cloudfront.net/api/health/ready
 curl -fsS https://dhm2rz5nmsibj.cloudfront.net/chat/health/ready
 ```
 
-Check S3 bucket privacy:
+Thanh rà rào cản ngăn công khai trần tuột của hòm S3:
 
 ```bash
 aws s3api get-public-access-block \
   --bucket internship-prod-frontend-<AWS_ACCOUNT_ID>
 ```
 
-Check distribution:
+Khám xét thông số cấu hình tài nguyên distribution:
 
 ```bash
 aws cloudfront get-distribution --id EQIGYNECXDYL8
 aws cloudfront list-invalidations --distribution-id EQIGYNECXDYL8
 ```
 
-## Expected result
+## Kết quả mong đợi
 
-- The frontend loads through CloudFront.
-- Direct frontend S3 bucket public access remains blocked.
-- `/api/*`, `/chat/*`, and `/socket.io/*` routes use the ALB origin.
-- SPA deep links return `index.html`.
-- A new CloudFront invalidation is created after deployment.
+- Trang frontend hoành nghênh hiện múa êm thắm từ sau vây cống mạng CloudFront.
+- Ranh giới cản phá ngăn mạn cất chặn việc mở cửa lộ thiên (public access) của hòm S3 tiếp chặng đứng sừng sững gác vững vàng.
+- Dải luân điều hướng tuyến `/api/*`, `/chat/*`, kết mác cùng `/socket.io/*` răm rắp dốc đầu về rẽorigin ALB hợp hiền.
+- Chuỗi tra truy nhập thẳng (deep links) bỗng chốc bốc sa hẫng đều khôn lanh được CDN nén trả quay đầu theo vạch `index.html`.
+- Một bản trát ban lệnh xóa cối đệm (invalidation) hiển lộ oai phong ngay tại hồi sau đợt bung ban triển khai.
 
-## Common errors
+## Các lỗi thường gặp
 
-| Symptom | Cause | Resolution |
+| Triệu chứng | Nguyên nhân | Hướng khắc phục |
 |---|---|---|
-| Frontend job skipped | `FRONTEND_DEPLOY_ENABLED` not true in the context used by the job | Configure the flag in GitHub variables as required by the workflow |
-| API calls go to localhost in production | Missing `VITE_API_BASE_URL=/api` | Rebuild with production Vite variables |
-| CloudFront returns old UI | Cached assets or missing invalidation | Check invalidation status and `index.html` cache control |
-| S3 access denied through CloudFront | Missing OAC bucket policy | Run `ensure-cloudfront.sh` with correct account and distribution |
-| Direct S3 website endpoint fails | Expected current behavior | Frontend bucket is private and should be accessed through CloudFront |
-| Socket.IO fails | Missing `/socket.io/*` CloudFront behavior or ALB route | Verify CloudFront behavior and Ingress path |
+| Tác vụ thợ job của frontend khinh bạc giễu lướt qua bẻ bỏ | cọc biến mác `FRONTEND_DEPLOY_ENABLED` trượt giá trị true ở tầm bắt không gian biến cho job vồ vỗ | Hãy cẩn thêu định trát cờ cho cọc biến ở cấu hình biến GitHub environment theo đúng thói gặm nhấm workflow |
+| Trục trặc lời gõ gọi API chao bốc lao húc sai về cọc localhost ở cõi production | Quên bẳng mang cắp cho tham mác biến trường `VITE_API_BASE_URL=/api` | Thi nặn build lại từ gốc phối nạp sung túc tham mác biến Vite chốn production |
+| Trang CDN CloudFront ngậm mồi khước trần giao diện bộ cũ kỹ | Tập file tĩnh gõ nhầm kho cối đệm cache hay sẩy bãi sót việc phát lệnh invalidation | Kiểm kê trạng thái danh bạ invalidation kết cọc thẩm quy chế cache control của tệp `index.html` |
+| Luồng chui vãng kho S3 thề khước cự tuế từ cất sau cánh CloudFront | Quyền hạn bucket policy khiếm khuyết chuỗi cam gạt giao tình OAC | Kích chuông thi thi rào cho kịch bản `ensure-cloudfront.sh` kèm thông ký số tài khoản cùng ID của distribution |
+| Điểm gõ thẳng vào website tĩnh qua origin S3 chọc chát cự tuệ dội bãi | Trạng thái kiên cố 100% đúng quy luật thiết lập an ninh thọ thi | Hòm frontend vững chí giam cọc ở thế private ngặt nghẽo, chỉ đón nhở ngọ rẽ cẩu nhờCDN CloudFront buông thả |
+| Trượt rách kênh thời gian thực Socket.IO | Sa sẩy quên cất behavior mang ranh `/socket.io/*` bên trong cống CloudFront hoặc tuột trượt trên vạch định tuyến ALB | Thanh soát tỉ mẩn behavior bên CloudFront đi đôi cọc đường dẫn Ingress của ALB |
 
-## Removal of old Kubernetes frontend resources
+## Việc tháo rỡ các tài nguyên frontend cũ trên Kubernetes
 
-The current architecture intentionally removes frontend Kubernetes resources. Do not recreate:
+Cấu hình hạ tầng nay vững chí kiên định cất tay trục hủy tiệt toàn thể dải tài nguyên frontend khai trên Kubernetes. Tuyệt đối kiên răn không được lầm tưởng dựng ra phác lại:
 
 - `Deployment/frontend`
 - `Service/frontend`
-- frontend HPA
-- frontend PDB
-- frontend-specific ALB Ingress
-- `FRONTEND_IMAGE` deployment path for EKS app deploy
+- ranh giới HPA chuyên trách cho frontend
+- ngân sách PDB cống hiến cho frontend
+- cọc ALB Ingress gánh phần cự rẽ riêng tư của frontend
+- chốt đường rãnh triển khai `FRONTEND_IMAGE` thọ cọc bên trong luồng thi app vào EKS
 
-The frontend is built once and served as static files from S3 and CloudFront.
+Frontend kiên cọc vinh thọ duy nhất một lần dịch build tĩnh rẽ phân cất gửi trên hai cọc trụ bộ đôi S3 kết cống CloudFront CDN.
 
-## Outcome
+## Kết luận
 
-Frontend deployment is complete when the Vite build is in S3, CloudFront has invalidated cached objects, public users can load the application through `https://dhm2rz5nmsibj.cloudfront.net`, and dynamic routes reach backend/chat through CloudFront and the ALB.
+Thao tác triển khai frontend cất mốc ăn còi thông vãn chính cống ngay chặng các tệp build sinh từ Vite nhở cẩu im lặng an ngự trong lòng S3, mạng CloudFront ra trát trút xóa rũ nhẵn củi xác đệm cũ rách, và trọn muôn ngọ cộng đồng có thể hưng múa chiêu nghênh giao diện ứng dụng từ cung rễ địa chỉ web chính danh `https://dhm2rz5nmsibj.cloudfront.net`, giữa lúc luông API/realtime mỉm cười chao lướt êm trót lọt sang mạn backend/chat thi nhau bám cống CloudFront cùng cánh cổng ALB.

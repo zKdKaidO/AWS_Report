@@ -6,8 +6,6 @@ chapter: false
 pre: " <b> 5. </b> "
 ---
 
-# Workshop
-
 ## Overview
 
 This workshop presents the complete deployment process of the Internship Application Tracker on AWS.
@@ -53,6 +51,8 @@ This workshop is intended for:
 - Students preparing an AWS internship or graduation project report.
 
 ## Architecture summary
+
+![Internship Application Tracker architecture on AWS](/images/5-Workshop/architecture.png)
 
 The browser connects to Amazon CloudFront through HTTPS.
 
