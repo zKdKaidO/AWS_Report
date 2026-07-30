@@ -1,9 +1,9 @@
-﻿---
-title: "Access S3 from on-premises"
+---
+title: "Legacy S3 Interface Endpoint Lab"
 date: 2024-01-01
-weight: 4
+weight: 94
 chapter: false
-pre: " <b> 5.4. </b> "
+pre: " <b> Legacy 3. </b> "
 draft: true
 ---
 

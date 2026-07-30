@@ -1,9 +1,9 @@
-﻿---
-title: "Truy cập S3 từ môi trường truyền thống"
-date: 2024-01-01 
-weight: 4 
+---
+title: "Legacy - S3 Interface Endpoint"
+date: 2024-01-01
+weight: 94
 chapter: false
-pre: " <b> 5.4. </b> "
+pre: " <b> Legacy 3. </b> "
 draft: true
 ---
 

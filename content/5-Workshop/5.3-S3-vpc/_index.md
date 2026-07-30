@@ -1,9 +1,9 @@
 ---
-title: "Access S3 from VPC"
+title: "Legacy S3 Gateway Endpoint Lab"
 date: 2024-01-01
-weight: 3
+weight: 93
 chapter: false
-pre: " <b> 5.3. </b> "
+pre: " <b> Legacy 2. </b> "
 draft: true
 ---
 

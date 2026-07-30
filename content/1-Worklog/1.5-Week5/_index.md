@@ -1,12 +1,11 @@
 ﻿---
-title: "Week 5 Worklog"
+title: "Week 5 Worklog - Local Kubernetes Deployment"
 date: 2024-01-01
 weight: 5
 chapter: false
 pre: " <b> 1.5. </b> "
 ---
 
-# Week 5 - Local Kubernetes Deployment
 
 ## Objectives
 

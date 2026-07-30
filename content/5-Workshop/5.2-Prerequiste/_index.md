@@ -1,9 +1,9 @@
-﻿---
-title: "Prerequiste"
+---
+title: "Legacy PrivateLink Prerequisites"
 date: 2024-01-01 
-weight: 2 
+weight: 92
 chapter: false
-pre: " <b> 5.2. </b> "
+pre: " <b> Legacy 1. </b> "
 draft: true
 ---
 

@@ -6,8 +6,6 @@ chapter: false
 pre: " <b> 7. </b> "
 ---
 
-# Sharing and Feedback
-
 ## Supervisor information
 
 | Field | Value |

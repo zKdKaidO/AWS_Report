@@ -5,7 +5,6 @@ weight: 8
 chapter: false
 pre: " <b> 5.8. </b> "
 ---
-# Triển khai frontend
 
 ## Mục tiêu
 
@@ -13,7 +12,7 @@ Thực hiện build mã nguồn frontend trên React/Vite, đăng tải bộ t�
 
 ## Bối cảnh kiến trúc
 
-Hiện tại, frontend được triển khai theo quy chuẩn của các tệp tĩnh đơn thuần, loại trừ mọi yếu tố ràng buộc chạy như workload trên EKS. Những tài nguyên Kubernetes cũ mang tên frontend gồm Deployment, Service, HPA, PDB, đi kèm khối ALB Ingress cũ đã bị bóc tháo tiệt cọ, nhằm chặn đứng nguy cơ các đợt áp triển khai mã app vào EKS trong tương lai lầm lọt thi thoảng vô ý vác còi tự nặn sinh ra lại chúng.
+Hiện tại, frontend được triển khai theo quy chuẩn của các tệp tĩnh đơn thuần trên S3 và CloudFront, không còn là workload Kubernetes. Những tài nguyên Kubernetes cũ mang tên frontend gồm Deployment, Service, HPA, PDB, đi kèm khối ALB Ingress cũ đã bị bóc tháo, nhằm tránh việc các đợt triển khai ứng dụng về sau vô tình tái tạo tài nguyên frontend trên Kubernetes.
 
 Điểm truy cập công cộng hiện thời của người dùng:
 

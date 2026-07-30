@@ -5,7 +5,6 @@ weight: 2
 chapter: false
 pre: " <b> 5.2. </b> "
 ---
-# Kiến trúc
 
 ## Mục tiêu
 
@@ -13,7 +12,7 @@ Chương tài liệu này tường giải cấu trúc kiến trúc AWS sau cùng
 
 ## Phạm vi
 
-Kiến trúc này được phác thảo dựa trên minh chứng production sau cùng, tài liệu thiết kế ghi chú của dự án và kho lưu trữ mã nguồn hiện tại của ứng dụng. Tôi lấy bằng chứng vận hành khi chạy thực tế (runtime evidence) làm cội nguồn chân lý cho các tình huống mà nó có điểm xô lệch so với những manifest cũ. Điểm đính chính kiến trúc đáng chú ý nhất hiện nay là việc frontend được lưu giữ và phát tán qua cống bộ đôi S3 và CloudFront, loại bỏ yếu tố chạy trong EKS.
+Kiến trúc này được phác thảo dựa trên minh chứng production sau cùng, tài liệu thiết kế ghi chú của dự án và kho lưu trữ mã nguồn hiện tại của ứng dụng. Tôi lấy bằng chứng vận hành khi chạy thực tế (runtime evidence) làm cội nguồn chân lý cho các tình huống mà nó có điểm xô lệch so với những manifest cũ. Điểm đính chính kiến trúc đáng chú ý nhất hiện nay là frontend được lưu giữ và phát tán qua bộ đôi S3 và CloudFront, không còn là workload Kubernetes.
 
 ## Bối cảnh kiến trúc
 

@@ -1,12 +1,12 @@
 ﻿---
-title: "Week 8 Worklog"
+title: "Week 8 Worklog - End-to-End Deployment and Operational Validation"
 date: 2024-01-01
 weight: 8
 chapter: false
 pre: " <b> 1.8. </b> "
 ---
 
-# Week 8 - End-to-End Deployment and Operational Validation
+# Week 8
 
 ## Objectives
 
@@ -378,14 +378,10 @@ I also keep the remaining gaps explicit: ALB target health was not fully healthy
 - [x] Add the July 1-28 AWS cost summary.
 - [x] Add the AWS Billing credits screenshot.
 - [x] Add a Cost Explorer overview screenshot.
-- [ ] Capture the finalized AWS Billing summary.
-- [ ] Build an AWS Pricing Calculator estimate. This is currently blocked.
 - [x] Capture CloudFront monitoring evidence.
 - [x] Capture S3 frontend bucket object evidence.
 - [x] Capture Amazon DynamoDB table status evidence.
 - [x] Capture Amazon SQS queue and message-count evidence.
-- [ ] Capture updated ALB target health after every required target is healthy.
-- [ ] Capture CloudFront behavior/origin configuration or browser smoke proof.
 - [x] Add a sanitized Lambda screenshot.
 
 ## Lessons Learned

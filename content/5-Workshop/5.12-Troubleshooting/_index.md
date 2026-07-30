@@ -5,7 +5,6 @@ weight: 12
 chapter: false
 pre: " <b> 5.12. </b> "
 ---
-# Troubleshooting
 
 ## Objective
 
@@ -83,7 +82,7 @@ Incorrect design to avoid:
 
 ```text
 S3 behind ALB
-frontend running in EKS
+frontend Kubernetes Deployment/Service
 ```
 
 ### Lambda DynamoDB reserved word

@@ -5,7 +5,6 @@ weight: 6
 chapter: false
 pre: " <b> 5.6. </b> "
 ---
-# Database Deployment
 
 ## Objective
 
@@ -27,16 +26,20 @@ Different data stores are used for different access patterns:
 
 The production RDS identifier is `internship-prod-postgres`. PostgreSQL stores transactional business data and all database-backed worker queues.
 
-Evidence required:
+The AWS evidence also shows a second PostgreSQL instance named `internship-tracker-db`. The report treats `internship-prod-postgres` as the production database from `PROJECT_CONTEXT.md`; `internship-tracker-db` should be reviewed separately and deleted only if it is confirmed unused.
 
-- DB instance class
-- allocated storage
-- storage encryption status
-- backup retention
-- Multi-AZ setting
-- subnet group name
-- security group IDs
-- deletion protection setting
+| Attribute | `internship-prod-postgres` | `internship-tracker-db` |
+|---|---|---|
+| Engine | PostgreSQL `18.3` | PostgreSQL `18.3` |
+| Instance class | `db.t4g.micro` | `db.t4g.micro` |
+| Storage | 20 GB `gp3` | 20 GB `gp2` |
+| Storage encryption | KMS enabled | KMS enabled |
+| Backup retention | 7 days | 1 day |
+| Multi-AZ | No | No |
+| Deletion protection | Enabled | Disabled |
+| Private access | Security group allows PostgreSQL only from EKS security group | Similar private access pattern |
+
+Private access proof: security group `sg-07bb82c3c3c31b61e` allows TCP `5432` only from `sg-06f3c7732550ce8fd`, the EKS control plane security group. The provided evidence does not show an internet-facing inbound rule for PostgreSQL.
 
 Verification:
 
@@ -108,7 +111,17 @@ Expected response:
 
 ## ElastiCache Redis
 
-The production Redis replication group is `internship-prod-redis`, and I verified it as `available` in the Week 8 evidence. Redis is used by the Socket.IO adapter so chat events can be broadcast between multiple chat pods.
+The production replication group is `internship-prod-redis`, with Redis-compatible cluster node `internship-prod-redis-001` running Valkey `9.1.0` on `cache.t4g.micro`. Redis is used by the Socket.IO adapter so chat events can be broadcast between multiple chat pods.
+
+| Attribute | Value |
+|---|---|
+| Cluster | `internship-prod-redis-001` |
+| Engine | Valkey `9.1.0` |
+| Node type | `cache.t4g.micro` |
+| At-rest encryption | Enabled |
+| Transit encryption | Enabled and required |
+| Auth token | Enabled |
+| Private access | Security group `sg-0405e9a0dbadd61af` allows TCP `6379` from the EKS security group |
 
 Verification:
 
@@ -128,7 +141,18 @@ The chat service uses three DynamoDB tables:
 - `ChatGroups`
 - `ChatMessages`
 
-I verified all three chat tables as `ACTIVE` in the Week 8 evidence. The chat service readiness endpoint depends on both DynamoDB and Redis:
+The three chat tables were verified as `ACTIVE`. The provided AWS evidence shows AWS-owned-key encryption and PITR status for all DynamoDB tables used by the application:
+
+| Table | Encryption | PITR |
+|---|---|---|
+| `ChatGroups` | AWS owned key | Disabled |
+| `ChatMessages` | AWS owned key | Disabled |
+| `ChatUsers` | AWS owned key | Disabled |
+| `InternshipLambdaEventDedupe` | AWS owned key | Disabled |
+
+PITR is currently disabled on all listed DynamoDB tables. For a production environment, enabling PITR is recommended before treating DynamoDB backup protection as complete.
+
+The chat service readiness endpoint depends on both DynamoDB and Redis:
 
 ```bash
 kubectl port-forward service/chat-service 18081:3000 -n internship

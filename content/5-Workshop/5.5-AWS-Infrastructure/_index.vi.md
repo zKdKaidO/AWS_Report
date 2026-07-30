@@ -5,7 +5,6 @@ weight: 5
 chapter: false
 pre: " <b> 5.5. </b> "
 ---
-# Hạ tầng AWS
 
 ## Mục tiêu
 
@@ -46,21 +45,35 @@ Hạ tầng nền tảng tự do bấu víu cho một kiến trúc kết hợp v
 
 ## Nền tảng mạng
 
-Cụm máy EKS trong bối cảnh sản xuất production nhất định khẩn khỏm đòi hỏi cấu trúc mạng VPC có chia đôi phân cách giữa các subnet public và private:
+Cụm EKS production chạy trong VPC `vpc-0cfee519122ae18b4`, CIDR `192.168.0.0/16`, tên `eksctl-internship-prod-cluster/VPC`. DNS support và DNS hostnames đã bật. Mạng được chia thành public subnet cho ALB/NAT và private subnet cho workload nội bộ.
 
-- Các subnet public thọ nuôi cụm máy cân bằng tải hứng lưu lượng từ thế giới public bên ngoài và kho vây các máy NAT Gateway.
-- Các subnet private bao vây an ninh êm bế nuôi dưỡng cụm máy cọc worker nodes của EKS cùng đường rẽ vào bên trong của mạng dịch vụ AWS được quản lý.
-- Một cống Internet Gateway có chức năng khai quan cho lưu lượng public trượt thiền vào và mở đàng cho lưu lượng từ NAT ung dung phi xuất ngoại.
-- Một trạm chuyển giao NAT Gateway ra mặt bao sắm cho dàn máy nằm an tịnh trong lòng subet private đặc quyền tiếp cận ra vạch ngoài Internet để bồi nạp lấy container image, trao đổi chuỗi gọi tới AWS APIs, tải về tệp gói phụ trợ, đồng thời giao đãi mạch nảy theo cụm điều phối control-plane.
+| Loại subnet | Subnet ID | AZ | CIDR |
+|---|---|---|---|
+| Public | `subnet-04388ebeb4b0c8e1e` | `ap-southeast-1a` | `192.168.0.0/19` |
+| Public | `subnet-0a6b05b5878a0eebc` | `ap-southeast-1b` | `192.168.64.0/19` |
+| Public | `subnet-0311ab6100ff4ac55` | `ap-southeast-1c` | `192.168.32.0/19` |
+| Private | `subnet-0ee9684a5cef4c5be` | `ap-southeast-1a` | `192.168.96.0/19` |
+| Private | `subnet-049892c2d36586328` | `ap-southeast-1b` | `192.168.160.0/19` |
+| Private | `subnet-0a4831028cb96b744` | `ap-southeast-1c` | `192.168.128.0/19` |
 
-Cần bằng chứng:
+| Route table | Loại | Ghi chú |
+|---|---|---|
+| `rtb-0ad5499557a765f04` | Main | Local only |
+| `rtb-0dd4580050faf65ce` | Public | Route ra `igw-0721b83c41b0a13a7` |
+| `rtb-061d062bf4bf8c9ac` | Private 1a | Route ra `nat-16294630aebc49598` |
+| `rtb-05fbabd9d0c5cf102` | Private 1b | Route ra `nat-16294630aebc49598` |
+| `rtb-0ec6c0e327db879f0` | Private 1c | Route ra `nat-16294630aebc49598` |
 
-- Thông số định danh VPC ID, tuy rằng biến cố lỗi xử lý trong sự cố khắc phục đã kiên thấu xác tín số `vpc-0cfee519122ae18b4` từng bị sử dụng để cầu khấn rước AWS Load Balancer Controller múa việc.
-- Các mã số nhận diện Public subnet IDs.
-- Các mã số nhận diện Private subnet IDs.
-- Danh bạ số liệu bảng định tuyến Route table IDs.
-- Nhóm bảo mật Security group IDs và điều luật tường lửa vây kèm.
-- Số hiệu của NAT Gateway ID kết hợp mã cấp tài khoản địa chỉ Elastic IP allocation ID.
+NAT Gateway đang dùng là `nat-16294630aebc49598`, tên `internship-prod-nat`, trạng thái `Available`. Các Elastic IP đang gắn gồm `54.169.85.157` (`eipalloc-0419e6eef457539f4`), `13.214.80.74` (`eipalloc-0c690bf3bb255dde4`) và `47.130.245.122` (`eipalloc-013257661ce5d11d1`). Có một Elastic IP chưa gắn là `13.251.12.233` (`eipalloc-0a9b85e5ce92d2c02`); đây là hạng mục cần dọn dẹp để tránh phát sinh chi phí không cần thiết.
+
+| Security group | Tên | Inbound chính |
+|---|---|---|
+| `sg-06f3c7732550ce8fd` | EKS Control Plane | All từ self và `sg-041eff3c38b13505e`; TCP `3000-8000` từ LB SG |
+| `sg-041eff3c38b13505e` | ClusterSharedNodeSG | All từ self và EKS Control Plane SG |
+| `sg-07bb82c3c3c31b61e` | `internship-prod-rds` | TCP `5432` từ EKS Control Plane SG |
+| `sg-0405e9a0dbadd61af` | `internship-prod-valkey` | TCP `6379` từ EKS Control Plane SG |
+| `sg-0a49fc5e24439c5c3` | LoadBalancer Public | TCP `80` từ `0.0.0.0/0` |
+| `sg-0b5a6b3c62e503235` | LB Backend Shared | Không có inbound |
 
 Kiểm chứng:
 

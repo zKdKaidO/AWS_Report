@@ -5,7 +5,6 @@ weight: 5
 chapter: false
 pre: " <b> 5.5. </b> "
 ---
-# AWS Infrastructure
 
 ## Objective
 
@@ -30,37 +29,76 @@ The infrastructure supports a hybrid edge and container architecture:
 | Area | Resource | Status |
 |---|---|---|
 | Account and region | Project AWS account, `ap-southeast-1` | Account ID redacted |
-| EKS | `internship-prod` | Verified from Week 8 evidence and workflow |
+| EKS | `internship-prod` | Verified from runtime evidence and workflow |
 | Namespace | `internship` | Verified from manifests |
-| ALB | `k8s-internshippublic-48101b50ad-85486086.ap-southeast-1.elb.amazonaws.com` | Verified from Week 8 evidence |
+| ALB | `k8s-internshippublic-48101b50ad-85486086.ap-southeast-1.elb.amazonaws.com` | Verified from runtime evidence |
 | Frontend bucket | `internship-prod-frontend-<AWS_ACCOUNT_ID>` | Account suffix redacted |
 | Upload/archive bucket | `internship-prod-uploads-<AWS_ACCOUNT_ID>` | Account suffix redacted |
-| CloudFront | Distribution `EQIGYNECXDYL8` | Verified from Week 8 evidence |
-| RDS | `internship-prod-postgres` | Verified from Week 8 evidence |
-| Redis | `internship-prod-redis`, status `available` | Verified from Week 8 evidence |
-| DynamoDB | `ChatUsers`, `ChatGroups`, `ChatMessages`, `InternshipLambdaEventDedupe` | Verified from Week 8 evidence |
-| SQS | `internship-prod-outbox`, `internship-prod-outbox-dlq` | Verified from Week 8 evidence |
-| SageMaker | Endpoint `internship-qwen3-4b` | Verified from Week 8 evidence |
-| Lambda | `internship-outbox-handler` | Verified from Week 8 evidence |
-| IAM roles | `internship-github-deploy`, `internship-eks-runtime`, `internship-sagemaker-execution`, `internship-eks-node-role`, `internship-lambda-outbox-role`, `AmazonEKSLoadBalancerControllerRole` | Verified from deployment configuration and Week 8 evidence |
+| CloudFront | Distribution `EQIGYNECXDYL8` | Verified from runtime evidence |
+| RDS | `internship-prod-postgres` | Verified from runtime evidence |
+| Redis | Replication group `internship-prod-redis`, cluster `internship-prod-redis-001` | Verified from runtime evidence |
+| DynamoDB | `ChatUsers`, `ChatGroups`, `ChatMessages`, `InternshipLambdaEventDedupe` | Verified from runtime evidence |
+| SQS | `internship-prod-outbox`, `internship-prod-outbox-dlq` | Verified from runtime evidence |
+| SageMaker | Endpoint `internship-qwen3-4b` | Verified from runtime evidence |
+| Lambda | `internship-outbox-handler` | Verified from runtime evidence |
+| IAM roles | `internship-github-deploy`, `internship-eks-runtime`, `internship-sagemaker-execution`, `internship-eks-node-role`, `internship-lambda-outbox-role`, `AmazonEKSLoadBalancerControllerRole` | Verified from deployment configuration and runtime evidence |
 
 ## Network foundation
 
-The production EKS cluster requires a VPC with public and private subnets:
+The production EKS cluster uses a VPC created for `eksctl-internship-prod-cluster/VPC`.
 
-- Public subnets host internet-facing load balancer resources and NAT Gateway resources.
-- Private subnets host EKS nodes and internal managed service access.
-- An Internet Gateway supports public ingress and NAT egress.
-- A NAT Gateway gives private nodes outbound access for image pulls, AWS APIs, package downloads, and control-plane integration.
+| Field | Value |
+|---|---|
+| VPC ID | `vpc-0cfee519122ae18b4` |
+| CIDR | `192.168.0.0/16` |
+| DNS support | Enabled |
+| DNS hostnames | Enabled |
 
-Evidence required:
+The public subnets host internet-facing load balancer resources and NAT Gateway resources.
 
-- VPC ID, except the troubleshooting incident confirms `vpc-0cfee519122ae18b4` was used by the AWS Load Balancer Controller.
-- Public subnet IDs.
-- Private subnet IDs.
-- Route table IDs.
-- Security group IDs and rules.
-- NAT Gateway ID and Elastic IP allocation ID.
+| Subnet ID | Availability Zone | CIDR |
+|---|---|---|
+| `subnet-04388ebeb4b0c8e1e` | `ap-southeast-1a` | `192.168.0.0/19` |
+| `subnet-0a6b05b5878a0eebc` | `ap-southeast-1b` | `192.168.64.0/19` |
+| `subnet-0311ab6100ff4ac55` | `ap-southeast-1c` | `192.168.32.0/19` |
+
+The private subnets host EKS nodes and internal managed service access.
+
+| Subnet ID | Availability Zone | CIDR |
+|---|---|---|
+| `subnet-0ee9684a5cef4c5be` | `ap-southeast-1a` | `192.168.96.0/19` |
+| `subnet-049892c2d36586328` | `ap-southeast-1b` | `192.168.160.0/19` |
+| `subnet-0a4831028cb96b744` | `ap-southeast-1c` | `192.168.128.0/19` |
+
+The route table evidence shows separate public and private routing.
+
+| Route table ID | Type | Important route |
+|---|---|---|
+| `rtb-0ad5499557a765f04` | Main | Local only |
+| `rtb-0dd4580050faf65ce` | Public | Internet Gateway `igw-0721b83c41b0a13a7` |
+| `rtb-061d062bf4bf8c9ac` | Private 1a | NAT Gateway `nat-16294630aebc49598` |
+| `rtb-05fbabd9d0c5cf102` | Private 1b | NAT Gateway `nat-16294630aebc49598` |
+| `rtb-0ec6c0e327db879f0` | Private 1c | NAT Gateway `nat-16294630aebc49598` |
+
+The active NAT Gateway is `nat-16294630aebc49598`, named `internship-prod-nat`, and its runtime status is `Available`.
+
+| Elastic IP | Allocation ID | Note |
+|---|---|---|
+| `54.169.85.157` | `eipalloc-0419e6eef457539f4` | Attached for `ap-southeast-1a` |
+| `13.214.80.74` | `eipalloc-0c690bf3bb255dde4` | Attached for `ap-southeast-1b` |
+| `47.130.245.122` | `eipalloc-013257661ce5d11d1` | Attached for `ap-southeast-1c` |
+| `13.251.12.233` | `eipalloc-0a9b85e5ce92d2c02` | Unattached; should be released if unused |
+
+The security group evidence confirms that only the public load balancer security group accepts public inbound traffic.
+
+| Security group ID | Name | Inbound summary |
+|---|---|---|
+| `sg-06f3c7732550ce8fd` | EKS Control Plane | All from self and `sg-041eff3c38b13505e`; TCP `3000-8000` from load balancer security group |
+| `sg-041eff3c38b13505e` | ClusterSharedNodeSG | All from self and EKS control plane security group |
+| `sg-07bb82c3c3c31b61e` | `internship-prod-rds` | TCP `5432` from EKS control plane security group |
+| `sg-0405e9a0dbadd61af` | `internship-prod-valkey` | TCP `6379` from EKS security group |
+| `sg-0a49fc5e24439c5c3` | LoadBalancer Public | TCP `80` from `0.0.0.0/0` |
+| `sg-0b5a6b3c62e503235` | LB Backend Shared | No inbound rules |
 
 Verification:
 

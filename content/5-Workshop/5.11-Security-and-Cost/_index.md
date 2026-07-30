@@ -5,7 +5,6 @@ weight: 11
 chapter: false
 pre: " <b> 5.11. </b> "
 ---
-# Security and Cost
 
 ## Objective
 
@@ -27,16 +26,16 @@ The platform processes user accounts, CVs, job applications, chat messages, AI a
 | S3 private frontend bucket | Bucket public access blocked, CloudFront OAC used | Implemented in `ensure-cloudfront.sh`; runtime evidence required |
 | CloudFront HTTPS | CloudFront redirects viewers to HTTPS | Implemented in helper config |
 | ALB route control | ALB routes only API/chat/socket paths to services | Implemented in Ingress |
-| RDS private access | PostgreSQL should not be publicly exposed | Evidence required |
-| Redis private access | ElastiCache should not be publicly exposed | Evidence required |
-| SQS SSE | Main queue and DLQ use server-side encryption | Verified from Week 8 evidence |
-| DynamoDB encryption | DynamoDB tables use AWS-managed encryption by default unless configured otherwise | Evidence required for final table settings |
-| RDS encryption | Must be verified with `describe-db-instances` | Evidence required |
-| Encryption in transit | CloudFront HTTPS; internal service and database TLS settings require evidence | Partially evidenced |
+| RDS private access | PostgreSQL security group allows TCP `5432` only from EKS security group | Verified from security group evidence |
+| Redis private access | ElastiCache/Valkey security group allows TCP `6379` only from EKS security group | Verified from security group evidence |
+| SQS SSE | Main queue and DLQ use server-side encryption | Verified from runtime evidence |
+| DynamoDB encryption | `ChatGroups`, `ChatMessages`, `ChatUsers`, and `InternshipLambdaEventDedupe` use AWS owned keys | Verified |
+| RDS encryption | `internship-prod-postgres` and `internship-tracker-db` use KMS encryption | Verified |
+| Encryption in transit | CloudFront HTTPS; Redis transit encryption enabled and required; RDS TLS setting still requires evidence | Partially evidenced |
 | Secret handling | No `.env`, token, key, password, or database URL should be committed | Required control |
-| DLQ | SQS DLQ isolates failed consumer messages | Verified from Week 8 evidence |
+| DLQ | SQS DLQ isolates failed consumer messages | Verified from runtime evidence |
 | Idempotency | PostgreSQL idempotency, outbox, chat `clientMessageId`, and Lambda DynamoDB dedupe | Implemented; Lambda smoke verified |
-| Backup and PITR | RDS backup and DynamoDB PITR settings require exported evidence | Evidence required |
+| Backup and PITR | RDS backup retention verified; DynamoDB PITR is disabled on all listed tables | Partially verified; DynamoDB PITR recommended |
 | Direct ALB access hardening | Restricting ALB origin to CloudFront is recommended | Optional hardening |
 | AWS WAF | WAF on CloudFront is recommended for production | Optional hardening |
 
@@ -78,74 +77,67 @@ I do not print or paste secret values from Kubernetes, GitHub, or AWS into the d
 
 ## Cost evidence source
 
-I report cost data from the Week 8 AWS cost evidence. The evidence records July 1-28, 2026 month-to-date spend and a Billing and Cost Management credits screenshot. The finalized monthly bill and AWS Pricing Calculator estimate remain pending.
+I report cost data from the supplied AWS Budgets and runtime resource evidence. The finalized monthly bill and AWS Pricing Calculator estimate remain pending, so I do not present a full monthly price total as final.
 
-| Cost evidence | Observed value | Interpretation |
-|---|---|---:|---|
-| July 1-28, 2026 total spend | Current month-to-date cost | `$94.92` | Source-of-truth Week 8 cost summary |
-| Highest daily spend | July 28, 2026 | `$31.83` | Largest daily spend in the July 1-28 period |
-| Credits total amount used | Billing credits | `$27.90` | Billing credits screenshot |
-| Credits total estimated amount used | Billing credits | `$140.65` | Billing credits screenshot |
-| Credits total amount remaining | Billing credits | `$172.10` | Billing credits screenshot |
-| Credits total estimated amount remaining | Billing credits | `$59.35` | Billing credits screenshot |
+| Budget | Limit | Actual | Forecast | Status |
+|---|---:|---:|---:|---|
+| `Monthly` | `$100` | `$0.00` | `$17.26` | Healthy |
+| `My Monthly Cost Budget` | `$100` | `$156.02` | `$173.28` | Exceeded |
 
-These values cover the July 1-28 period only. I do not treat them as the finalized monthly bill or steady-state production estimate until AWS Bills and AWS Pricing Calculator evidence are attached.
+The budget named `My Monthly Cost Budget` has exceeded the configured `$100` limit. This is operational evidence that cost controls need attention before the environment is left running for a long period.
 
-## Observed Week 8 service cost
+## Observed cost drivers
 
-The Week 8 cost summary identifies the following top cost drivers for July 1-28, 2026.
+The supplied runtime evidence identifies these important cost drivers:
 
-| Rank | Service | July 1-28 cost | Share of total |
-|---:|---|---:|---:|
-| 1 | Amazon RDS | `$29.69` | 31.3% |
-| 2 | Amazon SageMaker | `$23.45` | 24.7% |
-| 3 | Amazon VPC | `$14.11` | 14.9% |
-| 4 | Amazon EC2 - Compute | `$12.42` | 13.1% |
-| 5 | EC2 - Other | `$7.68` | 8.1% |
-| 6 | Amazon EKS | `$5.64` | 5.9% |
-
-These six services account for approximately 98% of the July 1-28 reported spend. The July 28 daily cost spike indicates that new production infrastructure, SageMaker endpoint uptime, and VPC/NAT-related networking should be monitored closely.
+| Area | Evidence | Cost note |
+|---|---|---|
+| NAT Gateway | `nat-16294630aebc49598` is `Available` with three attached Elastic IPs | NAT Gateway has a fixed hourly cost plus data processing cost; review whether multi-AZ NAT is required for this internship environment |
+| Unattached Elastic IP | `13.251.12.233`, allocation `eipalloc-0a9b85e5ce92d2c02` | Release if unused to avoid ongoing public IPv4 charges |
+| SageMaker | Log group `/aws/sagemaker/Endpoints/internship-qwen3-4b` exists | Endpoint has run or is running; verify current endpoint status and stop/delete it when idle |
+| RDS | `internship-prod-postgres` and `internship-tracker-db` both exist as `db.t4g.micro` | Review whether both databases are still required |
+| EKS and worker nodes | Production EKS cluster is active | EKS control plane, EC2 nodes, EBS volumes, ALB, and logs can continue generating cost while idle |
 
 ## Cost assumptions
 
-Exact future monthly cost still requires AWS Pricing Calculator or a representative Cost Explorer period. The deployed configuration observed in the evidence folder is:
+Exact future monthly cost still requires AWS Pricing Calculator or a representative Cost Explorer period. The deployed configuration observed in the supplied evidence is:
 
 | Cost driver | Observed configuration | Monthly estimate input still required |
 |---|---|---|
 | EKS control plane | One production cluster in `ap-southeast-1` | Cluster runtime hours and current regional EKS hourly price |
-| EC2 worker nodes | Two Ready Kubernetes worker nodes | Node instance type, EBS size, runtime hours |
-| RDS PostgreSQL | Two private, encrypted PostgreSQL `db.t4g.micro` instances, 20 GiB each, Single-AZ | Backup storage, additional I/O, representative runtime |
-| ElastiCache / Valkey | One available replication group with encryption at rest and in transit | Node type, node count, data transfer |
+| EC2 worker nodes | Production EKS worker nodes are active | Node instance type, node count, EBS size, runtime hours |
+| RDS PostgreSQL | Two private, encrypted PostgreSQL `db.t4g.micro` instances, 20 GB each, Single-AZ | Review whether both instances are required; include backup storage, I/O, and runtime |
+| ElastiCache / Valkey | `cache.t4g.micro`, encryption at rest and in transit, auth token enabled | Node count and data transfer |
 | Application Load Balancer | One active internet-facing ALB | ALB runtime hours and LCU usage |
 | CloudFront | Application distribution plus report distribution evidence | Request count, data transfer out, invalidations, behavior export |
 | S3 | Frontend bucket object evidence plus upload/archive/report bucket context | Storage GB, PUT/GET requests, lifecycle policy |
-| DynamoDB | Chat and Lambda dedupe tables use on-demand billing in the Week 8 screenshot | Read/write request volume, storage, PITR if enabled |
-| SQS | Main queue and DLQ had zero visible messages in the Week 8 screenshot | Request volume and payload size |
-| Lambda | Outbox handler is Active, 256 MB memory, 20 second timeout | Invocations, average duration, errors/retries |
-| SageMaker | Real-time endpoint is `InService` with one production variant | Instance type, endpoint uptime, data processed |
+| DynamoDB | Chat and Lambda dedupe tables use AWS owned key encryption; PITR disabled | Read/write request volume, storage, PITR if enabled later |
+| SQS | Main outbox queue and DLQ are deployed | Request volume and payload size |
+| Lambda | `internship-outbox-handler` log group exists | Invocations, average duration, errors/retries |
+| SageMaker | Endpoint log group exists for `internship-qwen3-4b` | Endpoint current status, instance type, uptime, data processed |
 | CloudWatch | Logs and metrics are enabled through AWS and Kubernetes services | Log ingestion, retention, custom metrics, alarms |
-| Data transfer | Cost Explorer shows data transfer adjustment in the captured period | CloudFront egress, ALB traffic, NAT processing, cross-AZ traffic |
+| Data transfer | NAT Gateway and CloudFront/ALB routing are present | CloudFront egress, ALB traffic, NAT processing, cross-AZ traffic |
 
 ## Cost estimation table
 
 | Service | Estimation method | Current evidence status |
 |---|---|---|
-| Amazon EKS | Cluster hourly charge multiplied by runtime hours | Deployed; Week 8 cost summary reports `$5.64` |
-| EC2 worker nodes | Node hourly price times two nodes plus EBS storage | Nodes verified; EC2 Compute reports `$12.42`, EC2 - Other reports `$7.68` |
-| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup and I/O | Two private encrypted instances verified; Week 8 cost summary reports `$29.69` |
-| Amazon ElastiCache / Valkey | Node hourly price times node count plus data transfer | Replication group verified; node type/count still needed |
+| Amazon EKS | Cluster hourly charge multiplied by runtime hours | Deployed; include in Pricing Calculator |
+| EC2 worker nodes | Node hourly price plus EBS storage | Node instance type and EBS size still needed |
+| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GB storage per instance, backup and I/O | Two private encrypted instances verified |
+| Amazon ElastiCache / Valkey | `cache.t4g.micro` hourly price times node count plus data transfer | Node type verified; node count still needed |
 | Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; target health still needs final healthy evidence |
-| Amazon CloudFront | Requests plus data transfer out and invalidations | Monitoring screenshot available; behavior/origin export still required |
-| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Frontend bucket object screenshot available |
-| Amazon DynamoDB | On-demand read/write requests plus storage | Table status screenshot available |
-| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ screenshot available |
-| AWS Lambda | Request count plus GB-seconds | Function exists; invocation and trigger health still pending |
+| Amazon CloudFront | Requests plus data transfer out and invalidations | Distribution verified; request and data-transfer volume still required |
+| Amazon S3 | Storage GB plus request volume and lifecycle transitions | Buckets verified; storage and request volume still required |
+| Amazon DynamoDB | Read/write requests plus storage, and PITR if enabled later | Encryption verified; PITR disabled |
+| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ verified |
+| AWS Lambda | Request count plus GB-seconds | Log group exists; invocation and trigger cost still pending |
 | Amazon SES | Email send count and attachments if any | Service planned through Lambda notification path |
-| Amazon ECR | Image storage GB and data transfer if applicable | Not separated in the Week 8 top-driver table |
-| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint verified `InService`; Week 8 cost summary reports `$23.45` |
-| Amazon CloudWatch | Log ingestion, retention, metrics, alarms | Retention and ingestion volume still required |
-| Amazon VPC and data transfer | CloudFront egress, ALB traffic, NAT, and cross-AZ traffic | Week 8 cost summary reports Amazon VPC at `$14.11`; traffic breakdown still needed |
-| Total | Use Pricing Calculator for forecast, then compare with representative billing evidence | Week 8 July 1-28 spend reports `$94.92`; finalized bill and steady-state estimate pending |
+| Amazon ECR | Image storage GB and data transfer if applicable | Not separated in the supplied cost data |
+| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint log group exists; current idle/running status still needed |
+| Amazon CloudWatch | Log ingestion, retention, metrics, alarms | Log groups verified; retention and ingestion trend still required |
+| Amazon VPC and data transfer | CloudFront egress, ALB traffic, NAT, and cross-AZ traffic | NAT Gateway and EIPs verified; traffic breakdown still needed |
+| Total | Use Pricing Calculator for forecast, then compare with representative billing evidence | Budget evidence shows one `$100` budget exceeded at `$156.02`; finalized bill and steady-state estimate pending |
 
 ## Evidence hygiene
 
@@ -164,7 +156,9 @@ The highest-risk future cost areas are:
 - CloudFront and data transfer when traffic grows.
 - CloudWatch log ingestion and retention if verbose logs are kept.
 
-The Week 8 evidence shows that cost is no longer near zero. SageMaker, RDS, VPC/NAT-related networking, EC2 worker nodes, and EKS should be treated as active cost drivers. SageMaker should be stopped or deleted when demos finish if real-time inference is not required.
+The budget evidence shows that cost is no longer near zero. SageMaker, RDS, VPC/NAT-related networking, EC2 worker nodes, and EKS should be treated as active cost drivers. SageMaker should be stopped or deleted when demos finish if real-time inference is not required.
+
+The current AWS Budgets evidence is stronger than a warning: `My Monthly Cost Budget` has already exceeded its `$100` limit. The immediate cleanup candidates are the unattached Elastic IP `13.251.12.233`, idle SageMaker endpoint runtime, unnecessary duplicate RDS instances, and whether the internship environment needs three-AZ NAT Gateway coverage.
 
 ## Cost optimization options
 
@@ -174,7 +168,7 @@ The Week 8 evidence shows that cost is no longer near zero. SageMaker, RDS, VPC/
 | Keep processing worker disabled when AI testing is not active | Avoids unnecessary retries and worker runtime |
 | Right-size EKS node group | Reduces EC2 and EBS cost |
 | Scale non-production workloads down after demos | Reduces always-on compute |
-| Confirm whether NAT Gateway is required | Avoids NAT hourly and data-processing charges if private egress is not needed |
+| Review three-AZ NAT Gateway coverage | Avoids unnecessary NAT hourly and data-processing charges if full multi-AZ NAT is not needed |
 | Add VPC endpoints where appropriate | Reduces NAT data processing for AWS service traffic |
 | S3 lifecycle rules | Move old uploads/archives to cheaper storage or expire test artifacts |
 | ECR lifecycle policy | Delete old SHA images after the retention window |
@@ -194,7 +188,7 @@ I consider the security and cost section complete when it identifies implemented
 | Direct S3 public access | Bucket policy or public access block misconfigured | Restore public access block and CloudFront OAC policy |
 | Lambda duplicate side effects | Missing event dedupe | Use DynamoDB conditional writes by `eventId` |
 | Unexpected high bill | SageMaker/NAT/EKS left running | Check Cost Explorer and stop/delete idle high-cost resources |
-| Cost table has fake totals | Pricing not exported | Use `Pricing evidence required` until AWS Pricing Calculator is attached |
+| Cost table has unsupported totals | Pricing not exported | Use AWS Pricing Calculator output before publishing a final monthly estimate |
 
 ## Outcome
 

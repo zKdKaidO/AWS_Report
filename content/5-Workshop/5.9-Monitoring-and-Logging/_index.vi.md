@@ -5,7 +5,6 @@ weight: 9
 chapter: false
 pre: " <b> 5.9. </b> "
 ---
-# Giám sát và nhật ký
 
 ## Mục tiêu
 
@@ -159,7 +158,7 @@ Thư viện kịch bản tại gốc repository sở hữu trọn tập quy nạ
 | `InternshipProcessingJobsFailing` | Các processing jobs trồi sa đâm sấp thảm bại liên hoàn |
 | `InternshipAIProviderFailures` | Trùng trùng lỗi chát dội sang từ nguồn cất trát dịch vụ AI |
 
-Trang thái: đã triển khai trong các manifest của repository. Cần bằng chứng để minh chứng các cảnh báo này đã được áp dụng trong production.
+Trạng thái: các cảnh báo trên đã được định nghĩa trong manifest của repository. Chưa có bằng chứng runtime cho thấy các `PrometheusRule` này đã được apply trong production, vì vậy phần này được ghi nhận là cấu hình có trong mã nguồn, không phải bằng chứng triển khai hiện hành.
 
 ## Nhật ký CloudWatch (CloudWatch Logs)
 
@@ -175,7 +174,16 @@ aws logs tail /aws/lambda/internship-outbox-handler \
   --region ap-southeast-1
 ```
 
-Kiêm tra soát các tệp log phát nạp từ mạn EKS duy nhất chỉ những chuỗi thời khắc cọc điều hướng thu tệp container log shipping gieo rắc kích múa thành công. Cần bằng chứng: tên các log group trên CloudWatch dành cho backend, chat, worker, dispatcher, và AI service.
+Các log group CloudWatch đã được cung cấp trong bằng chứng AWS:
+
+| Log group | Dung lượng | Ghi chú |
+|---|---:|---|
+| `/aws/eks/internship-prod/cluster` | 478 MB | Log EKS cluster và log workload hiện đang gom chung tại đây |
+| `/aws/lambda/internship-outbox-handler` | 15 KB | Log của Lambda outbox handler |
+| `/aws/sagemaker/Endpoints/internship-qwen3-4b` | 15 KB | Log liên quan SageMaker endpoint |
+| `/aws/vpc/flowlogs` | 551 KB | VPC Flow Logs |
+
+Chưa có log group riêng theo tên cụ thể cho `backend`, `chat-service`, `backend-processing-worker`, `backend-outbox-dispatcher` và `ai-service`. Nếu cần tách log theo workload, phần đó nên được ghi là đề xuất cấu hình Container Insights hoặc Fluent Bit, không phải trạng thái đã triển khai.
 
 ## Chỉ số giám sát của các dịch vụ AWS được quản lý
 
@@ -192,7 +200,13 @@ Kiêm tra soát các tệp log phát nạp từ mạn EKS duy nhất chỉ nhữ
 
 ## Đề xuất các cảnh báo CloudWatch (Proposed CloudWatch alarms)
 
-Các mô hình cảnh báo dưới đây mang dáng hình lời khuyến nghị. Cần bằng chứng trước khi chốt quyền xướng danh cúng trát là đã vinh quy múa việc tại cõi triển khai production:
+CloudWatch hiện có một alarm đã được xác minh:
+
+| Alarm | Trạng thái | Metric | Ngưỡng |
+|---|---|---|---|
+| `InternshipOutboxDLQHasMessages` | OK | SQS `ApproximateNumberOfMessagesVisible` | `>= 1` |
+
+Các mô hình cảnh báo dưới đây là đề xuất bổ sung, chưa được ghi nhận là đã triển khai trong production:
 
 | Cảnh báo | Điều kiện đề xuất |
 |---|---|

@@ -1,12 +1,12 @@
 ﻿---
-title: "Week 7 Worklog"
+title: "Week 7 Worklog - Amazon EKS and Managed AWS Services"
 date: 2024-01-01
 weight: 7
 chapter: false
 pre: " <b> 1.7. </b> "
 ---
 
-# Week 7 - Amazon EKS and Managed AWS Services
+# Week 7
 
 ## Objectives
 

@@ -1,9 +1,9 @@
 ---
-title: "Truy cập S3 từ VPC"
-date: 2024-01-01 
-weight: 3
+title: "Legacy - S3 Gateway Endpoint"
+date: 2024-01-01
+weight: 93
 chapter: false
-pre: " <b> 5.3. </b> "
+pre: " <b> Legacy 2. </b> "
 draft: true
 ---
 

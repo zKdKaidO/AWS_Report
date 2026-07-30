@@ -1,9 +1,9 @@
-﻿---
-title: "Clean up"
+---
+title: "Legacy PrivateLink Lab Cleanup"
 date: 2024-01-01
-weight: 6
+weight: 96
 chapter: false
-pre: " <b> 5.6. </b> "
+pre: " <b> Legacy 5. </b> "
 draft: true
 ---
 

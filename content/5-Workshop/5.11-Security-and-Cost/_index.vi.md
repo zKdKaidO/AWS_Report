@@ -5,7 +5,6 @@ weight: 11
 chapter: false
 pre: " <b> 5.11. </b> "
 ---
-# Bảo mật và Chi phí
 
 ## Mục tiêu
 
@@ -27,16 +26,16 @@ Nền tảng ứng dụng gánh tải xử lý và thuyên rã muôn thông tin 
 | Kho lưu S3 riêng tư cho frontend (S3 private frontend bucket) | Khóa chốt phong tỏa mọi ý định trần lộ cho thế giới public mở vào bucket, thi chuyển nạp theo cộc quyền CloudFront OAC | Đã triển khai trong `ensure-cloudfront.sh`; cọc chứng cứ thao thấu runtime ráo đón nạp bồi |
 | Giao thức HTTPS trên CloudFront | Cống mạng CloudFront chủ động ra trát ép điều khiển lượt tra cập của cộng đồng phải qua ranhHTTPS an nộ | Đã triển khai trong cấu hình phụ trợ |
 | Kiểm soát tuyến đường ALB | ALB buông rào cản ngăn kiên định, thọ cho lọt cối đi vào cụm backend/chat đối với đúng nhĩ 3 tuyến đường `/api`, `/chat`, `/socket.io` | Đã triển khai trong manifest Ingress |
-| Truy cập kín cõi cơ sở dữ liệu RDS | Khẩn hoan cất vây nhốt PostgreSQL khỏi mọi nhịp nhòm ngó hay châm trích thẳng từ cõi public Internet | Cần bằng chứng |
-| Truy cập cất rào cho Redis | Kho ElastiCache Redis thề khước cự bãi trước mọi rãnh chui vãng công khai từ Internet | Cần bằng chứng |
+| Truy cập kín cơ sở dữ liệu RDS | PostgreSQL được đặt sau security group riêng và không mở inbound trực tiếp từ Internet | Đã xác minh: `sg-07bb82c3c3c31b61e` chỉ cho phép TCP `5432` từ `sg-06f3c7732550ce8fd` |
+| Truy cập riêng cho Redis / Valkey | ElastiCache / Valkey không mở truy cập public | Đã xác minh: `sg-0405e9a0dbadd61af` chỉ cho phép TCP `6379` từ EKS SG |
 | Mã hóa dữ liệu SSE cho SQS | Hàng đợi chủ lực lẫn con bãi lỗi DLQ nghiêm gạt công tắc mã hóa bạt theo tiêu chuẩn máy chủ SSE | Đã xác minh qua hồ sơ chứng cứ Tuần 8 |
-| Mã hóa dữ liệu DynamoDB | Các bàn cất DynamoDB ngạo bạt chế độ mã hóa tự động do bộ AWS quản lý (AWS-managed encryption) từ lúc bục sinh trừ phi chủ rạch xoay ngang thi nặn kiểu khác | Cần bằng chứng rà soát lại thông số cọc thiết lập sau cùng của các bàn |
-| Mã hóa cõi RDS (RDS encryption) | Bắt nhĩ thâm cẩu đối rà bằng minh văn trích qua câu lệnh `describe-db-instances` | Cần bằng chứng |
+| Mã hóa dữ liệu DynamoDB | `ChatGroups`, `ChatMessages`, `ChatUsers`, `InternshipLambdaEventDedupe` dùng encryption với AWS Owned Key | Đã xác minh; PITR hiện tắt trên tất cả bảng |
+| Mã hóa RDS (RDS encryption) | Cả `internship-prod-postgres` và `internship-tracker-db` bật KMS encryption | Đã xác minh |
 | Mã hóa đường truyền (Encryption in transit) | Luồn HTTPS trót lọt qua CloudFront; tuy nhĩ thông số bấu rào cho giao thức an ninh TLS chốn các vi dịch vụ và trạm cơ sở dữ liệu nội bộ thi ra lời nài bằng chứng | Đã chứng minh một phần |
 | Quản lý và cách ly bí mật (Secret handling) | Nghiêm cấm gõ lệnh commit hão đưa bất kỳ file `.env`, mã xác thực token, chìa khóa, mật khẩu hay đường dẫn dữ liệu DB lên repository | Biện pháp bắt buộc |
 | Hàng đợi thư hỏng DLQ | Hạ tầng SQS DLQ khôn ngoan tựu chốt gom nhốt riêng mác các tin nhắn bị thợ consumer xô thất bại liên miên | Đã xác minh qua hồ sơ chứng cứ Tuần 8 |
 | Tính bất biến (Idempotency) | Khấu chốt bất biến tại PostgreSQL, bảng outbox, nhĩ cờ `clientMessageId` từ mạn chat cùng hào cống khử lặp DynamoDB từ phía Lambda | Đã triển khai; riêng luồng rà test khói Lambda hoan thọ xác minh |
-| Sao lưu và điểm khôi phục PITR (Backup and PITR) | Lịch ghi cọ sao lưu RDS và nút bật khôi phục PITR cõi DynamoDB gõ nài khẩn thiết dải bằng chứng xuất trát cụ thể | Cần bằng chứng |
+| Sao lưu và điểm khôi phục PITR (Backup and PITR) | RDS có backup retention; DynamoDB PITR chưa bật | Đã xác minh: `internship-prod-postgres` giữ backup 7 ngày, `internship-tracker-db` giữ 1 ngày; PITR DynamoDB đang tắt |
 | Gia cố rào cản cấm chui thẳng bãi ALB | Kịch bản tự nguyện kêu gọi việc trói nghẹt bãi ALB origin sao cho thọ nhĩ thấu lời gọi duy nhất từ đằng CDN CloudFront | Đề xuất gia cố (Optional hardening) |
 | Tường lửa AWS WAF | Trù cất chiêu huy động thêm AWS WAF án cữ ngay trước cánh CloudFront mang lại lớp rào bảo an mĩ mãn cho cõi production | Đề xuất gia cố |
 
@@ -78,75 +77,32 @@ Tôi xin thề kiên trinh chối từ, không nhã nhặn in thọ hay gõ sao 
 
 ## Nguồn bằng chứng về chi phí
 
-Tôi xin khai trình các thông số hao tổn ngân sách dựa vào tệp minh chứng chi phí AWS thu từ chặng Tuần 8. Kho bằng chứng này chụp vãng thông số hao tổn chi trả thực ghi từ nhịp ngày 1 đến ngày 28 tháng 7 năm 2026, đi kèm theo một bức ảnh chụp màn hình ghi chép kho tín dụng Billing and Cost Management credits. Hóa đơn chốt chu kỳ hết tháng hoàn thiện đi kèm bản dự toán chính khôn qua cỗ máy tính cước AWS Pricing Calculator vẫn đang trong bãi kiên khôn nài đợi nạp bồi.
+Phần chi phí dùng bằng chứng AWS Budgets do người dùng cung cấp. Đây là trạng thái ngân sách tại thời điểm trích xuất bằng chứng, không phải bảng giá tự suy đoán và không thay thế hóa đơn AWS cuối kỳ.
 
-| Bằng chứng chi phí | Giá trị ghi nhận | Diễn giải |
-|---|---|---:|---|
-| Tổng chi phí từ ngày 1 đến 28/07/2026 | Hao cước tính gõ dồn tới chặng hiện tại | `$94.92` | Giá trị bấu rào lấy ra làm sự thật theo minh chứng tài lộc Tuần 8 |
-| Mốc hao tổn cao vãng cọc đỉnh nhất trong một ngày | Ghi nhận ở mốc ngày 28/07/2026 | `$31.83` | Con số ngốn cước nặng gánh cao nấc nhất trong mạn khảo sát 1-28 tháng 7 |
-| Tổng ngân khoản tín dụng đã hao (Credits total amount used) | Thuộc quỹ Billing credits | `$27.90` | Soi gạt từ mạn chụp ảnh tín dụng Billing |
-| Ước lượng ngân khoản tín dụng tiêu (Credits total estimated amount used) | Thuộc quỹ Billing credits | `$140.65` | Soi gạt từ mạn chụp ảnh tín dụng Billing |
-| Số dư khoản tín dụng thực bám lại (Credits total amount remaining) | Thuộc quỹ Billing credits | `$172.10` | Soi gạt từ mạn chụp ảnh tín dụng Billing |
-| Ước tính phần tín dụng còn vãn bám (Credits total estimated amount remaining) | Thuộc quỹ Billing credits | `$59.35` | Soi gạt từ mạn chụp ảnh tín dụng Billing |
+| Budget | Giới hạn | Thực tế | Dự báo | Trạng thái |
+|---|---:|---:|---:|---|
+| `Monthly` | `$100` | `$0.00` | `$17.26` | HEALTHY |
+| `My Monthly Cost Budget` | `$100` | `$156.02` | `$173.28` | EXCEEDED |
 
-Toàn dải con số ở trên chỉ vây quy bọc trọn trong mốc từ ngày 1 tới 28 tháng 7. Tôi kiên trung chối từ việc khoác nhãn gán vãng coi những chữ số này chính là cọc hóa đơn tháng chính quy hoàn tất, hoặc giả xem chúng là dự toán ổn thọ miên man lâu dài cho hạ tầng production, cho đến mốc chặng có rào đệm bằng chứng hóa đơn tháng AWS Bills kiên cố kèm cõi bảng tính AWS Pricing Calculator nạp vào đây.
-
-## Chi phí thực tế các dịch vụ trong Tuần 8
-
-Bản tổng trút chi tiêu thuộc Tuần 8 vạch ro cho công chúng thấu hiểu chân dung các tay hao tiêu bạo cước chủ lực ngự trị trong chặng từ 1 đến 28 tháng 7, năm 2026.
-
-| Thứ hạng | Dịch vụ | Chi phí từ 1-28/7 | Tỷ trọng trên tổng chi phí |
-|---:|---|---:|---:|
-| 1 | Amazon RDS | `$29.69` | 31.3% |
-| 2 | Amazon SageMaker | `$23.45` | 24.7% |
-| 3 | Amazon VPC | `$14.11` | 14.9% |
-| 4 | Amazon EC2 - Compute | `$12.42` | 13.1% |
-| 5 | EC2 - Other | `$7.68` | 8.1% |
-| 6 | Amazon EKS | `$5.64` | 5.9% |
-|
-
-Lực lượng lục hộ tài nguyên (6 dịch vụ) kể trên ra thế nuốt nhĩ trọn vẹn khoảng 98% trên tổng quy bão ngân lộc báo cáo từ 1-28 tháng 7. Hiện tượng đỉnh cước vọt mã dị thường ngất ngưởng trong ngày 28 tháng 7 là hồi chuông rung gõ nài nhắc nhở: khâu bổ nhĩ gia tăng cơ sở hạ tầng mạn production, giờ mở máy vãng bám không ngớt từ cỗ cống SagMaker endpoint, đi chung chuỗi cước hao chuyển từ hệ thống mạng VPC cùng NAT Gateway thiền thọ đặt dưới nấc chốt theo dõi cảnh giác cao trào tối thượng.
+Budget `My Monthly Cost Budget` đã vượt giới hạn `$100`, với chi phí thực tế `$156.02` và dự báo `$173.28`. Vì vậy báo cáo không nên nói chi phí đang ở mức an toàn nếu dùng budget này làm nguồn kiểm chứng.
 
 ## Các giả định khi tính toán chi phí
 
-Dự tính toán thuyên chính trát minh văn cho ngân khoản hàng tháng trọn chu kỳ ở chặng tương lai vẫn kiên quyết đòi hỏi phải cầu bồi cỗ máy AWS Pricing Calculator, hay một mốc thời cẩu giám trát mẫu mẫn mang tính đại diện qua Cost Explorer. Thế cấu trát tài nguyên hạ tầng thực thụ được ngắm rà ghi cẩu bên trong rèm thư mục minh chứng cho thấy thói quen bám ngụ như sau:
+Không đưa giá theo giờ hoặc tổng chi phí tháng nếu chưa có AWS Pricing Calculator export hoặc AWS Bills/Cost Explorer đủ kỳ. Các cấu hình có thể dùng làm đầu vào cho bảng dự toán gồm:
 
-| Trình tạo chi phí (Cost driver) | Cấu hình quan sát được | Dữ liệu đầu vào cần thiết cho dự toán tháng |
+| Cost driver | Cấu hình đã xác minh | Ghi chú |
 |---|---|---|
-| Cụm máy chủ EKS (EKS control plane) | Một cụm múa việc mang ranh production tọa trú chốn vùng `ap-southeast-1` | Tổng con số giờ chạy thọ múa cụm (cluster runtime hours) đi chung chuỗi giá niêm yết theo giờ của EKS ở mạn khu vực sở tại |
-| Cụm trạm node công nhân (EC2 worker nodes) | Hai node Kubernetes công nhân vinh thọ ngả ở tư thế Ready múa việc | Thông tham số cấu trúc phân hạng EC2 (instance type), dung lượng ổ EBS và con số giờ chạy nhĩ thọ của node |
-| Máy chủ RDS PostgreSQL | Hai cọc máy chủ RDS PostgreSQL riêng tư, đã bật rào mã hóa mang phân hạng `db.t4g.micro`, dung lượng 20 GiB cho từng instance, trần thiết cọc Single-AZ | Ngân khoản đệm ổ sao lưu (backup storage), lượng lượt truy xuất thêm I/O và số giờ chạy điển hình thọ thực cẩu |
-| ElastiCache / Valkey (Redis) | Một cụm nhân bản replication group thọ nhĩ trạng thái available, trang bị đủ cờ mã hóa dữ liệu tĩnh và đường truyền | Loại hạng máy chủ (node type), con số cụm node gõ mở, cùng trữ lượng truyền thải giao tiếp qua lại (data transfer) |
-| Cổng cân bằng tải ALB (Application Load Balancer) | Một thực thể ALB hoạt động rạng rỡ ngoảnh mặt ra hướng Internet (internet-facing) | Con số giờ duy trì chạy của ALB kết hợp chỉ số ngốn lượng đơn vị LCU (LCU usage) |
-| Cống mạng CDN CloudFront | Minh chứng cho distribution phụ trách web và distribution cất cọc cho bản báo cáo | Trữ lượng request cẩu tới, thể tích byte ném xuất xa ra ngoài, tần suất lệnh gõ cõi invalidation cùng bản ghi cấu hình behavior exported |
-| Kho S3 | Ảnh minh chứng cho chuỗi đối tượng cõi frontend bucket, đi với bức tranh vây quanh cụm upload, archive và bucket lưu báo cáo | Số dung lượng cất GB, khối lượng thao tác lệnh GET/PUT và điều luật vòng đời lưu chiểu lifecycle policy |
-| Cỗ lưu DynamoDB | Cụm bảng chat cùng ranh cọc bảng khử lặp cho Lambda thảy đều ngoan cố thi theo rãnh trả cước theotừng lượt sử dụng thực tế (on-demand billing) theo ảnh chụp Tuần 8 | Sản lượng thông lượng cẩu gõ request đọc/ghi, dung lượng đĩa cất và cơ chế điểm khôi phục PITR (nếu ráo bật) |
-| Hàng đợi SQS | Cống đợi chính và rãnh chứa lỗi DLQ ghi trát với con số 0 tin nhắn ứ tắc lộ mạn trong ảnh chụp chứng cứ Tuần 8 | Quy mô thông số request kêu gọi và dung lượng byte bình quân cho một con tin nhắn (payload size) |
-| Trạng thái thợ hàm Lambda | Trình cấm outbox handler bạo phơi nhãn Active, quy hoạch 256 MB RAM, gạt nút ngát chờ sau 20 giây (timeout) | Tổng con số lượt kích hoạt (invocations), chu kỳ thời gian gặm xử lý trung bình (average duration), số lần báo lỗi hay nạp múa thử lại |
-| Bộ cống SagMaker | Điểm phơi mở suy bạt theo thì hiện đại endpoint kiên bão mác `InService` với 1 production variant chạy kề | Loại hình cấu trúc EC2 cho endpoint (instance type), số giờ gác chạy thọ bãi, và khối lượng dung lượng byte phải giải mác xử lý |
-| Quán cọc CloudWatch | Hệ log và chuỗi metrics được vỗ tay giục bật tự động qua mạn AWS và cỗ máy Kubernetes cluster | Trữ lượng log nuốt dồn vào, giới hạn quy bạt bảo lưu retention, dải metrics do dev cất gặt và con số kịch bản cảnh báo alarms |
-| Khối truyền thải giao thông (Data transfer) | Hồ sơ Cost Explorer rền vang tố cáo chao lệch chi phí cho giao thông truyền dữ liệu trong chặng theo dõi | Lưu lượng xuất ngoài cõi CloudFront (egress), giao thông cuộn vãnh qua ALB, thau dọn cẩu luồng bên trong cõi NAT Gateway và chi cước chạy trút ngang qua các AZ chéo nhau |
+| VPC / NAT Gateway | `nat-16294630aebc49598`, 3 Elastic IP đang gắn | NAT Gateway là chi phí cố định đáng chú ý; có thể cân nhắc giảm số AZ nếu không cần HA |
+| Elastic IP chưa gắn | `13.251.12.233` (`eipalloc-0a9b85e5ce92d2c02`) | Nên release nếu không dùng |
+| RDS PostgreSQL | Hai instance `db.t4g.micro`, mỗi instance 20 GB | Cần xác nhận có cần giữ cả `internship-prod-postgres` và `internship-tracker-db` không |
+| ElastiCache / Valkey | `cache.t4g.micro`, encryption at rest và transit enabled | Chi phí chạy liên tục theo node |
+| EKS | Cluster `internship-prod` và workload backend/chat/AI/worker/dispatcher trong EKS | Không tính frontend vào EKS vì frontend chạy trên S3 và CloudFront |
+| SageMaker | Có log group `/aws/sagemaker/Endpoints/internship-qwen3-4b` | Cần kiểm tra endpoint hiện có đang idle không |
+| CloudWatch Logs | Log groups đã xác minh cho EKS, Lambda, SageMaker và VPC Flow Logs | Cần cấu hình retention nếu muốn kiểm soát phí lưu log |
 
 ## Bảng ước tính chi phí
 
-| Dịch vụ | Phương pháp ước tính | Trạng thái bằng chứng hiện tại |
-|---|---|---|
-| Amazon EKS | Giá cho cọc cụm theo giờ thi nhân thẳng với con số giờ khởi chạy thực | Đã triển khai; bản kết trút hao cước Tuần 8 thọ báo giá trị `$5.64` |
-| Các node EC2 của cụm EKS | Giá EC2 chạy theo giờ bồi gấp đôi cho 2 node, nạp gộp khoản chi bồi cho dung lượng EBS | Các node được rà cọc minh bạch; nhánh EC2 Compute xướng cước `$12.42`, nhánh EC2 - Other gọi tên `$7.68` |
-| Amazon RDS PostgreSQL | Giá cẩu theo giờ của cọc `db.t4g.micro`, phí ổ cứng 20 GiB ứng với từng máy chủ, bồi kèm tiền cho backup và I/O | Đã kiểm chứng rành 2 instance bảo mật đóng vùng riêng tư; bảng tổng chi cước Tuần 8 bão cáo ngốn `$29.69` |
-| Amazon ElastiCache / Valkey | Giá máy cọc node theo giờ nhân với số lượng node, trát gộp cước chi phí lưu thông mạng data transfer | Nhóm replication group đã qua thẩm thấu rà cọc; phân loại máy chủ cùng con số node thực tế thọ khẩn nài tra chốt |
-| Application Load Balancer | Phí thọ vận cọc theo giờ cho ALB, bồi vây khoản cho số đơn vị hao tổn LCU | Đã chứng nghiệm tình trạng Active cho ALB; dải rà soát an nộ từ target health vẫn ngập đợi cẩu ảnh rào khỏe mạnh cuội cùng |
-| Amazon CloudFront | Tổng sản lượng các lượt requests, trát bồi cước xuất ngoại dung lượng byte data transfer out và số kỳ invalidations | Đã bồi nạp sẵn ảnh chụp giám sát monitoring; chuỗi xuất bãi minh văn cấu hình cho behaviors và origin vẫn ngập đợi gọi nạp |
-| Amazon S3 | Trữ lượng lưu đĩa GB bồi kèm nhĩ con số lượng gõ lệnh request và khâu chuyển trượt cọc lifecycle | Sở hữu tự nhiên bức ảnh trích kiểm chứng kho danh sách đối tượng bên trong lòng frontend bucket |
-| Amazon DynamoDB | Hóa đơn tính cẩu theo lưu lượng lệnh gọi thực tiễn on-demand read/write phối cọc cước lưu đĩa | Có sẵn hồ sơ chụp văn trần hiển lộ trạng thái an sinh của cụm các bàn |
-| Amazon SQS | Đơn cước đếm theo lượng request vãng cõi hàng đợi chuẩn (Standard) và quy mô kích thước tệp payload tin nhắn | Thọ sắm trọn hồ sơ chụp trạng thái múa của hai con hàng đợi chủ lực và DLQ |
-| AWS Lambda | Số lần gõ kích gọi cống request thọ tiệm bồi cước gõ theo cọc dung sai đơn vị GB-giây (GB-seconds) | Con hàm trỗi hình thọ sinh thật; tuy vậy số lần giục cho múa và tình trạng kích nổ thau chu vẫn trong tư thế chờ thẩm định |
-| Amazon SES | Lương số lượng thư từ phất gõ đi kèm (nếu vác thêm) dung sai khối văn thư đính kèm attachments | Dịch vụ được pháo tạc lên quy hoạch trong chặng phát ra nhĩ cõi tin cảnh báo theo đường rãnh từ Lambda |
-| Amazon ECR | Trữ lượng dung sai lưu trữ các image (GB) và khoản cước bồi chuyển tải dữ liệu data transfer (nếu có) | Chưa cẩu phân mác riêng tư trong bảng tổng rà hao phí thuộc dàn thủ lĩnh Tuần 8 |
-| Amazon SageMaker | Giá máy cọc EC2 thọ chạy cống endpoint theo giờ, gộp cùng cước theo lượng lần kích nổ suy đoán/dung lượng xử lý | Điểm endpoint kiên cọc ngẩng rạng trạng thái `InService`; báo cáo chi phí Tuần 8 thọ hô chuông cướ cọc `$23.45` |
-| Amazon CloudWatch | Cước nuốt log vào cối (log ingestion), khoản thu bảo lưu retention, lượng metrics tự định nghĩa và dàn cảnh báo alarms | Số liện nấc giới hạn bảo lưu retention và cọc thông lượng nạp tệp vào log vẫn ra lời gọi nài bổ nạp |
-| Amazon VPC và phí truyền dữ liệu (data transfer) | Chi phí cho mạng xuất cõi từ CloudFront, nhĩ luồng lưu thông thọ cẩu ALB, máy cống NAT, và giao thông vãng rẽ qua nhĩ chéo AZ | Trát cước Tuần 8 gọi thẳng tên Amazon VPC xướng giá `$14.11`; cọc bảng chi tiết bẽ rã rãnh từng luồng giao thông mạng vẫn ngập đợi |
-| Tổng cộng (Total) | Khẩn cầu cỗ máy Pricing Calculator dựng nên kịch bản bão giá, từ đó thâu rẽ đem đo đọ với một tệp minh chứng bill có độ cẩn mật mẫu mẫn | Mãn chu kỳ khảo soát chi phí Tuần 8 từ ngày 1-28 tháng 7 báo ngốn `$94.92`; hóa đơn chuế kỳ hoàn tàn hết tháng đi với bản bão giá steady-state tiếp tục nài đợi nạp bồi |
+Chưa có bảng AWS Pricing Calculator export hoặc hóa đơn AWS cuối kỳ đủ để chốt dự toán chi phí dài hạn. Phần hiện tại chỉ ghi nhận cost drivers, budget status và các hạng mục tối ưu được đề xuất dựa trên bằng chứng đã cung cấp.
 
 ## Vệ sinh tài liệu bằng chứng (Evidence hygiene)
 
@@ -195,7 +151,7 @@ Tôi tin tưởng khôn khéo trúng rào cất khải thông nghiệm thu trang
 | Luông chui vãng kho S3 khơi cõi hớ rộng công khai (direct public access) | Cấu trúc rào quyền hạn của hòm bucket policy hay chốt gác thọ bạt bốc lọt mác sai lệch | Trân cọc thi nặn dựng lại thế giam cản cõi public access block phối cọc cam kết trút quyền cho CloudFront OAC policy |
 | Tiến trình Lambda sập r rãnh dội sinh cọc 2 lần tác vụ phụ (duplicate side effects) | Bỏng khuyết cất rỗng cơ quan khử lặp sự kiện (event dedupe) | Yêu cầu buông dùng chiêu thức ghi dữ liệu theo điều kiện trên DynamoDB bấu kiên định theo chuế `eventId` |
 | Hóa đơn thu phí cướ phình bạo rợt kinh chấn (unexpected high bill) | Để hớ ngọ bãi chôn quên bẻ cho cụm SageMaker, ranh con NAT hay máy cõi EKS nhở ngọ múa chay vô công cõi | Thanh rà tức thời trong cỗ Cost Explorer và nháy pháo trút gõ xóa hẳn hay cho im tịt ngay các đàn tài nguyên ngốn phí lớn lao đang nhàn rỗi |
-| Bảng dự toán chi phí bục nặn các con số trút phỏng tự bịa | Chưa tải xuất về tệp tham chiếu giá thành chính danh cõi bảng gốc | Ưng ngã áp dụng nhãn báo ghi `Cần bằng chứng bão giá (Pricing evidence required)` cho tận mốc thợ máy AWS Pricing Calculator thọ được đính kèm vào trong hồ sơ |
+| Bảng dự toán chi phí chứa số chưa có nguồn | Chưa có export từ AWS Pricing Calculator hoặc hóa đơn AWS cuối kỳ | Không chốt số dự toán dài hạn; chỉ ghi budget status và đánh dấu dự toán steady-state là công việc đề xuất |
 
 ## Kết luận
 

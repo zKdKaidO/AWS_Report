@@ -1,12 +1,11 @@
 ﻿---
-title: "Week 1 Worklog"
+title: "Week 1 - Project Analysis and Architecture Baseline"
 date: 2024-01-01
 weight: 1
 chapter: false
 pre: " <b> 1.1. </b> "
 ---
 
-# Week 1 - Project Analysis and Architecture Baseline
 
 ## Objectives
 

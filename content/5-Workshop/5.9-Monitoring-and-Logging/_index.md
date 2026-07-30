@@ -5,7 +5,6 @@ weight: 9
 chapter: false
 pre: " <b> 5.9. </b> "
 ---
-# Monitoring and Logging
 
 ## Objective
 
@@ -158,9 +157,20 @@ The repository includes Prometheus alerts for:
 | `InternshipProcessingJobsFailing` | Processing jobs failing |
 | `InternshipAIProviderFailures` | AI provider failures |
 
-Status: implemented in repository manifests. Evidence required to prove these were applied in production.
+Status: implemented in repository manifests. The supplied AWS monitoring evidence does not yet prove that these PrometheusRule resources were applied in the production EKS cluster. Verify the CRDs and resources before marking repository-defined Prometheus alerts as deployed.
 
 ## CloudWatch Logs
+
+The supplied CloudWatch evidence shows these log groups:
+
+| Log group | Size | Purpose |
+|---|---:|---|
+| `/aws/eks/internship-prod/cluster` | 478 MB | EKS cluster logs and current central log location for EKS-side investigation |
+| `/aws/lambda/internship-outbox-handler` | 15 KB | Outbox Lambda logs |
+| `/aws/sagemaker/Endpoints/internship-qwen3-4b` | 15 KB | SageMaker endpoint logs |
+| `/aws/vpc/flowlogs` | 551 KB | VPC Flow Logs |
+
+There are no provided CloudWatch log groups with separate names for `backend`, `chat-service`, `backend-processing-worker`, `backend-outbox-dispatcher`, or `ai-service`. If separate workload log groups are required, configure Container Insights, Fluent Bit, or another log shipping path and then attach the exported evidence.
 
 Check Lambda logs:
 
@@ -174,7 +184,17 @@ aws logs tail /aws/lambda/internship-outbox-handler \
   --region ap-southeast-1
 ```
 
-Check EKS-related logs only if container log shipping is configured. Evidence required: CloudWatch log group names for backend, chat, worker, dispatcher, and AI service.
+Check EKS-related CloudWatch logs through the cluster log group unless workload-specific log groups are configured:
+
+```bash
+aws logs describe-log-groups \
+  --log-group-name-prefix /aws/eks/internship-prod/cluster \
+  --region ap-southeast-1
+
+aws logs tail /aws/eks/internship-prod/cluster \
+  --since 1h \
+  --region ap-southeast-1
+```
 
 ## AWS managed-service metrics
 
@@ -189,13 +209,18 @@ Check EKS-related logs only if container log shipping is configured. Evidence re
 | Lambda | errors, duration, throttles, iterator age, concurrent executions |
 | SageMaker | endpoint invocation errors, model latency, overhead latency, instance utilization |
 
-## Proposed CloudWatch alarms
+## CloudWatch alarms
 
-These alarms are recommended. Evidence required before marking them deployed:
+One CloudWatch alarm is evidenced as deployed:
+
+| Alarm | State | Metric | Threshold |
+|---|---|---|---|
+| `InternshipOutboxDLQHasMessages` | OK | SQS `ApproximateNumberOfMessagesVisible` | `>= 1` |
+
+The following alarms remain proposed until AWS evidence is exported:
 
 | Alarm | Recommended condition |
 |---|---|
-| DLQ messages visible | `ApproximateNumberOfMessagesVisible > 0` on `internship-prod-outbox-dlq` |
 | Main queue age high | Oldest SQS message age exceeds operational threshold |
 | Lambda errors | `Errors > 0` for `internship-outbox-handler` |
 | Lambda throttles | `Throttles > 0` |

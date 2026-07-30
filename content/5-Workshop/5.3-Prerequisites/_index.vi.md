@@ -5,7 +5,6 @@ weight: 3
 chapter: false
 pre: " <b> 5.3. </b> "
 ---
-# Điều kiện tiên quyết
 
 ## Mục tiêu
 

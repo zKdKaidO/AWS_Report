@@ -5,7 +5,6 @@ weight: 12
 chapter: false
 pre: " <b> 5.12. </b> "
 ---
-# Xử lý sự cố (Troubleshooting)
 
 ## Mục tiêu
 
@@ -83,7 +82,7 @@ Những phác cất sai lệch ngốc nghếch kiên kiêng cấm vướng vào:
 
 ```text
 S3 behind ALB
-frontend running in EKS
+frontend Kubernetes Deployment/Service
 ```
 
 ### Từ khóa bị cấm của DynamoDB trong hàm Lambda (reserved keyword)

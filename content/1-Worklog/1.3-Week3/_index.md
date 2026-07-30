@@ -1,12 +1,11 @@
 ﻿---
-title: "Week 3 Worklog"
+title: "Week 3 Worklog - Transactional Outbox and Asynchronous Processing"
 date: 2024-01-01
 weight: 3
 chapter: false
 pre: " <b> 1.3. </b> "
 ---
 
-# Week 3 - Transactional Outbox and Asynchronous Processing
 
 ## Objectives
 

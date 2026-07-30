@@ -1,9 +1,9 @@
 ---
-title: "VPC Endpoint Policies"
+title: "Legacy VPC Endpoint Policy Lab"
 date: 2024-01-01
-weight: 5
+weight: 95
 chapter: false
-pre: " <b> 5.5. </b> "
+pre: " <b> Legacy 4. </b> "
 draft: true
 ---
 

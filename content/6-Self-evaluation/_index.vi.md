@@ -6,8 +6,6 @@ chapter: false
 pre: " <b> 6. </b> "
 ---
 
-# Self-evaluation
-
 ## Assessment summary
 
 This is my draft self-assessment based on the Internship Application Tracker project. It is not an official supervisor rating.

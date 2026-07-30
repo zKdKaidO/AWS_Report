@@ -5,7 +5,6 @@ weight: 6
 chapter: false
 pre: " <b> 5.6. </b> "
 ---
-# Triển khai cơ sở dữ liệu
 
 ## Mục tiêu
 
@@ -27,16 +26,20 @@ Hệ thống tận dụng các kho dữ liệu khác nhau để giải quyết c
 
 Máy chủ cơ sở dữ liệu RDS trên production sở hữu danh xưng định danh `internship-prod-postgres`. PostgreSQL chịu trách nhiệm chốt giữ toàn bộ dữ liệu giao dịch cốt lõi và các hàng đợi công việc của worker cần bấu rào cống cơ sở dữ liệu.
 
-Cần bằng chứng:
+Thông tin kiểm chứng production:
 
-- thông số phân loại máy chủ DB instance class
-- dung lượng đĩa được ban cấp
-- tình trạng bật mã hóa lưu trữ
-- thời gian bảo lưu sao lưu tự động (backup retention)
-- thiết lập dự phòng qua Multi-AZ
-- tên định nghĩa subnet group
-- danh mục các ID thuộc về security group
-- tình trạng khóa bảo vệ khỏi thao tác xóa (deletion protection setting)
+| Thuộc tính | `internship-prod-postgres` | `internship-tracker-db` |
+|---|---|---|
+| Engine | PostgreSQL `18.3` | PostgreSQL `18.3` |
+| Instance class | `db.t4g.micro` | `db.t4g.micro` |
+| Storage | 20 GB gp3 | 20 GB gp2 |
+| Encryption | Bật bằng KMS | Bật bằng KMS |
+| Backup retention | 7 ngày | 1 ngày |
+| Multi-AZ | Không bật | Không bật |
+| Deletion protection | Bật | Tắt |
+| Private access | Security group chỉ mở TCP `5432` từ EKS SG | Tương tự |
+
+Security group `sg-07bb82c3c3c31b61e` chỉ cho phép TCP `5432` từ `sg-06f3c7732550ce8fd` và không có inbound từ Internet. `internship-tracker-db` tồn tại như một RDS PostgreSQL riêng; cần người phụ trách dự án xác nhận mục đích giữ lại nếu chỉ `internship-prod-postgres` là database production chính.
 
 Kiểm chứng:
 

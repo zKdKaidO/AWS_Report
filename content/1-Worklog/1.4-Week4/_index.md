@@ -1,12 +1,11 @@
 ﻿---
-title: "Week 4 Worklog"
+title: "Week 4 Worklog - Containerization and CI Quality Gates"
 date: 2024-01-01
 weight: 4
 chapter: false
 pre: " <b> 1.4. </b> "
 ---
 
-# Week 4 - Containerization and CI Quality Gates
 
 ## Objectives
 

@@ -5,7 +5,6 @@ weight: 1
 chapter: false
 pre: " <b> 5.1. </b> "
 ---
-# Tổng quan
 
 ## Mục tiêu
 
@@ -23,11 +22,10 @@ Môi trường production đích được xác định như sau:
 | Namespace Kubernetes | `internship` |
 | Địa chỉ frontend công cộng | `https://dhm2rz5nmsibj.cloudfront.net` |
 | Kho lưu trữ mã nguồn | `https://github.com/Temp-orgo/AWS-Internship` |
-|
 
 ## Phạm vi
 
-Workshop này chỉ tập trung phản ánh kiến trúc production chính thức hiện tại. Frontend được lưu trữ trên Amazon S3 và phân phối qua CloudFront. Frontend không còn được xem là một workload chạy trên EKS do các thiết lập cũ (Deployment, Service, HPA và PDB của frontend trên Kubernetes) đã được tháo dỡ hoàn toàn.
+Workshop này chỉ tập trung phản ánh kiến trúc production chính thức hiện tại. Frontend được lưu trữ trên Amazon S3 và phân phối qua CloudFront. Các thiết lập Kubernetes cũ của frontend như Deployment, Service, HPA và PDB đã được tháo dỡ hoàn toàn.
 
 Cụm EKS chịu trách nhiệm vận hành các tiến trình chạy liên tục sau:
 

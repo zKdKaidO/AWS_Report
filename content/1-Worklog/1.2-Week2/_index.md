@@ -1,12 +1,11 @@
 ﻿---
-title: "Week 2 Worklog"
+title: "Week 2 Worklog - Concurrency Control and Data Integrity"
 date: 2024-01-01
 weight: 2
 chapter: false
 pre: " <b> 1.2. </b> "
 ---
 
-# Week 2 - Concurrency Control and Data Integrity
 
 ## Objectives
 

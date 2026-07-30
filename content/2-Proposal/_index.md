@@ -176,8 +176,8 @@ The EKS cluster hosts only services that need long-running runtime behavior: bac
 | Component | Final responsibility | Implementation evidence |
 |---|---|---|
 | React/Vite frontend | Candidate and HR user interface, built to static assets | `frontend/package.json`, `scripts/ci/deploy-frontend.sh` |
-| CloudFront | HTTPS public entry point and route dispatcher | `scripts/aws/ensure-cloudfront.sh`, Week 8 distribution `EQIGYNECXDYL8` |
-| Frontend S3 bucket | Private storage for `frontend/dist` assets | Private frontend bucket from the Week 8 deployment evidence; account suffix redacted |
+| CloudFront | HTTPS public entry point and route dispatcher | `scripts/aws/ensure-cloudfront.sh`, runtime distribution `EQIGYNECXDYL8` |
+| Frontend S3 bucket | Private storage for `frontend/dist` assets | Private frontend bucket from runtime deployment evidence; account suffix redacted |
 | Application Load Balancer | Public routing to EKS services | `k8s/eks/ingress-alb-no-domain.yaml` |
 | FastAPI backend | Auth, jobs, applications, uploads, dashboards, processing job APIs | `backend/app/main.py`, backend routers |
 | Chat service | REST chat APIs and Socket.IO realtime channel | `chat-service/server.js` |
@@ -185,10 +185,10 @@ The EKS cluster hosts only services that need long-running runtime behavior: bac
 | Outbox dispatcher | Publishes committed PostgreSQL outbox events to SQS | `backend/app/workers/outbox_dispatcher.py`, ADR-001 |
 | AI service | Stable worker-facing adapter for SageMaker | `ai_service/app.py`, `k8s/app/ai-service.yaml` |
 | RDS PostgreSQL | Transactional business data and reliable worker queues | Alembic migrations through `0008_async_processing_jobs.py` |
-| DynamoDB | Chat persistence and Lambda event deduplication | Chat table names in Kubernetes config and Week 8 runtime evidence |
+| DynamoDB | Chat persistence and Lambda event deduplication | Chat table names in Kubernetes config and runtime evidence |
 | Redis | Socket.IO pub/sub between chat pods | `chat-service/lib/redis.js`, Kubernetes config |
-| SQS and DLQ | At-least-once event delivery and failed-message isolation | ADR-001 and Week 8 queue evidence |
-| Lambda and SES | Event notification, archive, and email delivery | Lambda configuration and CloudWatch evidence from Week 8 |
+| SQS and DLQ | At-least-once event delivery and failed-message isolation | ADR-001 and runtime queue evidence |
+| Lambda and SES | Event notification, archive, and email delivery | Lambda configuration and CloudWatch runtime evidence |
 | GitHub Actions OIDC | CI/CD without long-lived AWS access keys | `.github/workflows/cicd.yml` |
 
 ### Design rationale
@@ -312,22 +312,18 @@ I adjusted the plan to 8 weeks, from 08/06/2026 to 30/07/2026, to match the work
 
 ## Budget Estimation
 
-Exact monthly cost should be calculated with AWS Pricing Calculator and then compared with representative billing data for the project AWS account in `ap-southeast-1`. For this report, the Week 8 AWS evidence is treated as the source of truth for current cost status.
+Exact monthly cost should be calculated with AWS Pricing Calculator and then compared with representative billing data for the project AWS account in `ap-southeast-1`. For this report, the supplied AWS Budgets evidence is treated as the current source of truth for budget status.
 
-### Week 8 AWS cost evidence
+### Current AWS budget evidence
 
-The Week 8 evidence reports July 1-28, 2026 month-to-date AWS spend and a Billing and Cost Management credits screenshot. The finalized monthly bill and AWS Pricing Calculator estimate are still pending.
+The finalized monthly bill and AWS Pricing Calculator estimate are still pending, but the available AWS Budgets evidence already shows that one budget has exceeded its configured limit.
 
-| Cost evidence | Observed value | Interpretation |
-|---|---:|---|
-| July 1-28, 2026 total spend | `$94.92` | Current month-to-date spend from the Week 8 cost summary |
-| Highest daily spend | `$31.83` on July 28 | Largest daily cost in the July 1-28 period |
-| Credits total amount used | `$27.90` | Billing credits screenshot evidence |
-| Credits total estimated amount used | `$140.65` | Billing credits screenshot evidence |
-| Credits total amount remaining | `$172.10` | Billing credits screenshot evidence |
-| Credits total estimated amount remaining | `$59.35` | Billing credits screenshot evidence |
+| Budget | Limit | Actual | Forecast | Status |
+|---|---:|---:|---:|---|
+| `Monthly` | `$100` | `$0.00` | `$17.26` | Healthy |
+| `My Monthly Cost Budget` | `$100` | `$156.02` | `$173.28` | Exceeded |
 
-The top Week 8 cost drivers are Amazon RDS (`$29.69`), Amazon SageMaker (`$23.45`), Amazon VPC (`$14.11`), Amazon EC2 - Compute (`$12.42`), EC2 - Other (`$7.68`), and Amazon EKS (`$5.64`). Together they account for approximately 98% of the reported July 1-28 spend.
+The exceeded budget means the environment should not be left running without cleanup review. The supplied runtime evidence identifies NAT Gateway, SageMaker, RDS, EKS/EC2 worker nodes, and public IPv4 resources as the most important areas to review.
 
 ### Cost assumptions
 
@@ -337,14 +333,15 @@ The top Week 8 cost drivers are Amazon RDS (`$29.69`), Amazon SageMaker (`$23.45
 | Public traffic | CloudFront fronts browser traffic and routes API/chat traffic to ALB | Verified |
 | Frontend | Static assets are stored in a private S3 bucket and delivered by CloudFront | Verified |
 | Kubernetes | One EKS cluster runs backend, chat, worker, dispatcher, and AI adapter workloads | Verified |
-| Worker nodes | Two Ready Kubernetes worker nodes were captured in the evidence snapshot | Instance type and EBS size still required |
-| RDS PostgreSQL | Two private, encrypted PostgreSQL `db.t4g.micro` instances with 20 GiB storage each | Verified |
-| ElastiCache / Valkey | One available Redis-compatible replication group with encryption at rest and in transit | Node type/count still required |
-| DynamoDB | Chat and Lambda dedupe tables use on-demand billing and are near empty in the snapshot | Verified |
-| SQS | Main outbox queue and DLQ have zero visible messages in the snapshot | Verified |
-| Lambda | Outbox handler is Active, 256 MB memory, 20 second timeout | Verified |
-| SageMaker | Real-time endpoint is `InService` with one production variant | Instance type and expected uptime still required |
-| CloudWatch | Logs and metrics exist through AWS and Kubernetes services | Retention and ingestion volume still required |
+| Worker nodes | Production EKS worker nodes are active | Instance type, node count, EBS size, and runtime hours still required |
+| RDS PostgreSQL | `internship-prod-postgres` and `internship-tracker-db` are private encrypted `db.t4g.micro` instances with 20 GB storage | Verify whether both databases are still required |
+| ElastiCache / Valkey | `internship-prod-redis-001` uses `cache.t4g.micro`, encryption at rest, transit encryption, and auth token | Node count and data transfer still required |
+| DynamoDB | Chat and Lambda dedupe tables use AWS owned key encryption; PITR is disabled | Verified; PITR should be enabled if production recovery requires it |
+| SQS | Main outbox queue and DLQ are deployed | Request volume and payload size still required |
+| Lambda | Outbox handler log group exists | Invocations, average duration, and trigger cost still required |
+| SageMaker | Log group exists for endpoint `internship-qwen3-4b` | Current endpoint status, instance type, idle time, and expected uptime still required |
+| CloudWatch | EKS cluster, Lambda, SageMaker endpoint, and VPC Flow Logs log groups exist | Retention and ingestion volume still required |
+| NAT and public IPv4 | NAT Gateway `nat-16294630aebc49598` is running; one Elastic IP is unattached | Review multi-AZ NAT need and release unused EIP |
 
 ### Cost-estimation methodology
 
@@ -356,22 +353,22 @@ The top Week 8 cost drivers are Amazon RDS (`$29.69`), Amazon SageMaker (`$23.45
 
 | Service | Monthly estimate method | Current evidence status |
 |---|---|---|
-| Amazon EKS | Cluster hourly price times monthly runtime | Deployed; Week 8 cost summary reports `$5.64` |
-| EC2 worker nodes | Node hourly price times two nodes, plus EBS storage | Nodes verified; EC2 Compute reports `$12.42`, EC2 - Other reports `$7.68` |
-| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GiB storage per instance, backup/I/O | Two private encrypted instances verified; Week 8 cost summary reports `$29.69` |
-| Amazon ElastiCache / Valkey | Node hourly price times node count, plus data transfer | Replication group verified; node type/count needed |
+| Amazon EKS | Cluster hourly price times monthly runtime | Deployed; include in Pricing Calculator |
+| EC2 worker nodes | Node hourly price plus EBS storage | Node instance type and EBS size still needed |
+| Amazon RDS PostgreSQL | `db.t4g.micro` hourly price, 20 GB storage per instance, backup/I/O | Two private encrypted instances verified |
+| Amazon ElastiCache / Valkey | `cache.t4g.micro` hourly price times node count, plus data transfer | Node type verified; node count needed |
 | Application Load Balancer | ALB hourly charge plus LCU usage | Active ALB verified; included in networking/runtime cost checks |
-| Amazon CloudFront | Requests, transfer out, and invalidations | Monitoring screenshot available; behavior/origin export still required |
-| Amazon S3 | Storage GB, PUT/GET requests, lifecycle transitions | Frontend bucket object screenshot available |
-| Amazon DynamoDB | On-demand read/write requests plus storage | Table status screenshot available |
-| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ screenshot available |
-| AWS Lambda | Requests plus GB-seconds | Function exists; invocation cost and trigger health still pending |
+| Amazon CloudFront | Requests, transfer out, and invalidations | Distribution verified; request and data-transfer volume still required |
+| Amazon S3 | Storage GB, PUT/GET requests, lifecycle transitions | Buckets verified; storage and request volume still required |
+| Amazon DynamoDB | Read/write requests plus storage, and PITR if enabled later | Encryption verified; PITR disabled |
+| Amazon SQS | Standard queue requests and payload volume | Queue and DLQ verified |
+| AWS Lambda | Requests plus GB-seconds | Log group exists; invocation cost and trigger health still pending |
 | Amazon SES | Email send count and attachments if any | Used by notification path |
-| Amazon ECR | Image storage and transfer if applicable | Not separated in the Week 8 top-driver table |
-| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint verified `InService`; Week 8 cost summary reports `$23.45` |
-| Amazon CloudWatch | Log ingestion, storage retention, metrics, alarms | Retention and ingestion volume still required |
-| Amazon VPC and data transfer | CloudFront egress, ALB traffic, NAT processing, cross-AZ traffic | Week 8 cost summary reports Amazon VPC at `$14.11`; traffic breakdown still needed |
-| Total | Pricing Calculator forecast, then billing comparison | Week 8 July 1-28 spend reports `$94.92`; finalized bill and steady-state estimate pending |
+| Amazon ECR | Image storage and transfer if applicable | Not separated in the supplied cost data |
+| Amazon SageMaker | Endpoint instance hours and invocation/data charges | Endpoint log group exists; current status and idle time still required |
+| Amazon CloudWatch | Log ingestion, storage retention, metrics, alarms | Log groups verified; retention and ingestion volume still required |
+| Amazon VPC and data transfer | CloudFront egress, ALB traffic, NAT processing, cross-AZ traffic | NAT Gateway and EIPs verified; traffic breakdown still needed |
+| Total | Pricing Calculator forecast, then billing comparison | Budget evidence shows one `$100` budget exceeded at `$156.02`; finalized bill and steady-state estimate pending |
 
 The largest current and future cost drivers are RDS, SageMaker endpoint uptime, VPC/NAT-related networking, EC2 worker nodes and EBS, EKS control plane, Redis, ALB, CloudFront/data transfer, and CloudWatch logs. If the SageMaker endpoint remains online continuously, AI inference can become one of the dominant monthly costs.
 
@@ -391,7 +388,10 @@ No raw screenshots or logs should expose account IDs, access keys, secret keys, 
 - Use DynamoDB on-demand while traffic is still unstable.
 - Configure AWS Budget and Billing Alarm.
 - Delete unused Load Balancers, public IPv4 addresses, snapshots, and volumes.
-- Confirm whether NAT Gateway is required before leaving it running.
+- Release unattached Elastic IP `13.251.12.233` if it is not used.
+- Review whether three-AZ NAT Gateway coverage is required for this internship environment.
+- Review whether both RDS instances are still required.
+- Check whether SageMaker endpoint `internship-qwen3-4b` is idle and stop or delete it when not needed.
 
 ## Risk Assessment
 
