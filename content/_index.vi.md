@@ -19,6 +19,8 @@ Báo cáo này trình bày quá trình thực tập với dự án **Internship 
 | Trường | Trường Đại học Bách Khoa TP.HCM (HCMUT) |
 | Chuyên ngành | Khoa học Máy tính |
 | Vị trí thực tập | Thành viên dự án thực tập Cloud / AWS |
+| Email | nam.phamnhat1301@hcmut.edu.vn |
+| Số điện thoại| 0901 467 551 |
 
 ## Đơn vị thực tập
 
