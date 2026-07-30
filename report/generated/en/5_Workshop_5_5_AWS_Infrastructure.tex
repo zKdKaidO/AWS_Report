@@ -1,0 +1,493 @@
+\vspace{0.5em}\noindent\textbf{AWS Infrastructure}\par
+
+\vspace{0.5em}\noindent\textbf{Objective}\par
+
+Document the AWS infrastructure required by the production deployment
+and provide safe verification commands for each major resource.
+
+\vspace{0.5em}\noindent\textbf{Scope}\par
+
+This chapter documents implemented resources where evidence is
+available, identifies fields that still require exported AWS CLI
+evidence, and lists optional hardening separately.
+
+\vspace{0.5em}\noindent\textbf{Architecture context}\par
+
+The infrastructure supports a hybrid edge and container architecture:
+
+\begin{itemize}
+\tightlist
+\item
+  CloudFront and S3 serve the frontend.
+\item
+  The ALB routes dynamic traffic to EKS.
+\item
+  EKS runs long-running application workloads.
+\item
+  Managed databases, messaging, object storage, Lambda, SES, and
+  SageMaker provide platform services.
+\item
+  GitHub Actions deploys through OIDC, not through long-lived AWS access
+  keys.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Implemented resources}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resource
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Account and region & Project AWS account, \texttt{ap-\allowbreak{}southeast-\allowbreak{}1} &
+Account ID redacted \\
+EKS & \texttt{internship-\allowbreak{}prod} & Verified from Week 8 evidence and
+workflow \\
+Namespace & \texttt{internship} & Verified from manifests \\
+ALB &
+\texttt{k8s-\allowbreak{}internshippublic-\allowbreak{}48101b50ad-\allowbreak{}85486086.\allowbreak{}ap-\allowbreak{}southeast-\allowbreak{}1.\allowbreak{}elb.\allowbreak{}amazonaws.\allowbreak{}com}
+& Verified from Week 8 evidence \\
+Frontend bucket &
+\texttt{internship-prod-frontend-\textless{}AWS\_ACCOUNT\_ID\textgreater{}}
+& Account suffix redacted \\
+Upload/archive bucket &
+\texttt{internship-prod-uploads-\textless{}AWS\_ACCOUNT\_ID\textgreater{}}
+& Account suffix redacted \\
+CloudFront & Distribution \texttt{EQIGYNECXDYL8} & Verified from Week 8
+evidence \\
+RDS & \texttt{internship-\allowbreak{}prod-\allowbreak{}postgres} & Verified from Week 8
+evidence \\
+Redis & \texttt{internship-\allowbreak{}prod-\allowbreak{}redis}, status \texttt{available} &
+Verified from Week 8 evidence \\
+DynamoDB & \texttt{ChatUsers}, \texttt{ChatGroups},
+\texttt{ChatMessages}, \texttt{InternshipLambdaEventDedupe} & Verified
+from Week 8 evidence \\
+SQS & \texttt{internship-\allowbreak{}prod-\allowbreak{}outbox},
+\texttt{internship-\allowbreak{}prod-\allowbreak{}outbox-\allowbreak{}dlq} & Verified from Week 8 evidence \\
+SageMaker & Endpoint \texttt{internship-\allowbreak{}qwen3-\allowbreak{}4b} & Verified from Week 8
+evidence \\
+Lambda & \texttt{internship-\allowbreak{}outbox-\allowbreak{}handler} & Verified from Week 8
+evidence \\
+IAM roles & \texttt{internship-\allowbreak{}github-\allowbreak{}deploy},
+\texttt{internship-\allowbreak{}eks-\allowbreak{}runtime},
+\texttt{internship-\allowbreak{}sagemaker-\allowbreak{}execution},
+\texttt{internship-\allowbreak{}eks-\allowbreak{}node-\allowbreak{}role},
+\texttt{internship-\allowbreak{}lambda-\allowbreak{}outbox-\allowbreak{}role},
+\texttt{AmazonEKSLoadBalancerControllerRole} & Verified from deployment
+configuration and Week 8 evidence \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Network foundation}\par
+
+The production EKS cluster requires a VPC with public and private
+subnets:
+
+\begin{itemize}
+\tightlist
+\item
+  Public subnets host internet-facing load balancer resources and NAT
+  Gateway resources.
+\item
+  Private subnets host EKS nodes and internal managed service access.
+\item
+  An Internet Gateway supports public ingress and NAT egress.
+\item
+  A NAT Gateway gives private nodes outbound access for image pulls, AWS
+  APIs, package downloads, and control-plane integration.
+\end{itemize}
+
+Evidence required:
+
+\begin{itemize}
+\tightlist
+\item
+  VPC ID, except the troubleshooting incident confirms
+  \texttt{vpc-\allowbreak{}0cfee519122ae18b4} was used by the AWS Load Balancer
+  Controller.
+\item
+  Public subnet IDs.
+\item
+  Private subnet IDs.
+\item
+  Route table IDs.
+\item
+  Security group IDs and rules.
+\item
+  NAT Gateway ID and Elastic IP allocation ID.
+\end{itemize}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}vpcs }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}subnets }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}route{-}tables }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}nat{-}gateways }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}security{-}groups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{IAM and OIDC}\par
+
+GitHub Actions uses AWS OIDC. The workflow configures:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{permissions}\KeywordTok{:}
+\AttributeTok{  }\FunctionTok{id{-}token}\KeywordTok{:}\AttributeTok{ write}
+\AttributeTok{  }\FunctionTok{contents}\KeywordTok{:}\AttributeTok{ read}
+\end{Highlighting}
+\end{Shaded}
+
+Deployment jobs call \texttt{aws-\allowbreak{}actions/\allowbreak{}configure-\allowbreak{}aws-\allowbreak{}credentials@v6}
+with
+\texttt{role-to-assume:\ \$\{\{\ secrets.AWS\_ROLE\_TO\_ASSUME\ \}\}}
+and \texttt{allowed-account-ids:\ \$\{\{\ env.AWS\_ACCOUNT\_ID\ \}\}}.
+
+Runtime workloads use Kubernetes ServiceAccount \texttt{internship-\allowbreak{}app}.
+When \texttt{IRSA\_\allowbreak{}ROLE\_\allowbreak{}ARN} is provided,
+\texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}eks.\allowbreak{}sh} renders
+\texttt{k8s/\allowbreak{}eks/\allowbreak{}serviceaccount.\allowbreak{}yaml} and applies the role annotation.
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ iam get{-}role }\AttributeTok{{-}{-}role{-}name}\NormalTok{ internship{-}github{-}deploy}
+\ExtensionTok{aws}\NormalTok{ iam get{-}role }\AttributeTok{{-}{-}role{-}name}\NormalTok{ internship{-}eks{-}runtime}
+\ExtensionTok{aws}\NormalTok{ iam get{-}role }\AttributeTok{{-}{-}role{-}name}\NormalTok{ internship{-}lambda{-}outbox{-}role}
+\ExtensionTok{kubectl}\NormalTok{ get serviceaccount internship{-}app }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ yaml}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{ECR}\par
+
+The workflow builds SHA-tagged images and verifies backend and chat tags
+before deployment:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}ll@{}}
+\toprule\noalign{}
+Image & Default ECR repository \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Backend & \texttt{internship-\allowbreak{}backend} \\
+Chat & \texttt{internship-\allowbreak{}chat} \\
+AI adapter & \texttt{internship-\allowbreak{}ai} \\
+\end{longtable}
+\endgroup
+}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ ecr describe{-}repositories }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ecr describe{-}images }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1 }\AttributeTok{{-}{-}repository{-}name}\NormalTok{ internship{-}backend }\AttributeTok{{-}{-}image{-}ids}\NormalTok{ imageTag=}\OperatorTok{\textless{}}\NormalTok{GITHUB\_SHA}\OperatorTok{\textgreater{}}
+\ExtensionTok{aws}\NormalTok{ ecr describe{-}images }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1 }\AttributeTok{{-}{-}repository{-}name}\NormalTok{ internship{-}chat }\AttributeTok{{-}{-}image{-}ids}\NormalTok{ imageTag=}\OperatorTok{\textless{}}\NormalTok{GITHUB\_SHA}\OperatorTok{\textgreater{}}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{EKS cluster and workloads}\par
+
+The EKS cluster hosts:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Workload
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Notes
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{backend} & Deployment and Service & FastAPI on port
+\texttt{8000}, 2 replicas \\
+\texttt{chat-\allowbreak{}service} & Deployment and Service & Node.js/Socket.IO on
+port \texttt{3000}, 2 replicas \\
+\texttt{backend-\allowbreak{}outbox-\allowbreak{}dispatcher} & Deployment and Service & Metrics
+port \texttt{9101}, 1 replica \\
+\texttt{backend-\allowbreak{}processing-\allowbreak{}worker} & Deployment and Service & Metrics
+port \texttt{9102}, can be scaled to zero when AI is not ready \\
+\texttt{ai-\allowbreak{}service} & Deployment and Service & FastAPI adapter on port
+\texttt{8010}, 1 replica \\
+\texttt{backend-\allowbreak{}migrate} & Job & Runs \texttt{alembic\ upgrade\ head} \\
+\texttt{chat-\allowbreak{}init} & Job & Initializes DynamoDB chat tables \\
+\end{longtable}
+\endgroup
+}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ eks describe{-}cluster }\AttributeTok{{-}{-}name}\NormalTok{ internship{-}prod }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ eks list{-}nodegroups }\AttributeTok{{-}{-}cluster{-}name}\NormalTok{ internship{-}prod }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{kubectl}\NormalTok{ get deployments,pods,svc,hpa,pdb,jobs }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ wide}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{AWS Load Balancer Controller and
+ALB}\par
+
+The production Ingress is \texttt{internship-\allowbreak{}public} and uses AWS Load
+Balancer Controller annotations:
+
+\begin{itemize}
+\tightlist
+\item
+  scheme: \texttt{internet-\allowbreak{}facing}
+\item
+  target type: \texttt{ip}
+\item
+  listener: HTTP \texttt{80}
+\item
+  health check path: \texttt{/\allowbreak{}health/\allowbreak{}ready}
+\item
+  idle timeout: \texttt{3600}
+\item
+  target group stickiness: enabled for \texttt{86400} seconds
+\item
+  paths: \texttt{/\allowbreak{}api}, \texttt{/\allowbreak{}chat}, \texttt{/\allowbreak{}socket.\allowbreak{}io}
+\end{itemize}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get ingress internship{-}public }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ yaml}
+\ExtensionTok{kubectl}\NormalTok{ get deployment,pods }\AttributeTok{{-}n}\NormalTok{ kube{-}system }\AttributeTok{{-}l}\NormalTok{ app.kubernetes.io/name=aws{-}load{-}balancer{-}controller }\AttributeTok{{-}o}\NormalTok{ wide}
+\ExtensionTok{aws}\NormalTok{ elbv2 describe{-}load{-}balancers }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ elbv2 describe{-}target{-}groups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{S3 and CloudFront}\par
+
+Frontend deployment uses:
+
+\begin{itemize}
+\tightlist
+\item
+  private bucket
+  \texttt{internship-prod-frontend-\textless{}AWS\_ACCOUNT\_ID\textgreater{}}
+\item
+  CloudFront distribution \texttt{EQIGYNECXDYL8}
+\item
+  CloudFront Origin Access Control
+\item
+  default behavior to S3
+\item
+  \texttt{/\allowbreak{}api/\allowbreak{}*}, \texttt{/\allowbreak{}chat/\allowbreak{}*}, \texttt{/\allowbreak{}socket.\allowbreak{}io/\allowbreak{}*} behaviors to
+  ALB
+\item
+  SPA fallback for 403 and 404 to \texttt{/\allowbreak{}index.\allowbreak{}html}
+\end{itemize}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3api get{-}public{-}access{-}block }\AttributeTok{{-}{-}bucket}\NormalTok{ internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}
+\ExtensionTok{aws}\NormalTok{ cloudfront get{-}distribution }\AttributeTok{{-}{-}id}\NormalTok{ EQIGYNECXDYL8}
+\ExtensionTok{aws}\NormalTok{ cloudfront list{-}invalidations }\AttributeTok{{-}{-}distribution{-}id}\NormalTok{ EQIGYNECXDYL8}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Messaging and event-driven
+resources}\par
+
+Implemented current runtime:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Resource
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Configuration
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+SQS main queue & \texttt{internship-\allowbreak{}prod-\allowbreak{}outbox}, visibility timeout 120
+seconds, retention 4 days, SSE enabled \\
+SQS DLQ & \texttt{internship-\allowbreak{}prod-\allowbreak{}outbox-\allowbreak{}dlq}, retention 14 days,
+\texttt{maxReceiveCount} 5 \\
+Lambda & \texttt{internship-\allowbreak{}outbox-\allowbreak{}handler}, SQS trigger \\
+Dedupe table & \texttt{InternshipLambdaEventDedupe} \\
+Archive location &
+\texttt{s3://internship-prod-uploads-\textless{}AWS\_ACCOUNT\_ID\textgreater{}/outbox-archive/...} \\
+Email service & Amazon SES \\
+\end{longtable}
+\endgroup
+}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sqs get{-}queue{-}url }\AttributeTok{{-}{-}queue{-}name}\NormalTok{ internship{-}prod{-}outbox }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sqs get{-}queue{-}attributes }\AttributeTok{{-}{-}queue{-}url} \OperatorTok{\textless{}}\NormalTok{OUTBOX\_QUEUE\_URL}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}attribute{-}names All }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ lambda get{-}function }\AttributeTok{{-}{-}function{-}name}\NormalTok{ internship{-}outbox{-}handler }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ lambda list{-}event{-}source{-}mappings }\AttributeTok{{-}{-}function{-}name}\NormalTok{ internship{-}outbox{-}handler }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ InternshipLambdaEventDedupe }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+I recorded one naming conflict: repository scripts
+\texttt{scripts/\allowbreak{}aws/\allowbreak{}provision-\allowbreak{}outbox-\allowbreak{}sqs.\allowbreak{}sh} and \texttt{.\allowbreak{}ps1} default
+to \texttt{internship-\allowbreak{}outbox-\allowbreak{}events} with visibility timeout
+\texttt{60}, while the current runtime queue is
+\texttt{internship-\allowbreak{}prod-\allowbreak{}outbox} with visibility timeout \texttt{120}. I
+use runtime evidence for the deployed resource and would update the
+scripts only in the application repository as a separate implementation
+task.
+
+\vspace{0.5em}\noindent\textbf{SageMaker resources}\par
+
+The worker should call the internal \texttt{ai-\allowbreak{}service}, and
+\texttt{ai-\allowbreak{}service} calls SageMaker endpoint
+\texttt{internship-\allowbreak{}qwen3-\allowbreak{}4b}. The deployment script requires the
+SageMaker endpoint to be \texttt{InService} before enabling
+\texttt{PROCESSING\_\allowbreak{}WORKER\_\allowbreak{}ENABLED=true}.
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sagemaker describe{-}endpoint }\AttributeTok{{-}{-}endpoint{-}name}\NormalTok{ internship{-}qwen3{-}4b }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{kubectl}\NormalTok{ get deployment,svc ai{-}service }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Proposed hardening}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Hardening
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+ALB & Restrict direct ALB access so users enter through CloudFront where
+practical \\
+CloudFront & Add custom domain and ACM certificate if a production
+domain is required \\
+S3 & Confirm bucket policies allow only intended CloudFront and workload
+access \\
+WAF & Add AWS WAF to CloudFront for common web protections \\
+Logs & Set explicit CloudWatch retention for all Lambda and application
+log groups \\
+Backups & Verify RDS backup retention and PITR requirements \\
+Alarms & Add DLQ, Lambda Errors, RDS, ALB, and SageMaker cost/health
+alarms \\
+Cost & Schedule or delete SageMaker endpoint when not in use \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Expected result}\par
+
+The infrastructure is correctly prepared when the network is healthy,
+EKS nodes are Ready, ALB routes health checks, S3 and CloudFront serve
+the frontend, managed data services are reachable, SQS and Lambda
+process events, and SageMaker is ready before AI workers are enabled.
+
+\vspace{0.5em}\noindent\textbf{Common errors}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Root cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+EKS nodes cannot join & Private route points to deleted NAT Gateway &
+Restore NAT and recreate/recover node group \\
+ALB controller cannot infer VPC & Metadata lookup timeout & Configure
+\texttt{-\/\allowbreak{}-aws-\allowbreak{}region=ap-\allowbreak{}southeast-\allowbreak{}1} and
+\texttt{-\/\allowbreak{}-aws-\allowbreak{}vpc-\allowbreak{}id=vpc-\allowbreak{}0cfee519122ae18b4} \\
+CloudFront API routes fail & ALB DNS missing or wrong behavior & Verify
+CloudFront origins and cache behaviors \\
+SQS query returns queue not found & Wrong queue name & Use
+\texttt{internship-\allowbreak{}prod-\allowbreak{}outbox} \\
+Worker fails at deploy & SageMaker endpoint not \texttt{InService} &
+Keep worker disabled until endpoint readiness is verified \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Outcome}\par
+
+The infrastructure chapter gives the production resource map and
+verification commands needed before database, backend, frontend,
+monitoring, testing, and cleanup work can proceed.

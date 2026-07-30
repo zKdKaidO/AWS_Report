@@ -1,0 +1,496 @@
+\vspace{0.5em}\noindent\textbf{Clean-up}\par
+
+\vspace{0.5em}\noindent\textbf{Objective}\par
+
+Provide a safe, dependency-aware cleanup sequence for the AWS production
+environment after testing or demonstration is complete.
+
+\vspace{0.5em}\noindent\textbf{Warning}\par
+
+The commands in this chapter are destructive. Do not run them unless the
+project owner, AWS account owner, and team have approved cleanup. Export
+required evidence, logs, test results, cost reports, and final
+screenshots before deleting resources.
+
+This chapter is documentation only. No cleanup commands were executed as
+part of preparing this report.
+
+\vspace{0.5em}\noindent\textbf{Architecture context}\par
+
+Cleanup must follow dependency order. Deleting shared networking or IAM
+first can leave load balancers, ENIs, node groups, endpoints, queues,
+buckets, or log groups stuck. The safest approach is to stop producers,
+stop consumers, delete high-cost compute, then remove networking and IAM
+last.
+
+\vspace{0.5em}\noindent\textbf{Pre-cleanup checklist}\par
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Confirm the environment is no longer needed.
+\item[$\square$]
+  Export CloudFront, ALB, EKS, RDS, Redis, DynamoDB, SQS, Lambda,
+  SageMaker, and S3 evidence.
+\item[$\square$]
+  Export AWS Cost Explorer or Pricing Calculator evidence.
+\item[$\square$]
+  Export Lambda logs for the final smoke test.
+\item[$\square$]
+  Export any required S3 event archive objects.
+\item[$\square$]
+  Confirm no production users depend on the deployment.
+\item[$\square$]
+  Confirm backups or snapshots are either retained or intentionally
+  deleted.
+\item[$\square$]
+  Confirm the active AWS account is the intended project account.
+\item[$\square$]
+  Confirm the active region is \texttt{ap-\allowbreak{}southeast-\allowbreak{}1}.
+\end{itemize}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sts get{-}caller{-}identity}
+\ExtensionTok{aws}\NormalTok{ configure get region}
+\ExtensionTok{kubectl}\NormalTok{ config current{-}context}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Dependency-aware cleanup
+order}\par
+
+\vspace{0.5em}\noindent\textbf{1. Disable the processing
+worker}\par
+
+Stop long-running AI work before deleting SageMaker or database
+resources:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ scale deployment/backend{-}processing{-}worker }\AttributeTok{{-}{-}replicas}\OperatorTok{=}\NormalTok{0 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ delete hpa backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ delete pdb backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{120s}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{2. Disable Lambda SQS event-source
+mapping}\par
+
+List mappings:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ lambda list{-}event{-}source{-}mappings }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}function{-}name}\NormalTok{ internship{-}outbox{-}handler }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Disable each mapping:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ lambda update{-}event{-}source{-}mapping }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}uuid} \OperatorTok{\textless{}}\NormalTok{EVENT\_SOURCE\_MAPPING\_UUID}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}enabled}\NormalTok{ false }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{3. Delete SageMaker
+endpoint}\par
+
+SageMaker endpoint uptime can be a major cost driver:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sagemaker delete{-}endpoint }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}endpoint{-}name}\NormalTok{ internship{-}qwen3{-}4b }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Then inspect endpoint config and model resources before deleting them:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sagemaker list{-}endpoint{-}configs }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sagemaker list{-}models }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{4. Delete Lambda function}\par
+
+Delete after disabling the event-source mapping:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ lambda delete{-}function }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}function{-}name}\NormalTok{ internship{-}outbox{-}handler }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{5. Delete Lambda event-source
+mapping}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ lambda delete{-}event{-}source{-}mapping }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}uuid} \OperatorTok{\textless{}}\NormalTok{EVENT\_SOURCE\_MAPPING\_UUID}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{6. Inspect or purge test
+messages}\par
+
+Check queue state:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sqs get{-}queue{-}attributes }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}queue{-}url} \OperatorTok{\textless{}}\NormalTok{OUTBOX\_QUEUE\_URL}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}attribute{-}names}\NormalTok{ ApproximateNumberOfMessages ApproximateNumberOfMessagesNotVisible }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+If approved, purge test messages:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sqs purge{-}queue }\AttributeTok{{-}{-}queue{-}url} \OperatorTok{\textless{}}\NormalTok{OUTBOX\_QUEUE\_URL}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}region ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{7. Delete SQS queues}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sqs delete{-}queue }\AttributeTok{{-}{-}queue{-}url} \OperatorTok{\textless{}}\NormalTok{OUTBOX\_QUEUE\_URL}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}region ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sqs delete{-}queue }\AttributeTok{{-}{-}queue{-}url} \OperatorTok{\textless{}}\NormalTok{OUTBOX\_DLQ\_URL}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}region ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{8. Delete Kubernetes
+Ingress}\par
+
+Deleting the Ingress lets AWS Load Balancer Controller remove the ALB:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ delete ingress internship{-}public }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{9. Wait for ALB deletion}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ elbv2 describe{-}load{-}balancers }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ elbv2 describe{-}target{-}groups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Wait until the internship ALB and target groups are gone.
+
+\vspace{0.5em}\noindent\textbf{10. Delete EKS workloads}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ delete }\AttributeTok{{-}f}\NormalTok{ k8s/app/autoscaling.yaml }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ delete }\AttributeTok{{-}f}\NormalTok{ k8s/app/ai{-}service.yaml }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ delete }\AttributeTok{{-}f}\NormalTok{ k8s/app/backend{-}processing{-}worker.yaml }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ delete }\AttributeTok{{-}f}\NormalTok{ k8s/app/backend{-}outbox{-}dispatcher.yaml }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ delete }\AttributeTok{{-}f}\NormalTok{ k8s/app/chat.yaml }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ delete }\AttributeTok{{-}f}\NormalTok{ k8s/app/backend.yaml }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ delete job backend{-}migrate chat{-}init }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\end{Highlighting}
+\end{Shaded}
+
+Delete namespace only after confirming no resources remain:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get all }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ delete namespace internship}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{11. Delete EKS node group}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ eks list{-}nodegroups }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}cluster{-}name}\NormalTok{ internship{-}prod }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+
+\ExtensionTok{aws}\NormalTok{ eks delete{-}nodegroup }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}cluster{-}name}\NormalTok{ internship{-}prod }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}nodegroup{-}name} \OperatorTok{\textless{}}\NormalTok{NODEGROUP\_NAME}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Wait:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ eks wait nodegroup{-}deleted }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}cluster{-}name}\NormalTok{ internship{-}prod }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}nodegroup{-}name} \OperatorTok{\textless{}}\NormalTok{NODEGROUP\_NAME}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{12. Delete EKS cluster}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ eks delete{-}cluster }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}name}\NormalTok{ internship{-}prod }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{13. Delete RDS}\par
+
+Decide whether to keep a final snapshot:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ rds delete{-}db{-}instance }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}db{-}instance{-}identifier}\NormalTok{ internship{-}prod{-}postgres }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}final{-}db{-}snapshot{-}identifier}\NormalTok{ internship{-}prod{-}postgres{-}final{-}}\OperatorTok{\textless{}}\NormalTok{DATE}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Only skip the snapshot when explicitly approved:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ rds delete{-}db{-}instance }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}db{-}instance{-}identifier}\NormalTok{ internship{-}prod{-}postgres }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}skip{-}final{-}snapshot} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{14. Delete ElastiCache}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ elasticache delete{-}replication{-}group }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}replication{-}group{-}id}\NormalTok{ internship{-}prod{-}redis }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{15. Delete DynamoDB tables}\par
+
+Delete only after confirming no data retention is required:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ dynamodb delete{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatUsers }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb delete{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatGroups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb delete{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatMessages }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb delete{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ InternshipLambdaEventDedupe }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{16. Empty and delete S3
+buckets}\par
+
+Inspect first:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3 ls s3://internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}recursive }\AttributeTok{{-}{-}summarize}
+\ExtensionTok{aws}\NormalTok{ s3 ls s3://internship{-}prod{-}uploads{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}recursive }\AttributeTok{{-}{-}summarize}
+\end{Highlighting}
+\end{Shaded}
+
+Empty and delete after approval:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3 rm s3://internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}recursive}
+\ExtensionTok{aws}\NormalTok{ s3 rb s3://internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}
+\ExtensionTok{aws}\NormalTok{ s3 rm s3://internship{-}prod{-}uploads{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}recursive}
+\ExtensionTok{aws}\NormalTok{ s3 rb s3://internship{-}prod{-}uploads{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}
+\end{Highlighting}
+\end{Shaded}
+
+If versioning is enabled, delete object versions and delete markers
+before removing the bucket.
+
+\vspace{0.5em}\noindent\textbf{17. Disable and delete
+CloudFront}\par
+
+CloudFront must be disabled before deletion:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ cloudfront get{-}distribution{-}config }\AttributeTok{{-}{-}id}\NormalTok{ EQIGYNECXDYL8}
+\end{Highlighting}
+\end{Shaded}
+
+Update the distribution config with \texttt{Enabled=false}, keep the
+current \texttt{ETag}, then wait:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ cloudfront wait distribution{-}deployed }\AttributeTok{{-}{-}id}\NormalTok{ EQIGYNECXDYL8}
+\end{Highlighting}
+\end{Shaded}
+
+Delete:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ cloudfront delete{-}distribution }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}id}\NormalTok{ EQIGYNECXDYL8 }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}if{-}match} \OperatorTok{\textless{}}\NormalTok{ETAG}\OperatorTok{\textgreater{}}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{18. Delete NAT Gateway}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}nat{-}gateways }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 delete{-}nat{-}gateway }\AttributeTok{{-}{-}nat{-}gateway{-}id} \OperatorTok{\textless{}}\NormalTok{NAT\_GATEWAY\_ID}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}region ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{19. Release Elastic IP}\par
+
+Release the NAT Gateway Elastic IP only after the NAT Gateway is
+deleted:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ ec2 release{-}address }\AttributeTok{{-}{-}allocation{-}id} \OperatorTok{\textless{}}\NormalTok{ALLOCATION\_ID}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}region ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{20. Delete IAM roles and
+policies}\par
+
+Delete IAM roles last, after workloads that use them are gone:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ iam detach{-}role{-}policy }\AttributeTok{{-}{-}role{-}name}\NormalTok{ internship{-}github{-}deploy }\AttributeTok{{-}{-}policy{-}arn} \OperatorTok{\textless{}}\NormalTok{POLICY\_ARN}\OperatorTok{\textgreater{}}
+\ExtensionTok{aws}\NormalTok{ iam delete{-}role }\AttributeTok{{-}{-}role{-}name}\NormalTok{ internship{-}github{-}deploy}
+\end{Highlighting}
+\end{Shaded}
+
+Repeat for project-specific roles only after confirming no shared
+resource depends on them.
+
+\vspace{0.5em}\noindent\textbf{21. Delete remaining VPC
+resources}\par
+
+Inspect and remove:
+
+\begin{itemize}
+\tightlist
+\item
+  security groups
+\item
+  route tables
+\item
+  subnets
+\item
+  Internet Gateway
+\item
+  NAT routes
+\item
+  VPC endpoints
+\item
+  leftover ENIs
+\end{itemize}
+
+Commands:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}network{-}interfaces }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}security{-}groups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}route{-}tables }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}internet{-}gateways }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ ec2 describe{-}vpc{-}endpoints }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{22. Verify billing resources are
+gone}\par
+
+Final checks:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ eks list{-}clusters }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ elbv2 describe{-}load{-}balancers }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ rds describe{-}db{-}instances }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ elasticache describe{-}replication{-}groups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sqs list{-}queues }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ lambda list{-}functions }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sagemaker list{-}endpoints }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ cloudfront list{-}distributions}
+\end{Highlighting}
+\end{Shaded}
+
+Review AWS Billing and Cost Explorer the next day because some usage
+records appear after a delay.
+
+\vspace{0.5em}\noindent\textbf{Common errors}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+VPC cannot be deleted & ENIs, ALB, NAT, endpoints, or security groups
+remain & Inspect ENIs and dependent resources \\
+S3 bucket cannot be deleted & Versioned objects or delete markers remain
+& Delete all object versions and markers \\
+CloudFront cannot be deleted & Distribution still enabled or ETag
+mismatch & Disable, wait for deployed state, use latest ETag \\
+IAM role cannot be deleted & Policies still attached & Detach inline and
+managed policies first \\
+SQS messages keep reappearing & Lambda event source still enabled &
+Disable/delete event-source mapping before queue deletion \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Outcome}\par
+
+Cleanup is complete only when high-cost services, queues, buckets,
+databases, load balancers, endpoints, IAM roles, and VPC resources are
+removed or intentionally retained with written approval.

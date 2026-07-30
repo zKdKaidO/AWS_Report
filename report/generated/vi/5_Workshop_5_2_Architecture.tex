@@ -1,0 +1,401 @@
+\vspace{0.5em}\noindent\textbf{Kiến trúc}\par
+
+\vspace{0.5em}\noindent\textbf{Mục tiêu}\par
+
+Chương này mô tả kiến trúc AWS cuối cùng và các luồng chạy chính của hệ
+thống Internship Application Tracker.
+
+\vspace{0.5em}\noindent\textbf{Phạm vi}\par
+
+Kiến trúc được viết dựa trên ngữ cảnh production đã cung cấp, ghi chú
+trong repository Report và repository ứng dụng hiện tại. Bằng chứng
+runtime được ưu tiên hơn các manifest cũ. Điểm chỉnh quan trọng nhất là
+frontend hiện được phục vụ bằng S3 và CloudFront, không chạy như một
+workload trong EKS.
+
+\vspace{0.5em}\noindent\textbf{Bối cảnh kiến
+trúc}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Lớp
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Thành phần chính
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Edge & CloudFront distribution \texttt{EQIGYNECXDYL8} \\
+Public routing & Application Load Balancer
+\texttt{k8s-\allowbreak{}internshippublic-\allowbreak{}48101b50ad-\allowbreak{}85486086.\allowbreak{}ap-\allowbreak{}southeast-\allowbreak{}1.\allowbreak{}elb.\allowbreak{}amazonaws.\allowbreak{}com} \\
+Kubernetes & EKS cluster \texttt{internship-\allowbreak{}prod}, namespace
+\texttt{internship} \\
+Workloads & \texttt{backend}, \texttt{chat-\allowbreak{}service},
+\texttt{backend-\allowbreak{}outbox-\allowbreak{}dispatcher}, \texttt{backend-\allowbreak{}processing-\allowbreak{}worker},
+\texttt{ai-\allowbreak{}service} \\
+Dữ liệu & RDS PostgreSQL, DynamoDB, ElastiCache Redis, S3 \\
+Bất đồng bộ và sự kiện & PostgreSQL processing jobs, PostgreSQL outbox,
+SQS, Lambda, SES \\
+AI & Adapter \texttt{ai-\allowbreak{}service} và SageMaker endpoint
+\texttt{internship-\allowbreak{}qwen3-\allowbreak{}4b} \\
+CI/CD & GitHub Actions, AWS OIDC, ECR, kubectl, AWS CLI \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Diagram 1: Kiến trúc AWS tổng
+thể}\par
+
+\{\{\textless{} mermaid \textgreater\}\} graph LR User{[}``Candidate /
+HR browser''{]} CF{[}``CloudFront (dhm2rz5nmsibj.cloudfront.net)''{]}
+S3Frontend{[}``Private S3 frontend bucket
+(internship-prod-frontend-account-redacted)''{]} ALB{[}``Application
+Load Balancer (internet-facing)''{]} EKS{[}``EKS cluster
+(internship-prod)''{]} Backend{[}``backend (FastAPI :8000)''{]}
+Chat{[}``chat-service (Socket.IO :3000)''{]}
+Dispatcher{[}``backend-outbox-dispatcher''{]}
+Worker{[}``backend-processing-worker''{]} AI{[}``ai-service (:8010)''{]}
+RDS{[}``RDS PostgreSQL (internship-prod-postgres)''{]} DDB{[}``DynamoDB
+chat tables (ChatUsers / ChatGroups / ChatMessages)''{]}
+Redis{[}``ElastiCache Redis (internship-prod-redis)''{]} Uploads{[}``S3
+uploads and archive bucket
+(internship-prod-uploads-account-redacted)''{]} SQS{[}``SQS queue
+(internship-prod-outbox)''{]} DLQ{[}``SQS DLQ
+(internship-prod-outbox-dlq)''{]} Lambda{[}``Lambda
+(internship-outbox-handler)''{]} Dedupe{[}``DynamoDB dedupe table
+(InternshipLambdaEventDedupe)''{]} SES{[}``Amazon SES''{]}
+SM{[}``SageMaker endpoint (internship-qwen3-4b)''{]}
+
+\begin{verbatim}
+User --> CF
+CF --> S3Frontend
+CF --> ALB
+ALB --> EKS
+EKS --> Backend
+EKS --> Chat
+EKS --> Dispatcher
+EKS --> Worker
+EKS --> AI
+Backend --> RDS
+Backend --> Uploads
+Chat --> DDB
+Chat --> Redis
+Worker --> AI
+AI --> SM
+Dispatcher --> SQS
+SQS --> Lambda
+SQS --> DLQ
+Lambda --> Dedupe
+Lambda --> Uploads
+Lambda --> SES
+\end{verbatim}
+
+\{\{\textless{} /mermaid \textgreater\}\}
+
+\vspace{0.5em}\noindent\textbf{Diagram 2: Luồng định tuyến request qua
+CloudFront}\par
+
+\{\{\textless{} mermaid \textgreater\}\} graph TD Request{[}``HTTPS
+request to CloudFront''{]} Match\{``Path pattern''\}
+Frontend{[}``Default behavior to S3 frontend origin''{]} API{[}``/api/*
+behavior to ALB origin''{]} ChatRest{[}``/chat/* behavior to ALB
+origin''{]} Socket{[}``/socket.io/* behavior to ALB origin''{]}
+BackendSvc{[}``Kubernetes Service: backend''{]} ChatSvc{[}``Kubernetes
+Service: chat-service''{]}
+
+\begin{verbatim}
+Request --> Match
+Match --> Frontend
+Match --> API
+Match --> ChatRest
+Match --> Socket
+API --> BackendSvc
+ChatRest --> ChatSvc
+Socket --> ChatSvc
+\end{verbatim}
+
+\{\{\textless{} /mermaid \textgreater\}\}
+
+Frontend bucket vẫn là private. CloudFront xử lý HTTPS và SPA fallback.
+ALB Ingress rewrite prefix \texttt{/\allowbreak{}api} và \texttt{/\allowbreak{}chat} trước khi
+chuyển tiếp đến backend và chat service.
+
+\vspace{0.5em}\noindent\textbf{Diagram 3: Luồng upload CV và xử lý
+AI}\par
+
+\{\{\textless{} mermaid \textgreater\}\} sequenceDiagram participant
+Candidate participant Frontend participant Backend participant S3 as S3
+uploads bucket participant Postgres as RDS PostgreSQL participant Worker
+as Processing worker participant AI as ai-service participant SM as
+SageMaker
+
+\begin{verbatim}
+Candidate->>Frontend: Submit application with CV
+Frontend->>Backend: POST /jobs/{id}/apply
+Backend->>S3: Store uploaded document or generate storage reference
+Backend->>Postgres: Commit application, idempotency record, outbox event, processing job
+Backend-->>Frontend: Application accepted with processing status
+Worker->>Postgres: Claim queued async_processing_jobs row
+Worker->>AI: POST /parse-cv or /match-applications
+AI->>SM: Invoke endpoint internship-qwen3-4b
+SM-->>AI: Model response
+AI-->>Worker: Normalized JSON response
+Worker->>Postgres: Save parsed profile or matching results
+Frontend->>Backend: Poll processing job status
+Backend-->>Frontend: Processing result
+\end{verbatim}
+
+\{\{\textless{} /mermaid \textgreater\}\}
+
+\vspace{0.5em}\noindent\textbf{Diagram 4: Luồng realtime
+chat}\par
+
+\{\{\textless{} mermaid \textgreater\}\} sequenceDiagram participant
+UserA as User A browser participant CF as CloudFront participant ALB as
+ALB participant Chat1 as chat-service pod A participant Redis as
+ElastiCache Redis participant Chat2 as chat-service pod B participant
+DDB as DynamoDB chat tables participant UserB as User B browser
+
+\begin{verbatim}
+UserA->>CF: Socket.IO connect /socket.io
+CF->>ALB: Forward websocket/polling traffic
+ALB->>Chat1: Route to chat-service
+UserA->>Chat1: message:send
+Chat1->>DDB: Persist message
+Chat1->>Redis: Publish room event
+Redis->>Chat2: Broadcast event to subscribed pod
+Chat2->>UserB: Emit message:new
+Chat1-->>UserA: ACK after persistence
+\end{verbatim}
+
+\{\{\textless{} /mermaid \textgreater\}\}
+
+DynamoDB là nơi lưu trữ chat lâu dài. Redis chỉ là lớp pub/sub giữa
+nhiều pod và không thay thế persistent storage.
+
+\vspace{0.5em}\noindent\textbf{Diagram 5: Luồng transactional outbox, SQS và
+Lambda}\par
+
+\{\{\textless{} mermaid \textgreater\}\} sequenceDiagram participant API
+as FastAPI backend participant PG as RDS PostgreSQL participant
+Dispatcher as Outbox dispatcher participant SQS as SQS main queue
+participant Lambda as Lambda outbox handler participant DDB as DynamoDB
+dedupe participant S3 as S3 archive bucket participant SES as Amazon SES
+
+\begin{verbatim}
+API->>PG: Commit business mutation and outbox_events row in one transaction
+Dispatcher->>PG: Claim pending outbox_events row with lease
+Dispatcher->>SQS: Send event envelope
+Dispatcher->>PG: Mark event PUBLISHED
+SQS->>Lambda: Invoke batch
+Lambda->>DDB: Conditional write eventId
+alt First time event
+    Lambda->>S3: Put JSON archive
+    Lambda->>SES: Send email notification
+else Duplicate event
+    Lambda-->>SQS: Treat as already processed
+end
+\end{verbatim}
+
+\{\{\textless{} /mermaid \textgreater\}\}
+
+SQS có cơ chế at-least-once delivery. Duplicate delivery là tình huống
+bình thường, vì vậy Lambda phải xử lý idempotency. Smoke test thành công
+có event \texttt{lambda-\allowbreak{}smoke-\allowbreak{}fixed-\allowbreak{}1785220478}, được archive tại
+\texttt{outbox-\allowbreak{}archive/\allowbreak{}2026/\allowbreak{}07/\allowbreak{}28/\allowbreak{}lambda-\allowbreak{}smoke-\allowbreak{}fixed-\allowbreak{}1785220478.\allowbreak{}json}.
+
+\vspace{0.5em}\noindent\textbf{Diagram 6: Luồng thay đổi source code và CI/CD
+deployment}\par
+
+\{\{\textless{} mermaid \textgreater\}\} graph LR Dev{[}``Developer
+change''{]} GH{[}``GitHub Actions (workflow\_dispatch mode)''{]}
+Validate{[}``validate (tests, lint, build, infra scan)''{]}
+Images{[}``build-images (ECR SHA tags)''{]} Restore{[}``restore-compute
+(EKS node group check)''{]} App{[}``deploy-app (kubectl apply
+workloads)''{]} Public{[}``deploy-public (ALB ingress)''{]}
+CF{[}``ensure-cloudfront (S3 private + OAC + behaviors)''{]}
+Frontend{[}``deploy-frontend (npm build + S3 sync + invalidation)''{]}
+Summary{[}``Production summary''{]}
+
+\begin{verbatim}
+Dev --> GH
+GH --> Validate
+GH --> Restore
+Validate --> Images
+Restore --> Images
+Images --> App
+App --> Public
+Public --> CF
+CF --> Frontend
+App --> Summary
+Frontend --> Summary
+\end{verbatim}
+
+\{\{\textless{} /mermaid \textgreater\}\}
+
+Workflow hỗ trợ các mode \texttt{validate}, \texttt{deploy},
+\texttt{rollout}, \texttt{restore-\allowbreak{}compute}, \texttt{deploy-\allowbreak{}app},
+\texttt{deploy-\allowbreak{}public}, \texttt{deploy-\allowbreak{}frontend} và \texttt{full}.
+GitHub Actions assume AWS role thông qua OIDC; long-lived AWS access
+keys không nằm trong thiết kế deployment.
+
+\vspace{0.5em}\noindent\textbf{Mô tả thành phần}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Thành phần
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Trách nhiệm
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Lệnh kiểm tra
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+CloudFront & Public HTTPS entry point và định tuyến request &
+\texttt{aws\ cloudfront\ get-\allowbreak{}distribution\ -\/\allowbreak{}-id\ EQIGYNECXDYL8} \\
+S3 frontend bucket & Lưu static frontend assets &
+\texttt{aws\ s3\ ls\ s3://internship-prod-frontend-\textless{}AWS\_ACCOUNT\_ID\textgreater{}/} \\
+ALB & Định tuyến API/chat/socket traffic đến EKS services &
+\texttt{kubectl\ get\ ingress\ internship-\allowbreak{}public\ -n\ internship} \\
+Backend & FastAPI business API và health endpoints &
+\texttt{kubectl\ rollout\ status\ deployment/\allowbreak{}backend\ -n\ internship} \\
+Chat service & Socket.IO và chat REST API &
+\texttt{kubectl\ rollout\ status\ deployment/\allowbreak{}chat-\allowbreak{}service\ -n\ internship} \\
+Processing worker & Async AI/document jobs &
+\texttt{kubectl\ get\ deployment\ backend-\allowbreak{}processing-\allowbreak{}worker\ -n\ internship} \\
+Outbox dispatcher & Publish PostgreSQL events sang SQS &
+\texttt{kubectl\ logs\ deployment/\allowbreak{}backend-\allowbreak{}outbox-\allowbreak{}dispatcher\ -n\ internship} \\
+AI service & SageMaker adapter với worker routes ổn định &
+\texttt{kubectl\ port-\allowbreak{}forward\ service/\allowbreak{}ai-\allowbreak{}service\ 8010:8010\ -n\ internship} \\
+RDS PostgreSQL & Transactional data và queues &
+\texttt{aws\ rds\ describe-\allowbreak{}db-\allowbreak{}instances\ -\/\allowbreak{}-db-\allowbreak{}instance-\allowbreak{}identifier\ internship-\allowbreak{}prod-\allowbreak{}postgres\ -\/\allowbreak{}-region\ ap-\allowbreak{}southeast-\allowbreak{}1} \\
+DynamoDB & Chat tables và Lambda dedupe table &
+\texttt{aws\ dynamodb\ describe-\allowbreak{}table\ -\/\allowbreak{}-table-\allowbreak{}name\ ChatMessages\ -\/\allowbreak{}-region\ ap-\allowbreak{}southeast-\allowbreak{}1} \\
+Redis & Socket.IO pub/sub &
+\texttt{aws\ elasticache\ describe-\allowbreak{}replication-\allowbreak{}groups\ -\/\allowbreak{}-replication-\allowbreak{}group-\allowbreak{}id\ internship-\allowbreak{}prod-\allowbreak{}redis\ -\/\allowbreak{}-region\ ap-\allowbreak{}southeast-\allowbreak{}1} \\
+SQS & Outbox event transport &
+\texttt{aws\ sqs\ get-queue-attributes\ -\/-queue-url\ \textless{}OUTBOX\_QUEUE\_URL\textgreater{}\ -\/-attribute-names\ All} \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Tài nguyên public và
+private}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}ll@{}}
+\toprule\noalign{}
+Public-facing & Private hoặc internal \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+CloudFront domain & RDS PostgreSQL \\
+ALB DNS origin & ElastiCache Redis \\
+CloudFront HTTPS routes & DynamoDB tables \\
+Static assets truy cập qua CloudFront & EKS pod-to-service traffic \\
+SES email delivery & SQS queue và DLQ \\
+& S3 buckets không mở public bucket access trực tiếp \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Ranh giới bảo mật}\par
+
+\begin{itemize}
+\tightlist
+\item
+  GitHub Actions dùng OIDC để assume role
+  \texttt{internship-\allowbreak{}github-\allowbreak{}deploy}.
+\item
+  EKS workloads dùng ServiceAccount \texttt{internship-\allowbreak{}app} và IRSA role
+  mapping.
+\item
+  Secrets được inject qua GitHub environment secrets và Kubernetes
+  \texttt{internship-\allowbreak{}secrets}.
+\item
+  S3 frontend bucket phải giữ private và chỉ cho CloudFront đọc.
+\item
+  Backend và chat pods chỉ expose service ports qua ALB path rules.
+\item
+  AI traffic đi nội bộ trong cluster từ worker đến \texttt{ai-\allowbreak{}service};
+  SageMaker được gọi bởi adapter.
+\item
+  SQS/Lambda processing xử lý idempotency bằng DynamoDB conditional
+  writes.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Kết quả mong đợi}\par
+
+Kiến trúc cuối cùng tách rõ static delivery, public request routing,
+long-running service execution, transactional storage, realtime
+synchronization, asynchronous event delivery, short event-driven
+notification và AI inference. Mỗi thành phần có trách nhiệm rõ ràng và
+có đường kiểm tra độc lập.
+
+\vspace{0.5em}\noindent\textbf{Lỗi thường gặp}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Lỗi
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Nguyên nhân
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Cách xử lý
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Mô tả frontend chạy trong EKS & Tài liệu kiến trúc cũ & Chỉ dùng kiến
+trúc hiện tại: S3 và CloudFront \\
+Mô tả S3 nằm sau ALB & Hiểu sai origin model của CloudFront & Default
+CloudFront behavior phải route trực tiếp đến S3 \\
+Mô tả Redis là chat database & Hiểu sai thiết kế chat & DynamoDB lưu
+chat records; Redis chỉ dùng pub/sub \\
+Mô tả outbox là exactly-once & SQS Standard không đảm bảo exactly-once &
+Ghi rõ at-least-once và consumer idempotent \\
+Enable worker trước khi AI sẵn sàng & SageMaker dependency chưa ready &
+Giữ worker disabled cho đến khi AI service và endpoint sẵn sàng \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Kết luận}\par
+
+Chương Architecture này là mô hình tham chiếu cho các bước workshop còn
+lại. Các phần deployment, testing, monitoring, security, cost,
+troubleshooting và cleanup phía sau cần khớp với các diagram này.

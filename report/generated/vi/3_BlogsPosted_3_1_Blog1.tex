@@ -1,0 +1,113 @@
+\vspace{0.5em}\noindent\textbf{TẮT EC2 RỒI NHƯNG AWS VẪN TÍNH
+PHÍ?}\par
+
+Một hiểu lầm khá phổ biến khi mới học AWS là: \emph{EC2 đã tắt = AWS
+ngừng tính phí.}
+
+Nhưng qua những bài post và tin nhắn trong group, mình thấy rất nhiều
+người vẫn nhận hóa đơn dù instance đã ở trạng thái \emph{Stopped}, thậm
+chí đã \emph{Terminated}.
+
+Có một trường hợp thực tế là một người bạn của mình đã vô tình để quên
+NAT Gateway sau khi làm lab và nhận hóa đơn khoảng gần \$250.
+
+Vấn đề nằm ở chỗ: EC2 chỉ là một phần trong hệ thống. Những tài nguyên
+được tạo cùng với nó không phải lúc nào cũng tự biến mất.
+
+\vspace{0.5em}\noindent\textbf{Stop EC2 chỉ dừng phí máy
+ảo}\par
+
+Khi EC2 ở trạng thái Stopped, AWS ngừng tính phí phần compute. Tuy
+nhiên, ổ đĩa EBS vẫn được giữ lại để lần sau có thể bật máy và tiếp tục
+sử dụng, vì vậy dung lượng lưu trữ vẫn bị tính phí.
+
+Ta có thể hiểu đơn giản:
+
+\begin{itemize}
+\tightlist
+\item
+  Stop = Tắt máy nhưng giữ nguyên ổ cứng.
+\item
+  Terminate = Xóa máy, nhưng vẫn nên kiểm tra xem EBS volume có được cấu
+  hình xóa cùng với instance hay không.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{NAT Gateway vẫn tính tiền dù EC2 đã
+tắt}\par
+
+NAT Gateway là một tài nguyên riêng trong VPC nên nó không tự dừng theo
+EC2.
+
+AWS tính phí dựa trên cả:
+
+\begin{itemize}
+\tightlist
+\item
+  Số giờ NAT Gateway tồn tại.
+\item
+  Lượng dữ liệu đi qua nó.
+\end{itemize}
+
+Ví dụ, trong bảng giá AWS tại một số region, NAT Gateway có thể tốn
+khoảng \$0.045 mỗi giờ (chi phí tham khảo), tương đương hơn \$32 mỗi
+tháng, ngay cả khi gần như không có traffic.
+
+Nếu có dữ liệu đi qua, chi phí sẽ còn tăng thêm.
+
+\vspace{0.5em}\noindent\textbf{Elastic IP cũng không miễn
+phí}\par
+
+Nếu đã cấp một Elastic IP nhưng quên release, địa chỉ đó vẫn có thể tiếp
+tục tạo ra chi phí.
+
+AWS hiện tính phí public IPv4 cả khi đang được sử dụng lẫn khi để idle.
+Một địa chỉ chỉ tốn khoảng vài USD mỗi tháng, nhưng nếu nhiều địa chỉ bị
+bỏ quên ở nhiều region thì chi phí sẽ cộng dồn thành một con số đáng kể.
+
+\vspace{0.5em}\noindent\textbf{AWS Budget không phải ``hard spending
+limit''}\par
+
+AWS Budget mặc định chủ yếu dùng để gửi cảnh báo. Nó không tự động khóa
+toàn bộ tài khoản khi chi phí đạt đến mức đã đặt.
+
+Nếu muốn hệ thống tự phản ứng, chúng ta cần cấu hình thêm Budget
+Actions, chẳng hạn:
+
+\begin{itemize}
+\tightlist
+\item
+  Stop một EC2 hoặc RDS cụ thể.
+\item
+  Gắn IAM policy để ngăn tạo thêm tài nguyên.
+\item
+  Gửi cảnh báo qua email hoặc SNS.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Checklist tham khảo mình đúc kết sau mỗi buổi lab
+AWS}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Vào Cost Explorer, group theo Service và Usage Type.
+\item
+  Kiểm tra EC2 \(\rightarrow\) Volumes và xóa những EBS không còn cần
+  thiết.
+\item
+  Kiểm tra VPC \(\rightarrow\) NAT Gateways.
+\item
+  Release các Elastic IP không còn sử dụng.
+\item
+  Kiểm tra đúng region vì tài nguyên ở region khác vẫn có thể tính tiền.
+\item
+  Bật AWS Budget và Cost Anomaly Detection ngay từ đầu.
+\end{itemize}
+
+Bài học quan trọng nhất mình rút ra là: khi xóa một service trên AWS,
+đừng chỉ hỏi: \emph{``Mình đã tắt nó chưa?''} Mà hãy hỏi thêm:
+
+\emph{``Service này đã tạo ra những tài nguyên phụ nào, và chúng có còn
+đang tính phí không?''}
+
+\texttt{\#AWS} \texttt{\#EC2} \texttt{\#CloudComputing}
+\texttt{\#AWSCostOptimization}

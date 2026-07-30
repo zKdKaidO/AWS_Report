@@ -1,0 +1,24 @@
+\vspace{0.5em}\noindent\textbf{Sử dụng Gateway
+endpoint}\par
+
+Trong phần này, bạn sẽ tạo một Gateway endpoint để truy cập Amazon S3 từ
+một EC2 instance. Gateway endpoint sẽ cho phép tải một object lên S3
+bucket mà không cần sử dụng Internet Công cộng. Để tạo endpoint, bạn
+phải chỉ định VPC mà bạn muốn tạo endpoint và dịch vụ (trong trường hợp
+này là S3) mà bạn muốn thiết lập kết nối.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={overview}]{5-Workshop/5.3-S3-vpc/diagram2.png}}
+\caption{overview}
+\end{figure}
+
+\vspace{0.5em}\noindent\textbf{Nội dung}\par
+
+\begin{itemize}
+\tightlist
+\item
+  \href{5.3.1-create-gwe/}{Tạo gateway endpoint}
+\item
+  \href{5.3.2-test-gwe/}{Test gateway endpoint}
+\end{itemize}

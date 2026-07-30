@@ -1,0 +1,116 @@
+\vspace{0.5em}\noindent\textbf{WHY DOES AWS STILL CHARGE AFTER STOPPING
+EC2?}\par
+
+A common misunderstanding when learning AWS is: \emph{EC2 is stopped =
+AWS stops charging.}
+
+However, through posts and messages in the group, I have seen many
+people still receive bills even when their instance is in the
+\emph{Stopped} state, or even after it has been \emph{Terminated}.
+
+One real case was a friend of mine who accidentally left a NAT Gateway
+running after doing a lab and received a bill of nearly \$250.
+
+The issue is that EC2 is only one part of the system. The resources
+created together with it do not always disappear automatically.
+
+\vspace{0.5em}\noindent\textbf{Stopping EC2 only stops virtual machine compute
+charges}\par
+
+When an EC2 instance is in the Stopped state, AWS stops charging for the
+compute part. However, the EBS disk is still kept so the machine can be
+started again later, so the storage capacity is still charged.
+
+A simple way to understand it:
+
+\begin{itemize}
+\tightlist
+\item
+  Stop = Turn off the machine but keep the disk.
+\item
+  Terminate = Delete the machine, but it is still necessary to check
+  whether the EBS volume is configured to be deleted with the instance.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{NAT Gateway still charges even when EC2 is
+stopped}\par
+
+NAT Gateway is a separate resource in a VPC, so it does not stop
+automatically with EC2.
+
+AWS charges based on both:
+
+\begin{itemize}
+\tightlist
+\item
+  The number of hours the NAT Gateway exists.
+\item
+  The amount of data passing through it.
+\end{itemize}
+
+For example, in AWS pricing for some regions, a NAT Gateway may cost
+around \$0.045 per hour (reference cost), equivalent to more than \$32
+per month, even with almost no traffic.
+
+If data passes through it, the cost increases further.
+
+\vspace{0.5em}\noindent\textbf{Elastic IP is not free
+either}\par
+
+If an Elastic IP has been allocated but not released, that address may
+continue to generate cost.
+
+AWS currently charges for public IPv4 addresses whether they are in use
+or idle. One address may only cost a few dollars per month, but if many
+addresses are forgotten across multiple regions, the cost can add up
+significantly.
+
+\vspace{0.5em}\noindent\textbf{AWS Budget is not a hard spending
+limit}\par
+
+By default, AWS Budget is mainly used to send alerts. It does not
+automatically lock the entire account when spending reaches the
+configured amount.
+
+If the system needs to respond automatically, Budget Actions must be
+configured, for example:
+
+\begin{itemize}
+\tightlist
+\item
+  Stop a specific EC2 or RDS resource.
+\item
+  Attach an IAM policy to prevent creating more resources.
+\item
+  Send alerts through email or SNS.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Reference checklist after each AWS
+lab}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Open Cost Explorer and group by Service and Usage Type.
+\item
+  Check EC2 \(\rightarrow\) Volumes and delete EBS volumes that are no
+  longer needed.
+\item
+  Check VPC \(\rightarrow\) NAT Gateways.
+\item
+  Release Elastic IPs that are no longer used.
+\item
+  Check the correct region because resources in other regions can still
+  generate cost.
+\item
+  Enable AWS Budget and Cost Anomaly Detection from the beginning.
+\end{itemize}
+
+The most important lesson I learned is: when deleting a service on AWS,
+do not only ask: \emph{``Have I turned it off?''} Also ask:
+
+\emph{``What supporting resources did this service create, and are they
+still generating cost?''}
+
+\texttt{\#AWS} \texttt{\#EC2} \texttt{\#CloudComputing}
+\texttt{\#AWSCostOptimization}

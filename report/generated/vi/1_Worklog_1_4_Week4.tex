@@ -1,0 +1,277 @@
+\vspace{0.5em}\noindent\textbf{Week 4 - Containerization and CI Quality
+Gates}\par
+
+\vspace{0.5em}\noindent\textbf{Objectives}\par
+
+Week 4 focused on making the project repeatable: Dockerfiles, Docker
+Compose, GitHub Actions quality gates, local validation scripts, smoke
+tests, and security checks.
+
+\vspace{0.5em}\noindent\textbf{Tasks Completed}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence basis
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Completed & Standardized Docker build paths for backend, chat, frontend,
+and AI service. & \texttt{backend/\allowbreak{}Dockerfile},
+\texttt{chat-\allowbreak{}service/\allowbreak{}Dockerfile}, \texttt{frontend/\allowbreak{}Dockerfile}, and
+\texttt{Dockerfile.\allowbreak{}ai-\allowbreak{}service}. \\
+Completed & Kept local Compose as the parity environment for
+dependencies and smoke tests. & \texttt{docker-\allowbreak{}compose.\allowbreak{}yml},
+\texttt{docker-\allowbreak{}compose.\allowbreak{}ai-\allowbreak{}service.\allowbreak{}yml}, and
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}smoke-\allowbreak{}test.\allowbreak{}sh}. \\
+Completed & Consolidated GitHub Actions into the main CI/CD workflow. &
+\texttt{.\allowbreak{}github/\allowbreak{}workflows/\allowbreak{}cicd.\allowbreak{}yml} and commit \texttt{e09e84e}. \\
+Completed & Added required quality/security gates. &
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}repository\_\allowbreak{}quality.\allowbreak{}py},
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}infrastructure.\allowbreak{}py},
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}security\_\allowbreak{}scan.\allowbreak{}py}, \texttt{.\allowbreak{}gitleaks.\allowbreak{}toml}, and
+\texttt{.\allowbreak{}pre-\allowbreak{}commit-\allowbreak{}config.\allowbreak{}yaml}. \\
+Completed & Fixed ShellCheck SC2155 in the smoke test script. & Commit
+\texttt{98f3420}. \\
+Partially completed & Attached GitHub Actions screenshots and full
+before/after logs where available. & Evidence pending: I did not have
+the full CI screenshot/log artifact set in the local evidence
+archive. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Technical Implementation}\par
+
+The final CI workflow defines validation jobs for backend, chat service,
+frontend, Docker images, infrastructure, smoke checks, and security
+scanning. The workflow uses Python 3.12, Node.js 22, shell validation,
+Docker image builds, Trivy/Gitleaks images, and actionlint/kubeconform
+support through the infrastructure script.
+
+Relevant workflow checks include:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ ruff format }\AttributeTok{{-}{-}check}\NormalTok{ .}
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ ruff check .}
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ mypy app tests}
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ pytest }\AttributeTok{{-}m} \StringTok{"not postgres"}
+\ExtensionTok{npm}\NormalTok{ run check }\AttributeTok{{-}{-}prefix}\NormalTok{ chat{-}service}
+\ExtensionTok{npm}\NormalTok{ run lint }\AttributeTok{{-}{-}prefix}\NormalTok{ chat{-}service}
+\ExtensionTok{npm}\NormalTok{ run format:check }\AttributeTok{{-}{-}prefix}\NormalTok{ chat{-}service}
+\ExtensionTok{npm}\NormalTok{ run test:ci }\AttributeTok{{-}{-}prefix}\NormalTok{ chat{-}service}
+\ExtensionTok{npm}\NormalTok{ run test }\AttributeTok{{-}{-}prefix}\NormalTok{ frontend}
+\ExtensionTok{npm}\NormalTok{ run build }\AttributeTok{{-}{-}prefix}\NormalTok{ frontend}
+\ExtensionTok{docker}\NormalTok{ build }\AttributeTok{{-}t}\NormalTok{ internship{-}backend:ci ./backend}
+\ExtensionTok{docker}\NormalTok{ build }\AttributeTok{{-}t}\NormalTok{ internship{-}chat:ci ./chat{-}service}
+\ExtensionTok{docker}\NormalTok{ build }\AttributeTok{{-}f}\NormalTok{ Dockerfile.ai{-}service }\AttributeTok{{-}t}\NormalTok{ internship{-}ai:ci .}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Problems and Solutions}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Problem
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Root cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Multiple workflows made the deployment path harder to control. &
+Separate CI/deploy workflows split validation and deployment behavior. &
+Consolidated workflows into \texttt{.\allowbreak{}github/\allowbreak{}workflows/\allowbreak{}cicd.\allowbreak{}yml}. &
+Completed \\
+ShellCheck flagged SC2155 in the smoke test script. & Assignment and
+command substitution were combined in a way ShellCheck warns about. &
+Commit \texttt{98f3420} split the logic to satisfy ShellCheck. &
+Completed \\
+\texttt{.\allowbreak{}env} files can contain UTF-8 BOM and break shell parsing. &
+Windows editors may add BOM at the beginning of files. &
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}smoke-\allowbreak{}test.\allowbreak{}sh} strips the BOM when preparing
+smoke-test env input. & Completed \\
+Docker-based infra validation may hang or fail when Docker is
+unavailable. & Local Windows/Docker setups vary by machine. &
+Infrastructure scripts support local CLI binaries and bounded Docker
+fallback behavior. & Completed \\
+Full CI result screenshots are missing from the Hugo report. & GitHub
+Actions artifacts were not attached locally. & I kept CI log screenshots
+pending. & Blocked \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Testing, Build and Deployment
+Results}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Backend CI commands & Implemented & Commands are defined in
+\texttt{.\allowbreak{}github/\allowbreak{}workflows/\allowbreak{}cicd.\allowbreak{}yml}. Current-run output is pending. \\
+Chat CI commands & Implemented & Commands are defined in
+\texttt{.\allowbreak{}github/\allowbreak{}workflows/\allowbreak{}cicd.\allowbreak{}yml} and
+\texttt{scripts/\allowbreak{}chat-\allowbreak{}service.\allowbreak{}sh}. Current-run output is pending. \\
+Frontend CI commands & Implemented & Commands are defined in
+\texttt{.\allowbreak{}github/\allowbreak{}workflows/\allowbreak{}cicd.\allowbreak{}yml} and \texttt{scripts/\allowbreak{}frontend.\allowbreak{}sh}.
+Current-run output is pending. \\
+Infrastructure/security checks & Implemented &
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}infrastructure.\allowbreak{}py}, \texttt{scripts/\allowbreak{}check-\allowbreak{}infra.\allowbreak{}ps1},
+\texttt{scripts/\allowbreak{}check-\allowbreak{}infra.\allowbreak{}sh}, and
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}security\_\allowbreak{}scan.\allowbreak{}py} exist. \\
+Compose smoke test & Implemented & \texttt{scripts/\allowbreak{}ci/\allowbreak{}smoke-\allowbreak{}test.\allowbreak{}sh}
+exists and ends with \texttt{Compose\ smoke\ test\ passed} on success.
+Current-run output is pending. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Evidence}\par
+
+\vspace{0.5em}\noindent\textbf{Screenshots}\par
+
+Evidence pending: add screenshots under
+\texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}04/\allowbreak{}}, for example:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}04/\allowbreak{}github-\allowbreak{}actions-\allowbreak{}validate.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}04/\allowbreak{}shellcheck-\allowbreak{}before-\allowbreak{}after.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}04/\allowbreak{}docker-\allowbreak{}builds.\allowbreak{}png}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Commits and Pull
+Requests}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Commit
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pull Request
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{b4ef947} & Added required pipeline gates, security scanning,
+pre-commit config, and infrastructure validation scripts. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/b4ef947551615e6f22ae4261c6c977b4019080a3}{View
+commit} & Evidence pending \\
+\texttt{e09e84e} & Consolidated workflows into a single
+\texttt{cicd.\allowbreak{}yml} pipeline. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/e09e84ee423067eb5c2fa766133bd133b9f03a45}{View
+commit} & Evidence pending \\
+\texttt{29de145} & Resolved CI failures for pytest, frontend build, and
+infrastructure checks. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/29de145dc5eca8036ee76aedd29db24953a32245}{View
+commit} & Evidence pending \\
+\texttt{98f3420} & Fixed ShellCheck SC2155 in the smoke test script. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/98f34200147423960604f23a7f960a853c59cd0a}{View
+commit} & Evidence pending \\
+\texttt{c2ad7cc} & Consolidated and optimized the GitHub Actions
+workflow. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/c2ad7cc72ed18a9f90441696675939f7b94154b6}{View
+commit} & Evidence pending \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Test Logs}\par
+
+Evidence pending: attach CI or local output for backend, chat, frontend,
+and smoke-test jobs.
+
+\vspace{0.5em}\noindent\textbf{Build Logs}\par
+
+Evidence pending: attach Docker build and Vite build output from GitHub
+Actions or a local run.
+
+\vspace{0.5em}\noindent\textbf{Deployment Logs}\par
+
+Not applicable for Week 4. This phase prepared deployable artifacts and
+gates, while AWS/EKS deployment continued in later weeks.
+
+\vspace{0.5em}\noindent\textbf{Weekly Results}\par
+
+The project gained a single CI/CD backbone, repeatable quality gates,
+Docker build paths, smoke-test handling, and security/infrastructure
+validation scripts.
+
+\vspace{0.5em}\noindent\textbf{Lessons Learned}\par
+
+CI should fail early on repeatable checks: formatting, typing, tests,
+build, security, shell syntax, Dockerfile quality, and infrastructure
+manifest validation. Making these checks explicit reduced the amount of
+manual inspection needed before deployment.
+
+\vspace{0.5em}\noindent\textbf{Next Week Plan}\par
+
+Move from Docker Compose to local Kubernetes with kind, Kubernetes
+manifests, migration/init jobs, probes, HPA/PDB configuration, and
+observability resources.

@@ -1,0 +1,1135 @@
+\vspace{0.5em}\noindent\textbf{Internship Application
+Platform}\par
+
+\textbf{An AI-integrated internship application management platform
+deployed on AWS}
+
+\vspace{0.5em}\noindent\textbf{Project Summary}\par
+
+Internship Application Platform is a centralized platform that helps
+students, candidates, and companies manage the internship recruitment
+process in one system.
+
+For Candidates, the system supports profile creation, internship
+opportunity discovery, application status tracking, CV and document
+management, direct communication with HR, and AI-based evaluation of the
+fit between a CV and a Job Description.
+
+For HR teams and companies, the system supports company profile
+management, job posting, applicant review, recruitment status updates,
+direct communication with Candidates, and AI-assisted CV analysis,
+comparison, and ranking.
+
+The project is designed as a multi-service architecture, including:
+
+\begin{itemize}
+\tightlist
+\item
+  A React and Vite frontend.
+\item
+  A FastAPI REST backend.
+\item
+  A chat service using Node.js, Socket.IO, Redis, and DynamoDB.
+\item
+  An AI service for CV analysis, Job Description analysis, and candidate
+  ranking.
+\item
+  PostgreSQL for business data.
+\item
+  Amazon S3 for CV and document storage.
+\item
+  Docker and Kubernetes for standardized deployment environments.
+\item
+  Observability for metrics, logs, and distributed traces.
+\item
+  GitHub Actions for CI/CD and security checks.
+\end{itemize}
+
+The production architecture is planned for AWS using Amazon EKS, Amazon
+ECR, Amazon RDS for PostgreSQL, Amazon DynamoDB, Amazon ElastiCache,
+Amazon S3, Amazon CloudFront, Application Load Balancer, and suitable
+monitoring services.
+
+\vspace{0.5em}\noindent\textbf{Problem Statement}\par
+
+\vspace{0.5em}\noindent\textbf{Current Problems}\par
+
+During the internship search process, students often manage application
+information with spreadsheets, personal notes, email, or several
+separate platforms. This approach creates several problems:
+
+\begin{itemize}
+\tightlist
+\item
+  Job and company information is scattered.
+\item
+  It is difficult to track the status of each application.
+\item
+  CVs, transcripts, certificates, and related documents are stored in
+  multiple places.
+\item
+  Candidates have limited support for evaluating how well their CV
+  matches a Job Description.
+\item
+  Communication with HR is not directly connected to the application
+  record.
+\item
+  Candidates can easily miss deadlines, interview schedules, or document
+  requests.
+\end{itemize}
+
+For HR teams and companies, manual recruitment workflows also create
+limitations:
+
+\begin{itemize}
+\tightlist
+\item
+  CV reading and classification takes a significant amount of time.
+\item
+  It is difficult to compare multiple candidates using consistent
+  criteria.
+\item
+  Recruitment status may not be updated consistently.
+\item
+  Candidate data may be stored insecurely.
+\item
+  Communication between HR and Candidates is scattered across multiple
+  channels.
+\item
+  There is no centralized tool for tracking recruitment activity and
+  effectiveness.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Proposed Solution}\par
+
+Internship Application Platform provides a centralized system for both
+Candidates and HR.
+
+Candidates can:
+
+\begin{itemize}
+\tightlist
+\item
+  Register and manage their accounts.
+\item
+  Update personal profiles.
+\item
+  Search and view job information.
+\item
+  Submit applications.
+\item
+  Track recruitment status.
+\item
+  Upload and manage CVs, certificates, and transcripts.
+\item
+  Communicate directly with HR.
+\item
+  Use AI to analyze CV fit against a job.
+\end{itemize}
+
+HR teams and companies can:
+
+\begin{itemize}
+\tightlist
+\item
+  Create and manage company profiles.
+\item
+  Post and edit job openings.
+\item
+  View submitted applications.
+\item
+  Update candidate recruitment status.
+\item
+  Communicate directly with Candidates.
+\item
+  Use AI to extract information, calculate fit scores, and support
+  candidate ranking.
+\end{itemize}
+
+Long-running tasks such as document reading, CV analysis, and reranking
+are processed asynchronously through workers so that the main API is not
+blocked during processing.
+
+\vspace{0.5em}\noindent\textbf{Benefits and Value}\par
+
+For Candidates, the platform helps:
+
+\begin{itemize}
+\tightlist
+\item
+  Manage the full application process in one place.
+\item
+  Reduce the risk of losing documents and job information.
+\item
+  Track the status of each application clearly.
+\item
+  Identify relevant skills and missing skills.
+\item
+  Communicate with companies more conveniently.
+\end{itemize}
+
+For HR teams, the platform helps:
+
+\begin{itemize}
+\tightlist
+\item
+  Reduce manual CV processing time.
+\item
+  Centralize candidate information and recruitment status.
+\item
+  Standardize the resume evaluation process.
+\item
+  Support data-driven decision-making.
+\item
+  Improve recruitment tracking and coordination.
+\end{itemize}
+
+For the development team, the project provides an opportunity to apply
+full-stack development, Cloud architecture, AI integration, realtime
+communication, Kubernetes, CI/CD, observability, and system security
+knowledge.
+
+\vspace{0.5em}\noindent\textbf{Solution Architecture}\par
+
+The original proposal targeted a multi-service AWS architecture with
+Kubernetes for containerized services, managed databases, object
+storage, realtime chat, observability, and CI/CD. In the final
+implementation, I kept that direction and adjusted two important areas
+after completing the deployment work:
+
+\begin{itemize}
+\tightlist
+\item
+  The React frontend is no longer a Kubernetes workload. It is built
+  with Vite, stored in a private S3 bucket, and delivered by CloudFront.
+\item
+  Backend, chat, worker, outbox dispatcher, and the SageMaker adapter
+  remain on EKS because they are long-running processes or need
+  Kubernetes rollout, health check, and scaling controls.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Final implemented
+architecture}\par
+
+\{\{\textless{} mermaid \textgreater\}\} graph LR User{[}``Candidate /
+HR browser''{]} CF{[}``Amazon
+CloudFrontdhm2rz5nmsibj.cloudfront.net''{]} S3Frontend{[}``Private S3
+frontend bucketinternship-prod-frontend-account-redacted''{]}
+ALB{[}``Application Load Balancerinternet-facing''{]} EKS{[}``Amazon
+EKSinternship-prod / namespace internship''{]} Backend{[}``FastAPI
+backendDeployment/backend :8000''{]} Chat{[}``Node.js Socket.IO
+chatDeployment/chat-service :3000''{]} Dispatcher{[}``Outbox
+dispatcherDeployment/backend-outbox-dispatcher''{]}
+Worker{[}``Processing workerDeployment/backend-processing-worker''{]}
+AI{[}``AI service adapterDeployment/ai-service :8010''{]} RDS{[}``Amazon
+RDS PostgreSQLinternship-prod-postgres''{]} Redis{[}``Amazon ElastiCache
+Redisinternship-prod-redis''{]} DDBChat{[}``DynamoDB chat
+tablesChatUsers / ChatGroups / ChatMessages''{]} S3Uploads{[}``S3
+uploads and archive bucketinternship-prod-uploads-account-redacted''{]}
+SQS{[}``Amazon SQSinternship-prod-outbox''{]} DLQ{[}``SQS
+DLQinternship-prod-outbox-dlq''{]} Lambda{[}``AWS
+Lambdainternship-outbox-handler''{]} Dedupe{[}``DynamoDB dedupe
+tableInternshipLambdaEventDedupe''{]} SES{[}``Amazon SES''{]}
+SageMaker{[}``SageMaker endpointinternship-qwen3-4b''{]}
+GitHub{[}``GitHub Actions OIDC''{]} ECR{[}``Amazon ECR images''{]}
+
+\begin{verbatim}
+User --> CF
+CF -->|"Default *"| S3Frontend
+CF -->|"/api/*"| ALB
+CF -->|"/chat/*"| ALB
+CF -->|"/socket.io/*"| ALB
+ALB --> Backend
+ALB --> Chat
+Backend --> RDS
+Backend --> S3Uploads
+Backend --> Dispatcher
+Backend --> Worker
+Chat --> Redis
+Chat --> DDBChat
+Worker --> AI
+AI --> SageMaker
+Dispatcher --> SQS
+SQS --> Lambda
+SQS --> DLQ
+Lambda --> Dedupe
+Lambda --> S3Uploads
+Lambda --> SES
+GitHub --> ECR
+GitHub --> EKS
+GitHub --> S3Frontend
+GitHub --> CF
+\end{verbatim}
+
+\{\{\textless{} /mermaid \textgreater\}\}
+
+\vspace{0.5em}\noindent\textbf{Architecture explanation}\par
+
+CloudFront is the single public entry point for users. Static assets use
+the default CloudFront behavior and are read from the private frontend
+S3 bucket through CloudFront Origin Access Control. Dynamic API and
+realtime routes are sent to the public Application Load Balancer:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{/\allowbreak{}api/\allowbreak{}*} is rewritten by the ALB Ingress and routed to the
+  FastAPI backend.
+\item
+  \texttt{/\allowbreak{}chat/\allowbreak{}*} is rewritten and routed to the chat service.
+\item
+  \texttt{/\allowbreak{}socket.\allowbreak{}io/\allowbreak{}*} is routed to the chat service for Socket.IO
+  transport.
+\end{itemize}
+
+The EKS cluster hosts only services that need long-running runtime
+behavior: backend, chat, outbox dispatcher, processing worker, and the
+AI adapter. PostgreSQL is the transactional database for users, jobs,
+applications, workflow state, async processing jobs, outbox records, and
+idempotency records. DynamoDB stores permanent chat entities and Lambda
+event deduplication state. Redis is used only for Socket.IO pub/sub
+between chat replicas. SQS decouples committed business events from
+notification processing, and Lambda performs short event-driven work
+such as deduplication, S3 archive, and SES email delivery.
+
+\vspace{0.5em}\noindent\textbf{Component responsibility
+table}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Component
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Final responsibility
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Implementation evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+React/Vite frontend & Candidate and HR user interface, built to static
+assets & \texttt{frontend/\allowbreak{}package.\allowbreak{}json},
+\texttt{scripts/\allowbreak{}ci/\allowbreak{}deploy-\allowbreak{}frontend.\allowbreak{}sh} \\
+CloudFront & HTTPS public entry point and route dispatcher &
+\texttt{scripts/\allowbreak{}aws/\allowbreak{}ensure-\allowbreak{}cloudfront.\allowbreak{}sh}, Week 8 distribution
+\texttt{EQIGYNECXDYL8} \\
+Frontend S3 bucket & Private storage for \texttt{frontend/\allowbreak{}dist} assets &
+Private frontend bucket from the Week 8 deployment evidence; account
+suffix redacted \\
+Application Load Balancer & Public routing to EKS services &
+\texttt{k8s/\allowbreak{}eks/\allowbreak{}ingress-\allowbreak{}alb-\allowbreak{}no-\allowbreak{}domain.\allowbreak{}yaml} \\
+FastAPI backend & Auth, jobs, applications, uploads, dashboards,
+processing job APIs & \texttt{backend/\allowbreak{}app/\allowbreak{}main.\allowbreak{}py}, backend routers \\
+Chat service & REST chat APIs and Socket.IO realtime channel &
+\texttt{chat-\allowbreak{}service/\allowbreak{}server.\allowbreak{}js} \\
+Processing worker & Claims asynchronous processing jobs and writes
+results & \texttt{backend/\allowbreak{}app/\allowbreak{}workers/\allowbreak{}processing\_\allowbreak{}worker.\allowbreak{}py},
+\texttt{k8s/\allowbreak{}app/\allowbreak{}backend-\allowbreak{}processing-\allowbreak{}worker.\allowbreak{}yaml} \\
+Outbox dispatcher & Publishes committed PostgreSQL outbox events to SQS
+& \texttt{backend/\allowbreak{}app/\allowbreak{}workers/\allowbreak{}outbox\_\allowbreak{}dispatcher.\allowbreak{}py}, ADR-001 \\
+AI service & Stable worker-facing adapter for SageMaker &
+\texttt{ai\_\allowbreak{}service/\allowbreak{}app.\allowbreak{}py}, \texttt{k8s/\allowbreak{}app/\allowbreak{}ai-\allowbreak{}service.\allowbreak{}yaml} \\
+RDS PostgreSQL & Transactional business data and reliable worker queues
+& Alembic migrations through
+\texttt{0008\_\allowbreak{}async\_\allowbreak{}processing\_\allowbreak{}jobs.\allowbreak{}py} \\
+DynamoDB & Chat persistence and Lambda event deduplication & Chat table
+names in Kubernetes config and Week 8 runtime evidence \\
+Redis & Socket.IO pub/sub between chat pods &
+\texttt{chat-\allowbreak{}service/\allowbreak{}lib/\allowbreak{}redis.\allowbreak{}js}, Kubernetes config \\
+SQS and DLQ & At-least-once event delivery and failed-message isolation
+& ADR-001 and Week 8 queue evidence \\
+Lambda and SES & Event notification, archive, and email delivery &
+Lambda configuration and CloudWatch evidence from Week 8 \\
+GitHub Actions OIDC & CI/CD without long-lived AWS access keys &
+\texttt{.\allowbreak{}github/\allowbreak{}workflows/\allowbreak{}cicd.\allowbreak{}yml} \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Design rationale}\par
+
+The frontend was moved from EKS to S3 and CloudFront because it is
+static after build time. This reduces Kubernetes workload count, removes
+the need for a frontend Deployment, Service, HPA and PDB, and lets
+CloudFront handle caching and SPA delivery.
+
+The backend and chat service remain in EKS because they are long-running
+APIs with health probes, replicas, HPA, PDB, and rolling deployment
+needs. The processing worker also remains in EKS because CV parsing, job
+parsing, and matching jobs can run longer than a short Lambda-style task
+and need queue leases, retries, and controlled concurrency.
+
+The AI service isolates SageMaker-specific inference logic from the
+worker contract. The worker continues to call stable routes such as
+\texttt{/\allowbreak{}parse-\allowbreak{}job}, \texttt{/\allowbreak{}parse-\allowbreak{}cv}, and
+\texttt{/\allowbreak{}match-\allowbreak{}applications}, while the AI adapter handles SageMaker
+endpoint invocation, timeout, retry, and response normalization.
+
+The transactional outbox is used because committing application data and
+publishing an event are separate failure domains. Events are first
+inserted in PostgreSQL in the same transaction as the business mutation.
+A dispatcher later sends them to SQS. This provides at-least-once
+delivery, and Lambda uses DynamoDB conditional writes to deduplicate
+\texttt{eventId}.
+
+\vspace{0.5em}\noindent\textbf{Proposal vs final
+implementation}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Original proposal
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Final implemented architecture
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Frontend hosting & Could be served through Kubernetes or AWS static
+hosting & Implemented as private S3 plus CloudFront \\
+Public entry point & ALB and/or CloudFront expected & CloudFront is the
+user-facing entry point; ALB is an origin for API/chat/socket paths \\
+Backend runtime & Kubernetes on EKS & EKS Deployment \texttt{backend}, 2
+replicas, HPA 2-5 \\
+Chat runtime & Node.js and Socket.IO with Redis/DynamoDB & EKS
+Deployment \texttt{chat-\allowbreak{}service}, 2 replicas, ALB stickiness, Redis
+pub/sub \\
+AI runtime & AI service expected & EKS \texttt{ai-\allowbreak{}service} adapter
+invokes SageMaker endpoint \texttt{internship-\allowbreak{}qwen3-\allowbreak{}4b} \\
+Event processing & Asynchronous events expected & PostgreSQL outbox,
+SQS, Lambda, DynamoDB dedupe, S3 archive and SES \\
+Deployment & CI/CD expected & GitHub Actions workflow dispatch modes
+with OIDC and ECR image verification \\
+Runtime proof & Design-stage assumption & I collected runtime evidence
+for CloudFront, EKS workloads, RDS, Redis, DynamoDB, SQS, Lambda
+configuration, and the SageMaker endpoint \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{AWS Services Used}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+AWS service
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Role in the system
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Reason for selection
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Amazon EKS & Runs the backend, worker, chat service, and container
+workloads & Supports Kubernetes, scaling, rolling updates, and
+multi-service management \\
+Amazon ECR & Stores container images & Integrates directly with EKS and
+GitHub Actions \\
+Application Load Balancer & Receives and routes requests to services &
+Supports routing, health checks, and Kubernetes Ingress integration \\
+Amazon RDS for PostgreSQL & Stores users, companies, jobs, applications,
+document metadata, and processing jobs & Suitable for relational data
+and transactions \\
+Amazon DynamoDB & Stores chat users, conversations, and messages &
+Suitable for chat data with high read/write traffic \\
+Amazon ElastiCache & Provides Redis pub/sub for Socket.IO and temporary
+data & Helps multiple chat-service instances synchronize events \\
+Amazon S3 & Stores CVs, certificates, transcripts, and frontend assets &
+Provides scalability, high durability, and presigned URL support \\
+Amazon CloudFront & Distributes frontend and static assets & Improves
+access speed and supports HTTPS \\
+Amazon SQS & Receives asynchronous events from the outbox dispatcher &
+Reduces direct coupling between services \\
+Amazon SageMaker & Provides an AI inference endpoint in production &
+Supports managed model endpoints and scalability \\
+Amazon CloudWatch & Collects AWS logs, metrics, and alarms & Supports
+operations and incident investigation \\
+AWS IAM & Manages access between workloads and AWS resources & Supports
+the least privilege principle \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Component Design}\par
+
+\textbf{Frontend}
+
+The frontend is developed with React and Vite and provides interfaces
+for Candidates and HR. Static files can be built and stored on Amazon
+S3, then distributed through Amazon CloudFront. The frontend
+communicates with the backend and chat service through endpoints exposed
+by the Application Load Balancer.
+
+\textbf{Backend API}
+
+The backend is developed with FastAPI and is responsible for user
+authentication, Candidate and HR management, company and job management,
+application and document metadata management, presigned URL generation,
+processing job creation, dashboard data, and business APIs.
+
+\textbf{Processing Worker}
+
+The processing worker performs long-running tasks such as CV content
+extraction, Job Description analysis, CV analysis, matching score
+calculation, and candidate reranking. Lease, retry, and attempt-limit
+mechanisms are used to reduce failures when a worker stops during
+processing.
+
+\textbf{Chat Service}
+
+The chat service uses Node.js, Express, and Socket.IO to support
+realtime communication. DynamoDB stores users, groups, and messages; the
+Redis adapter synchronizes events across multiple pods; sticky sessions
+help maintain Socket.IO connections when multiple replicas are running.
+
+\textbf{AI Service}
+
+The AI service analyzes CVs and Job Descriptions, converts text into
+structured data, and supports fit scoring. The AI service should include
+schema validation, timeout, limited retry, health checks, log control to
+avoid exposing CV data, and fallback behavior when the model is
+unavailable.
+
+\textbf{Data Storage}
+
+PostgreSQL stores relational data that requires transactions. DynamoDB
+stores chat data. Amazon S3 stores large files. Redis supports realtime
+event distribution. Using multiple storage technologies allows each data
+group to be managed with a technology that matches its access pattern.
+
+\textbf{Observability}
+
+The system collects metrics for performance and health monitoring, logs
+for event and error investigation, and distributed traces to follow
+requests across services. Prometheus, Grafana, Loki, OpenTelemetry, and
+Tempo are used in Kubernetes environments; Amazon CloudWatch is used for
+AWS resource and log monitoring.
+
+\vspace{0.5em}\noindent\textbf{Technical Implementation}\par
+
+\vspace{0.5em}\noindent\textbf{Implementation Phases}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Phase
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Main activities
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1. Analysis and design & Analyze the Candidate-HR problem, define
+functional and non-functional requirements, design the database, design
+the multi-service architecture, and identify required AWS services \\
+2. Business platform foundation & Build authentication, Candidate/HR
+profiles, company management, job management, application tracking, and
+document management \\
+3. Realtime and AI integration & Build the chat service, integrate
+Socket.IO, store chat data in DynamoDB, integrate Redis adapter, build
+the AI service, analyze CV/JD content, and implement matching and
+reranking \\
+4. Reliability improvements & Build processing workers, retry, lease,
+idempotency, optimistic concurrency, transactional outbox, validation,
+and error handling \\
+5. Containerization and Kubernetes & Write Dockerfiles, build Docker
+Compose, create a local Kubernetes cluster with kind, deploy Deployment,
+Service, Ingress, HPA, PDB, health probes, and migration jobs \\
+6. Observability and CI/CD & Collect metrics, logs, and traces, build
+dashboards, set up alerts, build GitHub Actions, run automated tests,
+smoke tests, and security scans \\
+7. AWS deployment and completion & Build images, push to Amazon ECR,
+deploy workloads on Amazon EKS, connect RDS, DynamoDB, ElastiCache, and
+S3, deploy frontend on S3/CloudFront, run end-to-end tests, and complete
+the documentation \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Technical Requirements}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Component
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Technology or requirement
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Frontend & React, Vite, Tailwind CSS \\
+Backend & Python, FastAPI, SQLAlchemy, Alembic \\
+Chat service & Node.js, Express, Socket.IO \\
+AI service & Python, FastAPI, Qwen-compatible model or SageMaker
+endpoint \\
+Relational database & PostgreSQL \\
+Chat database & DynamoDB \\
+Cache/pub-sub & Redis or Amazon ElastiCache \\
+Object storage & Amazon S3 \\
+Containers & Docker \\
+Container orchestration & Kubernetes, kind, and Amazon EKS \\
+CI/CD & GitHub Actions \\
+Monitoring & Prometheus, Grafana, and CloudWatch \\
+Logs & Loki and CloudWatch Logs \\
+Tracing & OpenTelemetry and Tempo \\
+Security & JWT, IAM Role, OIDC, least privilege, and secret
+management \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Timeline and Milestones}\par
+
+I adjusted the plan to 8 weeks, from 08/06/2026 to 30/07/2026, to match
+the worklog timeline.
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Week
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Time
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Milestone
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Expected deliverable
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 08/06/2026 - 14/06/2026 & Requirements analysis, architecture,
+backend foundation, and authentication & Project scope, high-level
+architecture, registration, login, and initial migration \\
+2 & 15/06/2026 - 21/06/2026 & Candidate-HR platform, applications,
+documents, and S3 & Company, jobs, application flow, secure upload, and
+document download \\
+3 & 22/06/2026 - 28/06/2026 & Frontend and REST API integration &
+Candidate/HR interfaces, protected routes, and API integration \\
+4 & 29/06/2026 - 05/07/2026 & Realtime chat & Realtime communication
+between Candidate and HR using Socket.IO, Redis, and DynamoDB \\
+5 & 06/07/2026 - 12/07/2026 & AI integration and reliable processing &
+CV/JD analysis, matching, worker, idempotency, concurrency, and
+outbox \\
+6 & 13/07/2026 - 19/07/2026 & Docker Compose & Full stack runs locally
+with smoke test procedure \\
+7 & 20/07/2026 - 26/07/2026 & Kubernetes and observability & System runs
+on kind with metrics, logs, traces, and alerts \\
+8 & 27/07/2026 - 30/07/2026 & CI/CD, AWS, and reporting & End-to-end
+testing, AWS deployment preparation, and completed documentation \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Budget Estimation}\par
+
+Exact monthly cost should be calculated with AWS Pricing Calculator and
+then compared with representative billing data for the project AWS
+account in \texttt{ap-\allowbreak{}southeast-\allowbreak{}1}. For this report, the Week 8 AWS
+evidence is treated as the source of truth for current cost status.
+
+\vspace{0.5em}\noindent\textbf{Week 8 AWS cost evidence}\par
+
+The Week 8 evidence reports July 1-28, 2026 month-to-date AWS spend and
+a Billing and Cost Management credits screenshot. The finalized monthly
+bill and AWS Pricing Calculator estimate are still pending.
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Cost evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Observed value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+July 1-28, 2026 total spend & \texttt{\$94.\allowbreak{}92} & Current month-to-date
+spend from the Week 8 cost summary \\
+Highest daily spend & \texttt{\$31.\allowbreak{}83} on July 28 & Largest daily cost
+in the July 1-28 period \\
+Credits total amount used & \texttt{\$27.\allowbreak{}90} & Billing credits
+screenshot evidence \\
+Credits total estimated amount used & \texttt{\$140.\allowbreak{}65} & Billing
+credits screenshot evidence \\
+Credits total amount remaining & \texttt{\$172.\allowbreak{}10} & Billing credits
+screenshot evidence \\
+Credits total estimated amount remaining & \texttt{\$59.\allowbreak{}35} & Billing
+credits screenshot evidence \\
+\end{longtable}
+\endgroup
+}
+
+The top Week 8 cost drivers are Amazon RDS (\texttt{\$29.\allowbreak{}69}), Amazon
+SageMaker (\texttt{\$23.\allowbreak{}45}), Amazon VPC (\texttt{\$14.\allowbreak{}11}), Amazon EC2
+- Compute (\texttt{\$12.\allowbreak{}42}), EC2 - Other (\texttt{\$7.\allowbreak{}68}), and Amazon
+EKS (\texttt{\$5.\allowbreak{}64}). Together they account for approximately 98\% of
+the reported July 1-28 spend.
+
+\vspace{0.5em}\noindent\textbf{Cost assumptions}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence-based assumption
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Estimate status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Environment & Production deployment in \texttt{ap-\allowbreak{}southeast-\allowbreak{}1} &
+Verified \\
+Public traffic & CloudFront fronts browser traffic and routes API/chat
+traffic to ALB & Verified \\
+Frontend & Static assets are stored in a private S3 bucket and delivered
+by CloudFront & Verified \\
+Kubernetes & One EKS cluster runs backend, chat, worker, dispatcher, and
+AI adapter workloads & Verified \\
+Worker nodes & Two Ready Kubernetes worker nodes were captured in the
+evidence snapshot & Instance type and EBS size still required \\
+RDS PostgreSQL & Two private, encrypted PostgreSQL \texttt{db.\allowbreak{}t4g.\allowbreak{}micro}
+instances with 20 GiB storage each & Verified \\
+ElastiCache / Valkey & One available Redis-compatible replication group
+with encryption at rest and in transit & Node type/count still
+required \\
+DynamoDB & Chat and Lambda dedupe tables use on-demand billing and are
+near empty in the snapshot & Verified \\
+SQS & Main outbox queue and DLQ have zero visible messages in the
+snapshot & Verified \\
+Lambda & Outbox handler is Active, 256 MB memory, 20 second timeout &
+Verified \\
+SageMaker & Real-time endpoint is \texttt{InService} with one production
+variant & Instance type and expected uptime still required \\
+CloudWatch & Logs and metrics exist through AWS and Kubernetes services
+& Retention and ingestion volume still required \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Cost-estimation
+methodology}\par
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Use AWS Pricing Calculator for \texttt{ap-\allowbreak{}southeast-\allowbreak{}1}.
+\item
+  Enter the observed deployed resources from the evidence folder.
+\item
+  Add missing runtime inputs: node instance type, EBS size, Redis node
+  type/count, SageMaker instance type, monthly runtime hours, data
+  transfer, request volume, and CloudWatch log retention.
+\item
+  Export the Pricing Calculator estimate as the forecast.
+\item
+  Compare the forecast with Cost Explorer after the environment has run
+  for a representative period.
+\end{enumerate}
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Service
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Monthly estimate method
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Current evidence status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Amazon EKS & Cluster hourly price times monthly runtime & Deployed; Week
+8 cost summary reports \texttt{\$5.\allowbreak{}64} \\
+EC2 worker nodes & Node hourly price times two nodes, plus EBS storage &
+Nodes verified; EC2 Compute reports \texttt{\$12.\allowbreak{}42}, EC2 - Other
+reports \texttt{\$7.\allowbreak{}68} \\
+Amazon RDS PostgreSQL & \texttt{db.\allowbreak{}t4g.\allowbreak{}micro} hourly price, 20 GiB
+storage per instance, backup/I/O & Two private encrypted instances
+verified; Week 8 cost summary reports \texttt{\$29.\allowbreak{}69} \\
+Amazon ElastiCache / Valkey & Node hourly price times node count, plus
+data transfer & Replication group verified; node type/count needed \\
+Application Load Balancer & ALB hourly charge plus LCU usage & Active
+ALB verified; included in networking/runtime cost checks \\
+Amazon CloudFront & Requests, transfer out, and invalidations &
+Monitoring screenshot available; behavior/origin export still
+required \\
+Amazon S3 & Storage GB, PUT/GET requests, lifecycle transitions &
+Frontend bucket object screenshot available \\
+Amazon DynamoDB & On-demand read/write requests plus storage & Table
+status screenshot available \\
+Amazon SQS & Standard queue requests and payload volume & Queue and DLQ
+screenshot available \\
+AWS Lambda & Requests plus GB-seconds & Function exists; invocation cost
+and trigger health still pending \\
+Amazon SES & Email send count and attachments if any & Used by
+notification path \\
+Amazon ECR & Image storage and transfer if applicable & Not separated in
+the Week 8 top-driver table \\
+Amazon SageMaker & Endpoint instance hours and invocation/data charges &
+Endpoint verified \texttt{InService}; Week 8 cost summary reports
+\texttt{\$23.\allowbreak{}45} \\
+Amazon CloudWatch & Log ingestion, storage retention, metrics, alarms &
+Retention and ingestion volume still required \\
+Amazon VPC and data transfer & CloudFront egress, ALB traffic, NAT
+processing, cross-AZ traffic & Week 8 cost summary reports Amazon VPC at
+\texttt{\$14.\allowbreak{}11}; traffic breakdown still needed \\
+Total & Pricing Calculator forecast, then billing comparison & Week 8
+July 1-28 spend reports \texttt{\$94.\allowbreak{}92}; finalized bill and
+steady-state estimate pending \\
+\end{longtable}
+\endgroup
+}
+
+The largest current and future cost drivers are RDS, SageMaker endpoint
+uptime, VPC/NAT-related networking, EC2 worker nodes and EBS, EKS
+control plane, Redis, ALB, CloudFront/data transfer, and CloudWatch
+logs. If the SageMaker endpoint remains online continuously, AI
+inference can become one of the dominant monthly costs.
+
+\vspace{0.5em}\noindent\textbf{Evidence hygiene for cost
+materials}\par
+
+No raw screenshots or logs should expose account IDs, access keys,
+secret keys, database passwords, connection strings, Kubernetes Secret
+values, GitHub tokens, presigned URLs, or login-related logs. The pod
+log evidence must be summarized or sanitized before publication because
+the raw \texttt{02-\allowbreak{}eks/\allowbreak{}pod-\allowbreak{}logs-\allowbreak{}tail.\allowbreak{}txt} file contains a Redis
+connection URL with an embedded credential.
+
+\vspace{0.5em}\noindent\textbf{Cost Optimization}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Run the production environment only when demoing or testing.
+\item
+  Use instance types that match the actual workload.
+\item
+  Limit the number of worker nodes.
+\item
+  Stop or delete SageMaker endpoints when not in use.
+\item
+  Configure suitable log retention.
+\item
+  Delete old images in ECR.
+\item
+  Apply S3 lifecycle policies when appropriate.
+\item
+  Use DynamoDB on-demand while traffic is still unstable.
+\item
+  Configure AWS Budget and Billing Alarm.
+\item
+  Delete unused Load Balancers, public IPv4 addresses, snapshots, and
+  volumes.
+\item
+  Confirm whether NAT Gateway is required before leaving it running.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Risk Assessment}\par
+
+\vspace{0.5em}\noindent\textbf{Risk Matrix}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Risk
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Likelihood
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Impact
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Severity
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Secret or AWS credential exposure & Low & Very high & High \\
+RDS or services become public unnecessarily & Medium & High & High \\
+CV and personal data are accessed without permission & Low & Very high &
+High \\
+AI returns inaccurate results & Medium & Medium & Medium \\
+AI service runs out of resources or times out & Medium & High & High \\
+Realtime chat disconnects when scaled & Medium & Medium & Medium \\
+Worker processes duplicate jobs & Medium & High & High \\
+Database updates encounter race conditions & Medium & High & High \\
+Kubernetes pod or node failure & Medium & Medium & Medium \\
+AWS cost exceeds expectations & Medium & High & High \\
+CI/CD deployment fails & Medium & Medium & Medium \\
+Third-party package has a vulnerability & Medium & High & High \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Mitigation Measures}\par
+
+\textbf{Security}
+
+\begin{itemize}
+\tightlist
+\item
+  Use IAM Roles and least privilege.
+\item
+  Do not store AWS Access Keys in source code.
+\item
+  Use GitHub Actions OIDC.
+\item
+  Keep \texttt{.\allowbreak{}env}, private keys, and secrets out of the repository.
+\item
+  Keep S3 buckets private.
+\item
+  Use presigned URLs with expiration.
+\item
+  Do not log full CV content or tokens.
+\item
+  Check authorization and object ownership in the backend.
+\end{itemize}
+
+\textbf{Reliability}
+
+\begin{itemize}
+\tightlist
+\item
+  Use readiness and liveness probes.
+\item
+  Use HPA to support scaling.
+\item
+  Use PDB to reduce disruption during maintenance.
+\item
+  Use limited retry.
+\item
+  Apply processing-job leases.
+\item
+  Use idempotency keys.
+\item
+  Apply optimistic concurrency.
+\item
+  Use transactional outbox for events.
+\end{itemize}
+
+\textbf{AI}
+
+\begin{itemize}
+\tightlist
+\item
+  Validate output with schemas.
+\item
+  Set timeouts.
+\item
+  Limit retries.
+\item
+  Allow human review before recruitment decisions.
+\item
+  Do not use AI scores as the only hiring decision.
+\item
+  Record reasons or contributing factors when possible.
+\end{itemize}
+
+\textbf{Cost}
+
+\begin{itemize}
+\tightlist
+\item
+  Configure AWS Budget.
+\item
+  Monitor Cost Explorer.
+\item
+  Delete resources after the workshop.
+\item
+  Limit AI endpoint runtime.
+\item
+  Use suitable log retention.
+\item
+  Check for remaining EBS volumes, Elastic IPs, Load Balancers, and
+  snapshots.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Contingency Plan}\par
+
+\begin{itemize}
+\tightlist
+\item
+  If EKS is not ready, use Docker Compose or local Kubernetes for the
+  demo.
+\item
+  If the AI model is unavailable, use mock responses or deterministic
+  scoring to continue testing the business flow.
+\item
+  If Redis is unavailable, run a single chat-service instance for the
+  demo environment.
+\item
+  If S3 cannot be accessed, use local storage in development.
+\item
+  If a worker fails, processing jobs are retried with lease and attempt
+  limits.
+\item
+  If a new deployment fails, roll back to the previous container image
+  or Kubernetes revision.
+\item
+  If cost exceeds the limit, stop non-essential workloads and delete
+  high-cost resources.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Expected Outcomes}\par
+
+After completion, the system is expected to achieve the following
+outcomes:
+
+\begin{itemize}
+\tightlist
+\item
+  Provide a centralized platform for Candidates and HR.
+\item
+  Manage companies, jobs, applications, and documents.
+\item
+  Store CVs and documents securely.
+\item
+  Support realtime chat.
+\item
+  Support AI analysis for CVs and Job Descriptions.
+\item
+  Process long-running tasks with workers.
+\item
+  Control repeated requests and concurrent updates.
+\item
+  Run with Docker Compose and Kubernetes.
+\item
+  Provide a CI/CD pipeline.
+\item
+  Provide metrics, logs, traces, and alerts.
+\item
+  Provide an AWS deployment architecture.
+\item
+  Provide documentation for deployment, testing, and cleanup.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Long-Term Value}\par
+
+The project can continue evolving into a more complete system with:
+
+\begin{itemize}
+\tightlist
+\item
+  Email or notification when application status changes.
+\item
+  Interview scheduling.
+\item
+  AI-generated cover letters.
+\item
+  Interview questions generated from CVs and Job Descriptions.
+\item
+  Job recommendations based on Candidate profiles.
+\item
+  Recruitment analytics dashboard.
+\item
+  Calendar and email integration.
+\item
+  Improved explainability for AI matching.
+\item
+  Mobile application support.
+\item
+  Expansion to multiple universities and companies.
+\end{itemize}
+
+Beyond product value, the project also provides a reference for building
+a Cloud-native multi-service system with AI integration, realtime
+communication, asynchronous processing, Kubernetes, observability, and
+CI/CD.

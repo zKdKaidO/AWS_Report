@@ -1,0 +1,279 @@
+\vspace{0.5em}\noindent\textbf{Week 5 - Local Kubernetes
+Deployment}\par
+
+\vspace{0.5em}\noindent\textbf{Objectives}\par
+
+Week 5 focused on running the application in local Kubernetes using
+kind. The goal was to move from Compose-only development to Kubernetes
+Deployments, Services, Jobs, ConfigMaps, Secrets, ingress, autoscaling,
+and observability resources.
+
+\vspace{0.5em}\noindent\textbf{Tasks Completed}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence basis
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Completed & Added kind cluster configuration. &
+\texttt{k8s/\allowbreak{}cluster/\allowbreak{}kind-\allowbreak{}config.\allowbreak{}yaml} and commit \texttt{8dae02c}. \\
+Completed & Added Kubernetes resources for backend, chat, PostgreSQL,
+Redis, DynamoDB Local, migration job, and chat initialization job. &
+\texttt{k8s/\allowbreak{}app/\allowbreak{}*.\allowbreak{}yaml}. \\
+Completed & Added local deployment automation for PowerShell and shell
+users. & \texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}local.\allowbreak{}ps1} and
+\texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}local.\allowbreak{}sh}. \\
+Completed & Added HPA and PDB definitions for app services. &
+\texttt{k8s/\allowbreak{}app/\allowbreak{}autoscaling.\allowbreak{}yaml}. \\
+Completed & Added observability resources for Prometheus, Grafana, Loki,
+Tempo, Alloy, OTel collector, ServiceMonitors, and PrometheusRules. &
+\texttt{k8s/\allowbreak{}observability/\allowbreak{}*} and \texttt{observability/\allowbreak{}grafana/\allowbreak{}*}. \\
+Partially completed & Captured live \texttt{kubectl} screenshots and
+command logs where available. & Evidence pending: I did not have the
+full screenshot/log artifact set in the local evidence archive. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Technical Implementation}\par
+
+The local Kubernetes path uses kind for the cluster, in-cluster
+PostgreSQL/Redis/DynamoDB Local for dependencies, and Kubernetes
+manifests under \texttt{k8s/\allowbreak{}app} for the workload layer.
+
+\{\{\textless{} mermaid \textgreater\}\} graph TB subgraph
+Kind{[}``kind-internship-local''{]} subgraph Internship{[}``namespace:
+internship''{]} Backend{[}``Deployment/backend''{]}
+Chat{[}``Deployment/chat-service''{]}
+Dispatcher{[}``Deployment/backend-outbox-dispatcher''{]}
+Worker{[}``Deployment/backend-processing-worker''{]}
+Postgres{[}``Deployment/postgres''{]} Redis{[}``Deployment/redis''{]}
+DDB{[}``Deployment/dynamodb-local''{]}
+Migrate{[}``Job/backend-migrate''{]} Init{[}``Job/chat-init''{]} end
+subgraph Monitoring{[}``namespace: monitoring''{]}
+Prom{[}``Prometheus''{]} Grafana{[}``Grafana''{]} Loki{[}``Loki''{]}
+Tempo{[}``Tempo''{]} end end Backend --\textgreater{} Postgres Backend
+--\textgreater{} DDB Backend --\textgreater{} Dispatcher Worker
+--\textgreater{} Backend Chat --\textgreater{} Redis Chat
+--\textgreater{} DDB Prom --\textgreater{} Backend Prom --\textgreater{}
+Chat Prom --\textgreater{} Dispatcher \{\{\textless{} /mermaid
+\textgreater\}\}
+
+The deployment scripts build local images, load them into kind, apply
+app manifests, run migration/init jobs, wait for rollouts, and print
+port-forward commands for backend, chat, and optional AI service checks.
+
+\vspace{0.5em}\noindent\textbf{Problems and Solutions}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Problem
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Root cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Compose did not prove Kubernetes readiness. & Services could work
+locally while still missing probes, Services, Jobs, or ConfigMaps. &
+Added Kubernetes manifests and local deployment scripts. & Completed \\
+Fresh local images might not be used by kind. & Building an image is not
+enough; kind nodes need the image loaded. & Scripts run
+\texttt{kind\ load\ docker-\allowbreak{}image} and restart deployments. &
+Completed \\
+Migrations and chat table creation need ordered startup. & API/chat pods
+should not assume databases are initialized. & Added
+\texttt{backend-\allowbreak{}migrate} and \texttt{chat-\allowbreak{}init} Jobs. & Completed \\
+Local observability required multiple supporting components. & Metrics,
+logs, and traces need separate platform services. & Added Helm-backed
+Prometheus/Grafana/Loki/Tempo/Alloy resources and local runbook
+guidance. & Completed \\
+Live cluster screenshots are missing. & Runtime screenshots were not
+attached to the local evidence archive. & I kept Kubernetes evidence
+pending. & Blocked \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Testing, Build and Deployment
+Results}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Kubernetes manifests & Implemented & \texttt{k8s/\allowbreak{}app} includes
+Deployments, Services, Jobs, ConfigMaps, Secret examples, ingress, HPA,
+and PDB. \\
+Local deployment scripts & Implemented &
+\texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}local.\allowbreak{}ps1} and \texttt{.\allowbreak{}sh} automate cluster
+setup, image load, jobs, rollouts, and resource display. \\
+Observability resources & Implemented & \texttt{k8s/\allowbreak{}observability} and
+\texttt{observability/\allowbreak{}grafana} include dashboards, datasources, rules,
+and collectors. \\
+Runtime validation logs & Partially completed & Commands are scripted,
+but current report does not include saved \texttt{kubectl} output. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Evidence}\par
+
+\vspace{0.5em}\noindent\textbf{Screenshots}\par
+
+Evidence pending: add screenshots under
+\texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}05/\allowbreak{}}, for example:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}05/\allowbreak{}kubectl-\allowbreak{}get-\allowbreak{}nodes.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}05/\allowbreak{}kubectl-\allowbreak{}get-\allowbreak{}pods.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}05/\allowbreak{}grafana-\allowbreak{}dashboard.\allowbreak{}png}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Commits and Pull
+Requests}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Commit
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pull Request
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{8dae02c} & Added the first Kubernetes configuration for backend,
+chat, dependencies, jobs, namespace, and kind config. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/8dae02cc55c9782a390ac851126e79e25892070f}{View
+commit} & Evidence pending \\
+\texttt{7dbe7c6} & Added Kubernetes/EKS deployment platform,
+autoscaling, ingress, service accounts, observability, and deploy
+scripts. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/7dbe7c6555fbb1bebd218d9af149ab90ebdd999a}{View
+commit} & Evidence pending \\
+\texttt{4f37d4d} & Added Kubernetes deployment workflows. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/4f37d4db753c8646172cd17cd5f481b6c4e6a4d9}{View
+commit} & Evidence pending \\
+\texttt{7407fda} & Added tracing and chat initialization support. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/7407fda080ac210411f67985996772185c311b06}{View
+commit} & Evidence pending \\
+\texttt{3b6f346} & Added local terminal runbook and environment
+examples. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/3b6f34675b11b9c2a8c66006e3d4eb7fe9ca2e6f}{View
+commit} & Evidence pending \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Test Logs}\par
+
+Evidence pending: attach actual local Kubernetes output from commands
+such as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ cluster{-}info}
+\ExtensionTok{kubectl}\NormalTok{ get nodes}
+\ExtensionTok{kubectl}\NormalTok{ get pods }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ get services }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/chat{-}service }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Build Logs}\par
+
+Evidence pending: attach output from local image builds and
+\texttt{kind\ load\ docker-\allowbreak{}image} commands.
+
+\vspace{0.5em}\noindent\textbf{Deployment Logs}\par
+
+Evidence pending: attach output from
+\texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}local.\allowbreak{}ps1} or
+\texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}local.\allowbreak{}sh}.
+
+\vspace{0.5em}\noindent\textbf{Weekly Results}\par
+
+The project moved from local Compose toward a Kubernetes-shaped runtime.
+Backend, chat, dependencies, jobs, workers, ingress, autoscaling, and
+observability resources were represented in manifests and deployment
+scripts.
+
+\vspace{0.5em}\noindent\textbf{Lessons Learned}\par
+
+Local Kubernetes validation is more than checking that pods start. Jobs,
+readiness probes, image freshness, DNS, service ports, ingress, HPA
+metrics, and observability scraping all need explicit checks.
+
+\vspace{0.5em}\noindent\textbf{Next Week Plan}\par
+
+Prepare the AWS foundation: AWS CLI validation, region selection, GitHub
+OIDC, IAM deployment role, ECR repositories, and image build/push
+workflow.

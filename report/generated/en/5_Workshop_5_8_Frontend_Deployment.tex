@@ -1,0 +1,381 @@
+\vspace{0.5em}\noindent\textbf{Frontend Deployment}\par
+
+\vspace{0.5em}\noindent\textbf{Objective}\par
+
+Build the React/Vite frontend, publish it to a private S3 bucket, and
+serve it through CloudFront.
+
+\vspace{0.5em}\noindent\textbf{Architecture context}\par
+
+The frontend is currently deployed as static files, not as an EKS
+workload. The old frontend Kubernetes Deployment, Service, HPA, PDB, and
+frontend ALB Ingress were removed so future EKS app deployments cannot
+recreate them.
+
+Current public entry point:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{https://dhm2rz5nmsibj.cloudfront.net}
+\end{Highlighting}
+\end{Shaded}
+
+Current CloudFront distribution:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{EQIGYNECXDYL8}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Vite environment
+configuration}\par
+
+The frontend production build uses:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Variable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Production value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{VITE\_\allowbreak{}API\_\allowbreak{}BASE\_\allowbreak{}URL} & \texttt{/\allowbreak{}api} & Makes backend API calls
+go through CloudFront and ALB \\
+\texttt{VITE\_\allowbreak{}CHAT\_\allowbreak{}API\_\allowbreak{}BASE\_\allowbreak{}URL} & empty string & Allows browser
+runtime to use \texttt{/\allowbreak{}chat} outside localhost \\
+\end{longtable}
+\endgroup
+}
+
+The frontend API client defaults to local development when not
+configured:
+
+\begin{itemize}
+\tightlist
+\item
+  API default: \texttt{http:/\allowbreak{}/\allowbreak{}localhost:8001}
+\item
+  Chat default in local browser: \texttt{http:/\allowbreak{}/\allowbreak{}localhost:3000}
+\item
+  Chat default outside localhost: \texttt{/\allowbreak{}chat}
+\item
+  Socket.IO path: \texttt{/\allowbreak{}socket.\allowbreak{}io}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Build commands}\par
+
+From the application repository:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{cd}\NormalTok{ frontend}
+\ExtensionTok{npm}\NormalTok{ ci}
+\VariableTok{VITE\_API\_BASE\_URL}\OperatorTok{=}\NormalTok{/api }\VariableTok{VITE\_CHAT\_API\_BASE\_URL}\OperatorTok{=} \ExtensionTok{npm}\NormalTok{ run build}
+\end{Highlighting}
+\end{Shaded}
+
+Expected output directory:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{frontend/dist}
+\end{Highlighting}
+\end{Shaded}
+
+The deployment script detects \texttt{frontend/\allowbreak{}dist} or
+\texttt{frontend/\allowbreak{}build}, but the current Vite output is
+\texttt{frontend/\allowbreak{}dist}.
+
+\vspace{0.5em}\noindent\textbf{S3 publishing}\par
+
+The production helper is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{bash}\NormalTok{ scripts/ci/deploy{-}frontend.sh}
+\end{Highlighting}
+\end{Shaded}
+
+Required variables:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Variable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{FRONTEND\_\allowbreak{}DEPLOY\_\allowbreak{}ENABLED} & Must be \texttt{true} \\
+\texttt{FRONTEND\_\allowbreak{}BUCKET} & Target bucket, for example
+\texttt{internship-prod-frontend-\textless{}AWS\_ACCOUNT\_ID\textgreater{}} \\
+\texttt{CLOUDFRONT\_\allowbreak{}DISTRIBUTION\_\allowbreak{}ID} & Distribution to invalidate \\
+\texttt{VITE\_\allowbreak{}API\_\allowbreak{}BASE\_\allowbreak{}URL} & \texttt{/\allowbreak{}api} \\
+\texttt{VITE\_\allowbreak{}CHAT\_\allowbreak{}API\_\allowbreak{}BASE\_\allowbreak{}URL} & empty string \\
+\end{longtable}
+\endgroup
+}
+
+The script keeps the bucket private:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3api put{-}public{-}access{-}block }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}bucket}\NormalTok{ internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}public{-}access{-}block{-}configuration} \DataTypeTok{\textbackslash{}}
+\NormalTok{  BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true}
+\end{Highlighting}
+\end{Shaded}
+
+Static assets are uploaded with long cache headers:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3 sync frontend/dist s3://internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}delete} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}exclude}\NormalTok{ index.html }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}cache{-}control}\NormalTok{ public,max{-}age=31536000,immutable}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{index.\allowbreak{}html} is uploaded separately with no-cache semantics:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3 cp frontend/dist/index.html s3://internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}\NormalTok{/index.html }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}cache{-}control}\NormalTok{ no{-}cache }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}content{-}type}\NormalTok{ text/html}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{CloudFront configuration}\par
+
+The helper \texttt{scripts/\allowbreak{}aws/\allowbreak{}ensure-\allowbreak{}cloudfront.\allowbreak{}sh} validates or
+creates the distribution. The current design uses:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}lll@{}}
+\toprule\noalign{}
+Behavior & Origin & Notes \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Default \texttt{*} & S3 frontend bucket & Static frontend and SPA
+assets \\
+\texttt{/\allowbreak{}api/\allowbreak{}*} & ALB & Backend API \\
+\texttt{/\allowbreak{}chat/\allowbreak{}*} & ALB & Chat REST API \\
+\texttt{/\allowbreak{}socket.\allowbreak{}io/\allowbreak{}*} & ALB & Socket.IO traffic \\
+\end{longtable}
+\endgroup
+}
+
+CloudFront also configures SPA fallback:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}lll@{}}
+\toprule\noalign{}
+Error & Response path & Response code \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+403 & \texttt{/\allowbreak{}index.\allowbreak{}html} & 200 \\
+404 & \texttt{/\allowbreak{}index.\allowbreak{}html} & 200 \\
+\end{longtable}
+\endgroup
+}
+
+CloudFront invalidation:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ cloudfront create{-}invalidation }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}distribution{-}id}\NormalTok{ EQIGYNECXDYL8 }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}paths} \StringTok{"/*"}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{GitHub Actions frontend
+deployment}\par
+
+Use workflow dispatch mode:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{GitHub {-}\textgreater{} Actions {-}\textgreater{} CI/CD {-}\textgreater{} Run workflow {-}\textgreater{} mode: deploy{-}frontend}
+\end{Highlighting}
+\end{Shaded}
+
+The \texttt{deploy-\allowbreak{}frontend} job:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Configures AWS credentials through OIDC.
+\item
+  Sets Node.js from workflow \texttt{NODE\_\allowbreak{}VERSION}.
+\item
+  Verifies ALB health at \texttt{/\allowbreak{}api/\allowbreak{}health/\allowbreak{}ready} and
+  \texttt{/\allowbreak{}chat/\allowbreak{}health/\allowbreak{}ready}.
+\item
+  Runs \texttt{scripts/\allowbreak{}ci/\allowbreak{}deploy-\allowbreak{}frontend.\allowbreak{}sh}.
+\item
+  Uploads frontend files to S3.
+\item
+  Creates a CloudFront invalidation.
+\end{enumerate}
+
+\vspace{0.5em}\noindent\textbf{Verification}\par
+
+Check CloudFront:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{curl} \AttributeTok{{-}I}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/api/health/ready}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/chat/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+Check S3 bucket privacy:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3api get{-}public{-}access{-}block }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}bucket}\NormalTok{ internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}
+\end{Highlighting}
+\end{Shaded}
+
+Check distribution:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ cloudfront get{-}distribution }\AttributeTok{{-}{-}id}\NormalTok{ EQIGYNECXDYL8}
+\ExtensionTok{aws}\NormalTok{ cloudfront list{-}invalidations }\AttributeTok{{-}{-}distribution{-}id}\NormalTok{ EQIGYNECXDYL8}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Expected result}\par
+
+\begin{itemize}
+\tightlist
+\item
+  The frontend loads through CloudFront.
+\item
+  Direct frontend S3 bucket public access remains blocked.
+\item
+  \texttt{/\allowbreak{}api/\allowbreak{}*}, \texttt{/\allowbreak{}chat/\allowbreak{}*}, and \texttt{/\allowbreak{}socket.\allowbreak{}io/\allowbreak{}*} routes
+  use the ALB origin.
+\item
+  SPA deep links return \texttt{index.\allowbreak{}html}.
+\item
+  A new CloudFront invalidation is created after deployment.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Common errors}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Frontend job skipped & \texttt{FRONTEND\_\allowbreak{}DEPLOY\_\allowbreak{}ENABLED} not true in
+the context used by the job & Configure the flag in GitHub variables as
+required by the workflow \\
+API calls go to localhost in production & Missing
+\texttt{VITE\_\allowbreak{}API\_\allowbreak{}BASE\_\allowbreak{}URL=/\allowbreak{}api} & Rebuild with production Vite
+variables \\
+CloudFront returns old UI & Cached assets or missing invalidation &
+Check invalidation status and \texttt{index.\allowbreak{}html} cache control \\
+S3 access denied through CloudFront & Missing OAC bucket policy & Run
+\texttt{ensure-\allowbreak{}cloudfront.\allowbreak{}sh} with correct account and distribution \\
+Direct S3 website endpoint fails & Expected current behavior & Frontend
+bucket is private and should be accessed through CloudFront \\
+Socket.IO fails & Missing \texttt{/\allowbreak{}socket.\allowbreak{}io/\allowbreak{}*} CloudFront behavior or
+ALB route & Verify CloudFront behavior and Ingress path \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Removal of old Kubernetes frontend
+resources}\par
+
+The current architecture intentionally removes frontend Kubernetes
+resources. Do not recreate:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{Deployment/\allowbreak{}frontend}
+\item
+  \texttt{Service/\allowbreak{}frontend}
+\item
+  frontend HPA
+\item
+  frontend PDB
+\item
+  frontend-specific ALB Ingress
+\item
+  \texttt{FRONTEND\_\allowbreak{}IMAGE} deployment path for EKS app deploy
+\end{itemize}
+
+The frontend is built once and served as static files from S3 and
+CloudFront.
+
+\vspace{0.5em}\noindent\textbf{Outcome}\par
+
+Frontend deployment is complete when the Vite build is in S3, CloudFront
+has invalidated cached objects, public users can load the application
+through \texttt{https:/\allowbreak{}/\allowbreak{}dhm2rz5nmsibj.\allowbreak{}cloudfront.\allowbreak{}net}, and dynamic
+routes reach backend/chat through CloudFront and the ALB.

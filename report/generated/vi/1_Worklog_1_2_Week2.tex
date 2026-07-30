@@ -1,0 +1,300 @@
+\vspace{0.5em}\noindent\textbf{Week 2 - Concurrency Control and Data
+Integrity}\par
+
+\vspace{0.5em}\noindent\textbf{Objectives}\par
+
+Week 2 focused on making write operations safe when several backend or
+chat pods handle requests at the same time. The target was to prevent
+duplicate registrations, duplicate applications, stale workflow updates,
+and duplicate chat messages without using global application-level
+locks.
+
+\vspace{0.5em}\noindent\textbf{Tasks Completed}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence basis
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Completed & Analyzed concurrent writes across multiple backend pods. &
+\texttt{docs/\allowbreak{}architecture/\allowbreak{}concurrency-\allowbreak{}policy.\allowbreak{}md}. \\
+Completed & Documented optimistic and pessimistic UI policies. &
+\texttt{docs/\allowbreak{}architecture/\allowbreak{}concurrency-\allowbreak{}policy.\allowbreak{}md} and
+\texttt{docs/\allowbreak{}frontend/\allowbreak{}COMMAND\_\allowbreak{}MUTATION\_\allowbreak{}POLICY.\allowbreak{}md}. \\
+Completed & Added database-backed idempotency for candidate apply
+requests. & \texttt{backend/\allowbreak{}app/\allowbreak{}services/\allowbreak{}idempotency\_\allowbreak{}service.\allowbreak{}py},
+\texttt{backend/\allowbreak{}app/\allowbreak{}routers/\allowbreak{}jobs.\allowbreak{}py}, and migration
+\texttt{0004\_\allowbreak{}idempotency\_\allowbreak{}records.\allowbreak{}py}. \\
+Completed & Added version-gated workflow commands using
+\texttt{expectedVersion}. &
+\texttt{backend/\allowbreak{}app/\allowbreak{}services/\allowbreak{}optimistic\_\allowbreak{}concurrency.\allowbreak{}py},
+\texttt{backend/\allowbreak{}app/\allowbreak{}services/\allowbreak{}workflow\_\allowbreak{}commands.\allowbreak{}py}, and HR/Candidate
+routers. \\
+Completed & Hardened chat writes against duplicate retry behavior. &
+\texttt{chat-\allowbreak{}service/\allowbreak{}repositories/\allowbreak{}chatRepository.\allowbreak{}js} and
+\texttt{chat-\allowbreak{}service/\allowbreak{}tests/\allowbreak{}chatRepository.\allowbreak{}concurrency.\allowbreak{}test.\allowbreak{}js}. \\
+Partially completed & Attached visible API screenshots and CI logs where
+available. & Evidence pending: I did not have a screenshot or GitHub
+Actions log artifact in the local evidence archive. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Technical Implementation}\par
+
+Concurrency control was implemented at the database and API-contract
+level:
+
+\begin{itemize}
+\tightlist
+\item
+  PostgreSQL unique constraints protect duplicate user, company,
+  application, and idempotency records.
+\item
+  \texttt{Idempotency-\allowbreak{}Key} is accepted for candidate application
+  submission and selected workflow commands.
+\item
+  Reusing the same idempotency key with the same payload replays the
+  stored response.
+\item
+  Reusing the same idempotency key with a different payload returns
+  \texttt{409} with \texttt{idempotency\_\allowbreak{}key\_\allowbreak{}reused}.
+\item
+  Mutable HR job and application commands require
+  \texttt{expectedVersion}.
+\item
+  Stale version updates return controlled \texttt{409\ Conflict}
+  responses.
+\item
+  Chat retries use deterministic client message IDs and DynamoDB
+  conditional write behavior to avoid duplicate logical messages.
+\end{itemize}
+
+Conflict flow:
+
+\{\{\textless{} mermaid \textgreater\}\} sequenceDiagram participant C
+as Client participant API as FastAPI backend pod participant DB as
+PostgreSQL C-\textgreater\textgreater API: POST /jobs/\{id\}/apply +
+Idempotency-Key API-\textgreater\textgreater DB: reserve scoped
+idempotency record alt new request API-\textgreater\textgreater DB:
+insert application, documents, history API-\textgreater\textgreater DB:
+complete idempotency record API--\textgreater\textgreater C: 200/201
+application response else exact replay DB--\textgreater\textgreater API:
+completed stored response API--\textgreater\textgreater C: stored
+response + Idempotency-Replayed else payload mismatch or duplicate
+business conflict API--\textgreater\textgreater C: 409 Conflict end
+\{\{\textless{} /mermaid \textgreater\}\}
+
+\vspace{0.5em}\noindent\textbf{Problems and Solutions}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Problem
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Root cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Duplicate registration or company creation could surface as uncontrolled
+database errors. & Unique constraints existed or were needed, but error
+translation had to be explicit. & Integrity errors are rolled back and
+translated into \texttt{409\ Conflict}. & Completed \\
+Candidate apply can be retried by browser/network clients. & A second
+request may reach another backend pod before the first response is
+received. & Scoped idempotency records persist request hash and response
+data. & Completed \\
+HR workflow updates can become stale when two users act on the same
+job/application. & Plain updates do not know whether the client saw the
+latest row version. & Commands require \texttt{expectedVersion} and use
+conditional updates. & Completed \\
+Chat retries can duplicate realtime messages. & Socket retries and REST
+retries can re-send the same logical message. & Chat repository uses
+deterministic message identity and skips duplicate broadcast on replay.
+& Completed \\
+Public evidence for a \texttt{409} screenshot is missing. & The source
+repo contains tests and docs, but no screenshot artifact. & I kept
+screenshot evidence pending. & Blocked \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Testing, Build and Deployment
+Results}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Backend concurrency tests & Partially completed & Test sources exist:
+\texttt{backend/\allowbreak{}tests/\allowbreak{}test\_\allowbreak{}apply\_\allowbreak{}idempotency.\allowbreak{}py},
+\texttt{backend/\allowbreak{}tests/\allowbreak{}test\_\allowbreak{}apply\_\allowbreak{}idempotency\_\allowbreak{}postgres.\allowbreak{}py},
+\texttt{backend/\allowbreak{}tests/\allowbreak{}test\_\allowbreak{}optimistic\_\allowbreak{}concurrency.\allowbreak{}py}, and
+\texttt{backend/\allowbreak{}tests/\allowbreak{}test\_\allowbreak{}optimistic\_\allowbreak{}concurrency\_\allowbreak{}postgres.\allowbreak{}py}.
+Current-run output is pending. \\
+Chat concurrency tests & Partially completed & Test source exists:
+\texttt{chat-\allowbreak{}service/\allowbreak{}tests/\allowbreak{}chatRepository.\allowbreak{}concurrency.\allowbreak{}test.\allowbreak{}js}.
+Current-run output is pending. \\
+API conflict behavior & Implemented & Source contains explicit
+\texttt{409} handling for stale versions, duplicate apply, and
+idempotency-key reuse. \\
+Deployment & Planned & This week focused on correctness before
+deployment. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Evidence}\par
+
+\vspace{0.5em}\noindent\textbf{Screenshots}\par
+
+Evidence pending: add screenshots under
+\texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}02/\allowbreak{}}, for example:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}02/\allowbreak{}duplicate-\allowbreak{}apply-\allowbreak{}409.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}02/\allowbreak{}idempotency-\allowbreak{}replay.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}02/\allowbreak{}postgres-\allowbreak{}concurrency-\allowbreak{}tests.\allowbreak{}png}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Commits and Pull
+Requests}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Commit
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pull Request
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{0f9e7f2} & Added backend workflow outbox, idempotency records,
+optimistic concurrency helpers, async processing foundation, and tests.
+&
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/0f9e7f2aed730153e905df0700fc3401f8957b21}{View
+commit} & Evidence pending \\
+\texttt{5326cb0} & Hardened chat repository concurrency and added chat
+concurrency tests. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/5326cb0ad12bf5e311236469e5c2b90c7fe20b6e}{View
+commit} & Evidence pending \\
+\texttt{77faab4} & Integrated workflow and processing contracts into
+frontend API helpers and UI flows. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/77faab4a919405beef1865fc06a106b0289a3310}{View
+commit} & Evidence pending \\
+\texttt{5041f84} & Fixed failing optimistic concurrency test assertions.
+&
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/5041f84600390724c4760c51da499592b1cf6104}{View
+commit} & Evidence pending \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Test Logs}\par
+
+Evidence pending: attach actual output from commands such as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{cd}\NormalTok{ backend}
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ pytest tests/test\_apply\_idempotency.py tests/test\_optimistic\_concurrency.py}
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ pytest }\AttributeTok{{-}m}\NormalTok{ postgres tests/test\_apply\_idempotency\_postgres.py tests/test\_optimistic\_concurrency\_postgres.py}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Build Logs}\par
+
+Not applicable for the core Week 2 task. No dedicated build artifact was
+found for this phase.
+
+\vspace{0.5em}\noindent\textbf{Deployment Logs}\par
+
+Not applicable for Week 2. The feature was designed to be safe before
+scaling the backend in Kubernetes.
+
+\vspace{0.5em}\noindent\textbf{Weekly Results}\par
+
+The application gained stronger data-integrity guarantees: duplicate
+writes are constrained by PostgreSQL or DynamoDB, client retries are
+handled through idempotency records, stale updates produce
+\texttt{409\ Conflict}, and chat replay behavior avoids duplicate
+broadcasts.
+
+\vspace{0.5em}\noindent\textbf{Lessons Learned}\par
+
+Service load balancing does not serialize writes. Correctness must be
+enforced at the storage and transaction boundary, then reflected clearly
+through API response codes and UI behavior.
+
+\vspace{0.5em}\noindent\textbf{Next Week Plan}\par
+
+Build the transactional outbox and asynchronous processing layers so
+committed domain changes can trigger reliable downstream work without
+keeping the main API request open.

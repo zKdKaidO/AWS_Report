@@ -1,0 +1,515 @@
+\vspace{0.5em}\noindent\textbf{Backend Deployment}\par
+
+\vspace{0.5em}\noindent\textbf{Objective}\par
+
+Deploy and verify the EKS application workloads: FastAPI backend, chat
+service, outbox dispatcher, processing worker, and AI service adapter.
+
+\vspace{0.5em}\noindent\textbf{Architecture context}\par
+
+The frontend is not deployed to EKS. EKS hosts the long-running services
+and workers behind an ALB origin used by CloudFront.
+
+\vspace{0.5em}\noindent\textbf{Deployment inputs}\par
+
+The production workflow computes image URIs from the AWS account,
+region, ECR repository, and \texttt{github.\allowbreak{}sha}:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}lll@{}}
+\toprule\noalign{}
+Workload & Image variable & Default ECR repository \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Backend and workers & \texttt{BACKEND\_\allowbreak{}IMAGE} &
+\texttt{internship-\allowbreak{}backend} \\
+Chat service & \texttt{CHAT\_\allowbreak{}IMAGE} & \texttt{internship-\allowbreak{}chat} \\
+AI adapter & \texttt{AI\_\allowbreak{}IMAGE} & \texttt{internship-\allowbreak{}ai} \\
+\end{longtable}
+\endgroup
+}
+
+The deployment script requires:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{BACKEND\_\allowbreak{}IMAGE}
+\item
+  \texttt{CHAT\_\allowbreak{}IMAGE}
+\item
+  \texttt{SECRET\_\allowbreak{}KEY}
+\item
+  \texttt{DATABASE\_\allowbreak{}URL}
+\item
+  \texttt{REDIS\_\allowbreak{}URL}
+\item
+  \texttt{AWS\_\allowbreak{}REGION}
+\item
+  \texttt{OUTBOX\_\allowbreak{}QUEUE\_\allowbreak{}URL}
+\end{itemize}
+
+Optional but important:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{AI\_\allowbreak{}DEPLOY\_\allowbreak{}ENABLED}
+\item
+  \texttt{AI\_\allowbreak{}IMAGE}
+\item
+  \texttt{PROCESSING\_\allowbreak{}WORKER\_\allowbreak{}ENABLED}
+\item
+  \texttt{SAGEMAKER\_\allowbreak{}ENDPOINT\_\allowbreak{}NAME}
+\item
+  \texttt{AI\_\allowbreak{}SERVICE\_\allowbreak{}BASE\_\allowbreak{}URL}
+\item
+  \texttt{IRSA\_\allowbreak{}ROLE\_\allowbreak{}ARN}
+\item
+  \texttt{S3\_\allowbreak{}BUCKET}
+\item
+  \texttt{AI\_\allowbreak{}SERVICE\_\allowbreak{}API\_\allowbreak{}KEY}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Image build and ECR push}\par
+
+The CI helper \texttt{scripts/\allowbreak{}ci/\allowbreak{}deploy-\allowbreak{}eks-\allowbreak{}pipeline.\allowbreak{}sh} builds and
+pushes images:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{bash}\NormalTok{ scripts/ci/deploy{-}eks{-}pipeline.sh}
+\end{Highlighting}
+\end{Shaded}
+
+The workflow verifies pushed backend and chat tags:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ ecr describe{-}images }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1 }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}repository{-}name}\NormalTok{ internship{-}backend }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}image{-}ids}\NormalTok{ imageTag=}\OperatorTok{\textless{}}\NormalTok{GITHUB\_SHA}\OperatorTok{\textgreater{}}
+
+\ExtensionTok{aws}\NormalTok{ ecr describe{-}images }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1 }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}repository{-}name}\NormalTok{ internship{-}chat }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}image{-}ids}\NormalTok{ imageTag=}\OperatorTok{\textless{}}\NormalTok{GITHUB\_SHA}\OperatorTok{\textgreater{}}
+\end{Highlighting}
+\end{Shaded}
+
+If \texttt{AI\_\allowbreak{}DEPLOY\_\allowbreak{}ENABLED=true}, the AI adapter image is built
+with:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{docker}\NormalTok{ build }\AttributeTok{{-}{-}file}\NormalTok{ Dockerfile.ai{-}service }\AttributeTok{{-}{-}tag} \OperatorTok{\textless{}}\NormalTok{AI\_IMAGE}\OperatorTok{\textgreater{}}\NormalTok{ .}
+\ExtensionTok{docker}\NormalTok{ push }\OperatorTok{\textless{}}\NormalTok{AI\_IMAGE}\OperatorTok{\textgreater{}}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Kubernetes namespace and
+ServiceAccount}\par
+
+The deployment applies:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ apply }\AttributeTok{{-}f}\NormalTok{ k8s/app/namespace.yaml}
+\ExtensionTok{kubectl}\NormalTok{ apply }\AttributeTok{{-}f}\NormalTok{ k8s/app/serviceaccount.yaml}
+\end{Highlighting}
+\end{Shaded}
+
+When \texttt{IRSA\_\allowbreak{}ROLE\_\allowbreak{}ARN} is set, the EKS-specific ServiceAccount
+manifest is rendered and applied from
+\texttt{k8s/\allowbreak{}eks/\allowbreak{}serviceaccount.\allowbreak{}yaml}.
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get namespace internship}
+\ExtensionTok{kubectl}\NormalTok{ get serviceaccount internship{-}app }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ yaml}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{ConfigMap and Secret
+usage}\par
+
+The production ConfigMap comes from \texttt{k8s/\allowbreak{}eks/\allowbreak{}configmap.\allowbreak{}yaml}.
+Important values include:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}ll@{}}
+\toprule\noalign{}
+Key & Value or purpose \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{APP\_\allowbreak{}ENV} & \texttt{eks} \\
+\texttt{OUTBOX\_\allowbreak{}PUBLISHER} & \texttt{sqs} \\
+\texttt{AI\_\allowbreak{}SERVICE\_\allowbreak{}BASE\_\allowbreak{}URL} & \texttt{http:/\allowbreak{}/\allowbreak{}ai-\allowbreak{}service:8010} \\
+\texttt{AI\_\allowbreak{}SERVICE\_\allowbreak{}PARSE\_\allowbreak{}TIMEOUT\_\allowbreak{}SECONDS} & \texttt{120} \\
+\texttt{AI\_\allowbreak{}SERVICE\_\allowbreak{}MATCH\_\allowbreak{}TIMEOUT\_\allowbreak{}SECONDS} & \texttt{600} \\
+\texttt{STORAGE\_\allowbreak{}BACKEND} & \texttt{s3} \\
+\texttt{AWS\_\allowbreak{}REGION} & \texttt{ap-\allowbreak{}southeast-\allowbreak{}1} \\
+\texttt{DYNAMODB\_\allowbreak{}USERS\_\allowbreak{}TABLE} & \texttt{ChatUsers} \\
+\texttt{DYNAMODB\_\allowbreak{}GROUPS\_\allowbreak{}TABLE} & \texttt{ChatGroups} \\
+\texttt{DYNAMODB\_\allowbreak{}MESSAGES\_\allowbreak{}TABLE} & \texttt{ChatMessages} \\
+\end{longtable}
+\endgroup
+}
+
+The deployment creates or updates Kubernetes Secret
+\texttt{internship-\allowbreak{}secrets} from GitHub secrets. Do not print secret
+values.
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get configmap internship{-}config }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ yaml}
+\ExtensionTok{kubectl}\NormalTok{ describe secret internship{-}secrets }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Migration and chat initialization
+jobs}\par
+
+The deployment deletes old jobs, applies fresh jobs, and waits for
+completion:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ delete job backend{-}migrate chat{-}init }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}ignore{-}not{-}found}
+\ExtensionTok{kubectl}\NormalTok{ apply }\AttributeTok{{-}f} \OperatorTok{\textless{}}\NormalTok{rendered{-}backend{-}migration{-}job.yaml}\OperatorTok{\textgreater{}}
+\ExtensionTok{kubectl}\NormalTok{ apply }\AttributeTok{{-}f} \OperatorTok{\textless{}}\NormalTok{rendered{-}chat{-}init{-}job.yaml}\OperatorTok{\textgreater{}}
+\ExtensionTok{kubectl}\NormalTok{ wait }\AttributeTok{{-}{-}for}\OperatorTok{=}\NormalTok{condition=complete job/backend{-}migrate }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ wait }\AttributeTok{{-}{-}for}\OperatorTok{=}\NormalTok{condition=complete job/chat{-}init }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\end{Highlighting}
+\end{Shaded}
+
+\texttt{backend-\allowbreak{}migrate} runs \texttt{alembic\ upgrade\ head}.
+\texttt{chat-\allowbreak{}init} initializes the DynamoDB chat tables.
+
+\vspace{0.5em}\noindent\textbf{Workload deployments}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1765}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1765}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2353}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2353}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1765}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Deployment
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Container command
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Port
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Replicas
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{backend} &
+\texttt{uvicorn\ app.\allowbreak{}main:app\ -\/\allowbreak{}-host\ 0.\allowbreak{}0.\allowbreak{}0.\allowbreak{}0\ -\/\allowbreak{}-port\ 8000\ -\/\allowbreak{}-proxy-\allowbreak{}headers}
+& 8000 & 2 & FastAPI REST API \\
+\texttt{chat-\allowbreak{}service} & \texttt{node\ server.\allowbreak{}js} through image start
+command & 3000 & 2 & Chat REST and Socket.IO \\
+\texttt{backend-\allowbreak{}outbox-\allowbreak{}dispatcher} &
+\texttt{python\ -m\ app.\allowbreak{}workers.\allowbreak{}outbox\_\allowbreak{}dispatcher} & 9101 metrics & 1 &
+Publishes outbox events to SQS \\
+\texttt{backend-\allowbreak{}processing-\allowbreak{}worker} &
+\texttt{python\ -m\ app.\allowbreak{}workers.\allowbreak{}processing\_\allowbreak{}worker} & 9102 metrics & 2
+in manifest, can be rendered to 0 & Async AI/document jobs \\
+\texttt{ai-\allowbreak{}service} & AI image command & 8010 & 1 & SageMaker adapter \\
+\end{longtable}
+\endgroup
+}
+
+Apply and verify:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{bash}\NormalTok{ scripts/k8s/deploy{-}eks.sh}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/chat{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend{-}outbox{-}dispatcher }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/ai{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{900s}
+\end{Highlighting}
+\end{Shaded}
+
+Only run the \texttt{ai-\allowbreak{}service} rollout command when AI deployment is
+enabled.
+
+\vspace{0.5em}\noindent\textbf{AI and processing worker
+gate}\par
+
+The deployment script blocks unsafe worker enablement:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{PROCESSING\_\allowbreak{}WORKER\_\allowbreak{}ENABLED=true} requires
+  \texttt{AI\_\allowbreak{}DEPLOY\_\allowbreak{}ENABLED=true}.
+\item
+  \texttt{PROCESSING\_\allowbreak{}WORKER\_\allowbreak{}ENABLED=true} requires \texttt{AI\_\allowbreak{}IMAGE}.
+\item
+  SageMaker endpoint \texttt{internship-\allowbreak{}qwen3-\allowbreak{}4b} must be
+  \texttt{InService}.
+\end{itemize}
+
+Check the endpoint before enabling the worker:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ sagemaker describe{-}endpoint }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}endpoint{-}name}\NormalTok{ internship{-}qwen3{-}4b }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1 }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}query}\NormalTok{ EndpointStatus }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}output}\NormalTok{ text}
+\end{Highlighting}
+\end{Shaded}
+
+Expected result:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{InService}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Health probes}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Workload
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Startup probe
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Readiness probe
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Liveness probe
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{backend} & \texttt{/\allowbreak{}health/\allowbreak{}live} & \texttt{/\allowbreak{}health/\allowbreak{}ready} &
+\texttt{/\allowbreak{}health/\allowbreak{}live} \\
+\texttt{chat-\allowbreak{}service} & \texttt{/\allowbreak{}health/\allowbreak{}live} & \texttt{/\allowbreak{}health/\allowbreak{}ready} &
+\texttt{/\allowbreak{}health/\allowbreak{}live} \\
+\texttt{ai-\allowbreak{}service} & Not configured separately & \texttt{/\allowbreak{}health/\allowbreak{}ready}
+& \texttt{/\allowbreak{}health/\allowbreak{}ready} \\
+\texttt{backend-\allowbreak{}outbox-\allowbreak{}dispatcher} & TCP \texttt{9101} & TCP
+\texttt{9101} & TCP \texttt{9101} \\
+\texttt{backend-\allowbreak{}processing-\allowbreak{}worker} & TCP \texttt{9102} & TCP
+\texttt{9102} & TCP \texttt{9102} \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{HPA and PDB}\par
+
+The manifest \texttt{k8s/\allowbreak{}app/\allowbreak{}autoscaling.\allowbreak{}yaml} defines:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Resource
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+HPA
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+PDB
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{backend} & min 2, max 5, CPU target 70\% & min available 1 \\
+\texttt{chat-\allowbreak{}service} & min 2, max 5, CPU target 70\% & min available
+1 \\
+\texttt{backend-\allowbreak{}processing-\allowbreak{}worker} & min 2, max 5, CPU target 70\% & min
+available 1 when worker enabled \\
+\end{longtable}
+\endgroup
+}
+
+When the processing worker is disabled, deployment scripts delete its
+HPA and PDB and scale it to zero.
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get hpa,pdb }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ describe hpa backend }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ describe hpa chat{-}service }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Ingress and ALB routing}\par
+
+The public ALB Ingress is \texttt{k8s/\allowbreak{}eks/\allowbreak{}ingress-\allowbreak{}alb-\allowbreak{}no-\allowbreak{}domain.\allowbreak{}yaml}.
+It routes:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{/\allowbreak{}api} to Service \texttt{backend}
+\item
+  \texttt{/\allowbreak{}chat} to Service \texttt{chat-\allowbreak{}service}
+\item
+  \texttt{/\allowbreak{}socket.\allowbreak{}io} to Service \texttt{chat-\allowbreak{}service}
+\end{itemize}
+
+Deploy public ALB routing with the workflow mode \texttt{deploy-\allowbreak{}public}
+or the helper script:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\VariableTok{ENABLE\_ALB\_INGRESS}\OperatorTok{=}\NormalTok{true }\FunctionTok{bash}\NormalTok{ scripts/aws/deploy{-}public{-}ingress.sh}
+\end{Highlighting}
+\end{Shaded}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get ingress internship{-}public }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://k8s{-}internshippublic{-}48101b50ad{-}85486086.ap{-}southeast{-}1.elb.amazonaws.com/api/health/ready}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://k8s{-}internshippublic{-}48101b50ad{-}85486086.ap{-}southeast{-}1.elb.amazonaws.com/chat/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Port-forward smoke checks}\par
+
+The deployment script uses local port-forwards for health smoke tests:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/backend 18080:8000 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://127.0.0.1:18080/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/chat{-}service 18081:3000 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://127.0.0.1:18081/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/ai{-}service 18082:8010 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://127.0.0.1:18082/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Expected result}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Migration and chat init jobs complete.
+\item
+  Backend, chat, and dispatcher deployments roll out successfully.
+\item
+  Processing worker is either Ready or intentionally scaled to zero.
+\item
+  AI service is Ready when AI deployment is enabled.
+\item
+  Services have endpoints.
+\item
+  ALB health checks pass for backend and chat.
+\item
+  CloudFront can reach ALB origin for \texttt{/\allowbreak{}api}, \texttt{/\allowbreak{}chat}, and
+  \texttt{/\allowbreak{}socket.\allowbreak{}io}.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Common errors}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{Missing\ required\ environment\ variable} & Required deployment
+secret or variable absent & Add the missing GitHub secret or variable \\
+\texttt{Unable\ to\ compute\ backend/\allowbreak{}chat\ image\ URIs} & Workflow
+variable or SHA-based image construction issue & Use account, region,
+repository, and \texttt{github.\allowbreak{}sha} \\
+ECR image not found & Build/push job did not publish the SHA tag &
+Inspect \texttt{build-\allowbreak{}images} job and ECR repository \\
+\texttt{PROCESSING\_\allowbreak{}WORKER\_\allowbreak{}ENABLED=true} fails & AI dependencies not
+ready & Enable AI image and verify SageMaker \texttt{InService} first \\
+Chat readiness fails & Redis or DynamoDB dependency unavailable &
+Inspect chat logs and DynamoDB/Redis status \\
+Backend readiness fails & PostgreSQL unavailable or migration failed &
+Inspect backend logs and RDS connectivity \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Outcome}\par
+
+The EKS backend deployment is complete when backend, chat, dispatcher,
+optional worker, and optional AI adapter are running with correct
+probes, services, endpoints, scaling controls, and ALB routing.

@@ -1,0 +1,329 @@
+\vspace{0.5em}\noindent\textbf{End-to-End Testing}\par
+
+\vspace{0.5em}\noindent\textbf{Objective}\par
+
+Define an acceptance test set for the deployed Internship Application
+Tracker and record which results are verified, implemented but still
+requiring runtime evidence, proposed, or not completed.
+
+\vspace{0.5em}\noindent\textbf{Architecture context}\par
+
+End-to-end tests must cover the full public path:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Browser {-}\textgreater{} CloudFront {-}\textgreater{} S3 or ALB {-}\textgreater{} EKS workloads {-}\textgreater{} managed AWS services}
+\end{Highlighting}
+\end{Shaded}
+
+They must also cover asynchronous paths:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Backend {-}\textgreater{} PostgreSQL outbox {-}\textgreater{} dispatcher {-}\textgreater{} SQS {-}\textgreater{} Lambda {-}\textgreater{} DynamoDB dedupe {-}\textgreater{} S3 archive {-}\textgreater{} SES}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Test status definitions}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Meaning
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Verified & Runtime evidence from Week 8 or exported production evidence
+confirms the result \\
+Implemented, verification required & Code or manifests implement the
+capability, but production runtime evidence is not included \\
+Proposed & Recommended test or control, not proven implemented \\
+Not completed & Not implemented or not completed in the evidence I
+have \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Acceptance test table}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+ID
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Test case
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Test input or command
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Expected result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+TC01 & CloudFront frontend &
+\texttt{curl\ -I\ https:/\allowbreak{}/\allowbreak{}dhm2rz5nmsibj.\allowbreak{}cloudfront.\allowbreak{}net/\allowbreak{}} & CloudFront
+returns frontend response & Implemented, verification required \\
+TC02 & Backend health through CloudFront &
+\texttt{curl\ -fsS\ https:/\allowbreak{}/\allowbreak{}dhm2rz5nmsibj.\allowbreak{}cloudfront.\allowbreak{}net/\allowbreak{}api/\allowbreak{}health/\allowbreak{}ready}
+& Backend readiness JSON with PostgreSQL dependency true & Implemented,
+verification required \\
+TC03 & Chat health through CloudFront &
+\texttt{curl\ -fsS\ https:/\allowbreak{}/\allowbreak{}dhm2rz5nmsibj.\allowbreak{}cloudfront.\allowbreak{}net/\allowbreak{}chat/\allowbreak{}health/\allowbreak{}ready}
+& Chat readiness JSON with Redis and DynamoDB true & Implemented,
+verification required \\
+TC04 & Socket.IO handshake & Browser or Socket.IO client connects with
+path \texttt{/\allowbreak{}socket.\allowbreak{}io} & Socket connection established through
+CloudFront and ALB & Implemented, verification required \\
+TC05 & Registration & Create candidate or HR account & User created or
+duplicate email returns 409 & Implemented, verification required \\
+TC06 & Login & Valid credentials & JWT session created and role-based
+route opens & Implemented, verification required \\
+TC07 & Job creation & HR creates job posting & Job stored in PostgreSQL
+with version & Implemented, verification required \\
+TC08 & Application submission & Candidate applies to published job &
+Application, documents, status history, outbox event and processing job
+are committed & Implemented, verification required \\
+TC09 & Duplicate application handling & Repeat apply for same
+job/candidate & \texttt{409} duplicate application or idempotent replay
+& Implemented, verification required \\
+TC10 & CV upload & Apply with CV/document & File stored in S3 or
+configured storage backend and metadata stored in PostgreSQL &
+Implemented, verification required \\
+TC11 & Processing job creation & Submit CV/job parse request &
+\texttt{async\_\allowbreak{}processing\_\allowbreak{}jobs} row created and status visible &
+Implemented, verification required \\
+TC12 & AI completion & Worker calls \texttt{ai-\allowbreak{}service} and SageMaker
+endpoint & Parsed CV/job or matching result persisted & Implemented,
+verification required \\
+TC13 & Chat between two clients & Send direct or group message & Sender
+receives ACK; recipient receives realtime message & Implemented,
+verification required \\
+TC14 & Chat persistence & Reload chat history & DynamoDB returns
+persisted message & Implemented, verification required \\
+TC15 & Chat pod restart and reconnect & Restart one chat pod during
+active session & Socket reconnects and no duplicate persisted message
+for retry & Implemented, verification required \\
+TC16 & PostgreSQL connectivity & Backend \texttt{/\allowbreak{}health/\allowbreak{}ready} &
+\texttt{postgres:\ true} & Implemented, verification required \\
+TC17 & Redis status & Chat \texttt{/\allowbreak{}health/\allowbreak{}ready} &
+\texttt{redis:\ true} & Redis runtime status verified from Week 8
+evidence; health endpoint output still useful \\
+TC18 & DynamoDB table status & \texttt{describe-\allowbreak{}table} for chat tables &
+\texttt{ACTIVE} for \texttt{ChatUsers}, \texttt{ChatGroups},
+\texttt{ChatMessages} & Verified from Week 8 DynamoDB evidence \\
+TC19 & Outbox dispatcher & Inspect dispatcher deployment and logs &
+Dispatcher reads PostgreSQL outbox and publishes to SQS & Deployment
+verified from Week 8 EKS evidence; event publish verification
+required \\
+TC20 & SQS event & Inspect \texttt{internship-\allowbreak{}prod-\allowbreak{}outbox} & Message
+accepted with SSE, visibility timeout, retention & Queue and DLQ
+verified from Week 8 SQS evidence \\
+TC21 & Lambda processing & Smoke-test event
+\texttt{lambda-\allowbreak{}smoke-\allowbreak{}fixed-\allowbreak{}1785220478} & Lambda processed event and
+returned \texttt{EMAIL\_\allowbreak{}SENT} & Function and log group partially
+verified; successful invocation evidence still required \\
+TC22 & SES notification & Same smoke-test event & Email send result
+recorded as \texttt{EMAIL\_\allowbreak{}SENT} & Verification required; Week 8
+evidence does not prove SES delivery \\
+TC23 & S3 event archive & Inspect archive key &
+\texttt{outbox-\allowbreak{}archive/\allowbreak{}2026/\allowbreak{}07/\allowbreak{}28/\allowbreak{}lambda-\allowbreak{}smoke-\allowbreak{}fixed-\allowbreak{}1785220478.\allowbreak{}json}
+exists & Verification required; Week 8 evidence does not prove archive
+object creation \\
+TC24 & DynamoDB idempotency & Process duplicate event ID & Duplicate is
+skipped by dedupe table & Implemented, verification required \\
+TC25 & Duplicate Lambda event & Re-send same event ID & No second side
+effect & Implemented, verification required \\
+TC26 & DLQ handling & Force consumer failure in controlled test &
+Message redriven to \texttt{internship-\allowbreak{}prod-\allowbreak{}outbox-\allowbreak{}dlq} after max
+receive count & Proposed \\
+TC27 & CloudFront routing correctness & Check distribution behaviors &
+Default to S3; \texttt{/\allowbreak{}api}, \texttt{/\allowbreak{}chat}, \texttt{/\allowbreak{}socket.\allowbreak{}io} to ALB
+& Partially verified from CloudFront monitoring; behavior export or
+browser smoke proof still required \\
+TC28 & Frontend no longer in EKS &
+\texttt{kubectl\ get\ deployment\ frontend\ -n\ internship} & Not found
+& Partially verified from current architecture and EKS workload
+evidence; explicit command output still useful \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Manual command set}\par
+
+Run only with approved production access:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ eks update{-}kubeconfig }\AttributeTok{{-}{-}name}\NormalTok{ internship{-}prod }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{kubectl}\NormalTok{ get deployments,pods,svc,endpoints,hpa,pdb }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ wide}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/api/health/ready}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/chat/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+AWS service checks:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatUsers }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatGroups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatMessages }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ elasticache describe{-}replication{-}groups }\AttributeTok{{-}{-}replication{-}group{-}id}\NormalTok{ internship{-}prod{-}redis }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sqs get{-}queue{-}url }\AttributeTok{{-}{-}queue{-}name}\NormalTok{ internship{-}prod{-}outbox }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ lambda get{-}function }\AttributeTok{{-}{-}function{-}name}\NormalTok{ internship{-}outbox{-}handler }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sagemaker describe{-}endpoint }\AttributeTok{{-}{-}endpoint{-}name}\NormalTok{ internship{-}qwen3{-}4b }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Request examples}\par
+
+Backend health:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/api/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+Chat health:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/chat/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+AI health through port-forward:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/ai{-}service 18082:8010 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://127.0.0.1:18082/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Database result checks}\par
+
+Do not publish database credentials or raw personal data. Use
+application APIs, migration logs, and aggregate checks where possible.
+
+Useful production-safe checks:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ logs job/backend{-}migrate }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{100}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{100}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend{-}outbox{-}dispatcher }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{100}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Storage result checks}\par
+
+Frontend bucket:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3 ls s3://internship{-}prod{-}frontend{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}\NormalTok{/ }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Event archive:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ s3 ls s3://internship{-}prod{-}uploads{-}}\OperatorTok{\textless{}}\NormalTok{AWS\_ACCOUNT\_ID}\OperatorTok{\textgreater{}}\NormalTok{/outbox{-}archive/2026/07/28/ }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{CloudWatch log checks}\par
+
+Lambda:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ logs tail /aws/lambda/internship{-}outbox{-}handler }\AttributeTok{{-}{-}since}\NormalTok{ 1h }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+EKS workload CloudWatch log group names require evidence from log
+shipping configuration before being listed as deployed.
+
+\vspace{0.5em}\noindent\textbf{Expected result}\par
+
+The platform is accepted for demonstration when critical public health
+checks pass, EKS workloads are Ready,
+DynamoDB/Redis/SQS/Lambda/SageMaker resources are available, and the
+Lambda smoke-test path has exported proof for event processing, archive,
+and email result.
+
+\vspace{0.5em}\noindent\textbf{Common errors}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Likely cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Health check passes through ALB but fails through CloudFront &
+CloudFront behavior or origin configuration issue & Inspect CloudFront
+distribution behaviors \\
+Chat test fails after scaling & Redis adapter or ALB stickiness issue &
+Verify Redis readiness and target group stickiness \\
+Duplicate application creates two records & Missing DB unique constraint
+or idempotency bug & Run backend idempotency tests and inspect
+constraints \\
+Worker jobs stay queued & Worker disabled or SageMaker not ready &
+Verify \texttt{PROCESSING\_\allowbreak{}WORKER\_\allowbreak{}ENABLED}, \texttt{ai-\allowbreak{}service}, and
+endpoint status \\
+Lambda smoke test fails with DynamoDB reserved word & \texttt{result}
+used directly in UpdateExpression & Use \texttt{\#result} and
+\texttt{ExpressionAttributeNames} mapping \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Outcome}\par
+
+The E2E test plan is evidence-aware. It avoids marking tests passed
+solely because code exists and records which runtime checks still
+require exported evidence.

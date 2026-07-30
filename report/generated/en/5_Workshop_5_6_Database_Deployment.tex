@@ -1,0 +1,411 @@
+\vspace{0.5em}\noindent\textbf{Database Deployment}\par
+
+\vspace{0.5em}\noindent\textbf{Objective}\par
+
+Deploy and verify the data layer used by the Internship Application
+Tracker: RDS PostgreSQL, ElastiCache Redis, DynamoDB chat tables, and
+DynamoDB Lambda idempotency table.
+
+\vspace{0.5em}\noindent\textbf{Architecture context}\par
+
+Different data stores are used for different access patterns:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Store
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+RDS PostgreSQL & Users, companies, jobs, applications, workflow history,
+idempotency records, async processing jobs, transactional outbox \\
+ElastiCache Redis & Socket.IO pub/sub between multiple chat pods \\
+DynamoDB chat tables & Permanent chat users, groups, and messages \\
+DynamoDB dedupe table & Lambda consumer idempotency for SQS events \\
+S3 & File storage and event archives, covered in infrastructure/frontend
+chapters \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{PostgreSQL deployment}\par
+
+The production RDS identifier is \texttt{internship-\allowbreak{}prod-\allowbreak{}postgres}.
+PostgreSQL stores transactional business data and all database-backed
+worker queues.
+
+Evidence required:
+
+\begin{itemize}
+\tightlist
+\item
+  DB instance class
+\item
+  allocated storage
+\item
+  storage encryption status
+\item
+  backup retention
+\item
+  Multi-AZ setting
+\item
+  subnet group name
+\item
+  security group IDs
+\item
+  deletion protection setting
+\end{itemize}
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ rds describe{-}db{-}instances }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}db{-}instance{-}identifier}\NormalTok{ internship{-}prod{-}postgres }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Check subnet groups:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ rds describe{-}db{-}subnet{-}groups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Alembic migrations}\par
+
+The backend uses Alembic migrations in
+\texttt{backend/\allowbreak{}alembic/\allowbreak{}versions/\allowbreak{}}. Important migrations include:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}ll@{}}
+\toprule\noalign{}
+Migration & Purpose \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{0004\_\allowbreak{}idempotency\_\allowbreak{}records.\allowbreak{}py} & Idempotency records \\
+\texttt{0005\_\allowbreak{}idempotency\_\allowbreak{}status\_\allowbreak{}check.\allowbreak{}py} & Bounded idempotency
+statuses \\
+\texttt{0006\_\allowbreak{}job\_\allowbreak{}application\_\allowbreak{}versions.\allowbreak{}py} & Optimistic version
+fields \\
+\texttt{0007\_\allowbreak{}outbox\_\allowbreak{}events.\allowbreak{}py} & Transactional outbox \\
+\texttt{0008\_\allowbreak{}async\_\allowbreak{}processing\_\allowbreak{}jobs.\allowbreak{}py} & Async processing queue \\
+\texttt{1065bcf66cb9\_\allowbreak{}0007\_\allowbreak{}add\_\allowbreak{}rerank\_\allowbreak{}run\_\allowbreak{}tables.\allowbreak{}py} & Rerank run
+tables \\
+\end{longtable}
+\endgroup
+}
+
+The EKS deployment creates a Kubernetes Job named
+\texttt{backend-\allowbreak{}migrate} that runs:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{alembic}\NormalTok{ upgrade head}
+\end{Highlighting}
+\end{Shaded}
+
+Manual verification from the repository root:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{cd}\NormalTok{ backend}
+\ExtensionTok{alembic}\NormalTok{ current}
+\ExtensionTok{alembic}\NormalTok{ heads}
+\ExtensionTok{alembic}\NormalTok{ history }\AttributeTok{{-}{-}verbose}
+\end{Highlighting}
+\end{Shaded}
+
+Do not run migrations against production unless the deployment window
+and rollback plan are approved.
+
+\vspace{0.5em}\noindent\textbf{PostgreSQL connection
+configuration}\par
+
+The production deployment provides \texttt{DATABASE\_\allowbreak{}URL} through the
+Kubernetes Secret \texttt{internship-\allowbreak{}secrets}. The actual connection
+string is secret, so I do not print it in the documentation.
+
+Kubernetes verification without exposing the value:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get secret internship{-}secrets }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ describe secret internship{-}secrets }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+Backend readiness verifies PostgreSQL by executing \texttt{SELECT\ 1}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/backend 18080:8000 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://127.0.0.1:18080/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+Expected response:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{}\DataTypeTok{"status"}\FunctionTok{:}\StringTok{"ready"}\FunctionTok{,}\DataTypeTok{"service"}\FunctionTok{:}\StringTok{"internship{-}api"}\FunctionTok{,}\DataTypeTok{"dependencies"}\FunctionTok{:\{}\DataTypeTok{"postgres"}\FunctionTok{:}\KeywordTok{true}\FunctionTok{\}\}}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{ElastiCache Redis}\par
+
+The production Redis replication group is
+\texttt{internship-\allowbreak{}prod-\allowbreak{}redis}, and I verified it as \texttt{available}
+in the Week 8 evidence. Redis is used by the Socket.IO adapter so chat
+events can be broadcast between multiple chat pods.
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ elasticache describe{-}replication{-}groups }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}replication{-}group{-}id}\NormalTok{ internship{-}prod{-}redis }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+The chat service reads \texttt{REDIS\_\allowbreak{}URL} from
+\texttt{internship-\allowbreak{}secrets}. In production, Redis must be reachable from
+chat pods and should not be exposed publicly.
+
+\vspace{0.5em}\noindent\textbf{DynamoDB chat tables}\par
+
+The chat service uses three DynamoDB tables:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{ChatUsers}
+\item
+  \texttt{ChatGroups}
+\item
+  \texttt{ChatMessages}
+\end{itemize}
+
+I verified all three chat tables as \texttt{ACTIVE} in the Week 8
+evidence. The chat service readiness endpoint depends on both DynamoDB
+and Redis:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/chat{-}service 18081:3000 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://127.0.0.1:18081/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+Expected response when dependencies are ready:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{}\DataTypeTok{"status"}\FunctionTok{:}\StringTok{"ready"}\FunctionTok{,}\DataTypeTok{"dependencies"}\FunctionTok{:\{}\DataTypeTok{"redis"}\FunctionTok{:}\KeywordTok{true}\FunctionTok{,}\DataTypeTok{"dynamodb"}\FunctionTok{:}\KeywordTok{true}\FunctionTok{\}\}}
+\end{Highlighting}
+\end{Shaded}
+
+DynamoDB verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatUsers }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatGroups }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatMessages }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{DynamoDB Lambda dedupe
+table}\par
+
+The Lambda SQS consumer uses \texttt{InternshipLambdaEventDedupe} to
+store processed \texttt{eventId} values. This protects the Lambda side
+from duplicate SQS delivery.
+
+Verification:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}table{-}name}\NormalTok{ InternshipLambdaEventDedupe }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+For the successful smoke-test event:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ dynamodb get{-}item }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}table{-}name}\NormalTok{ InternshipLambdaEventDedupe }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}key} \StringTok{\textquotesingle{}\{"eventId":\{"S":"lambda{-}smoke{-}fixed{-}1785220478"\}\}\textquotesingle{}} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+The report should not claim this command was run unless the output is
+exported as evidence.
+
+\vspace{0.5em}\noindent\textbf{Data consistency design}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Concern
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mechanism
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Duplicate registration & PostgreSQL unique constraints and 409
+handling \\
+Duplicate candidate apply & Unique
+\texttt{(job\_\allowbreak{}posting\_\allowbreak{}id,\ candidate\_\allowbreak{}user\_\allowbreak{}id)} and
+\texttt{Idempotency-\allowbreak{}Key} \\
+Stale HR updates & \texttt{expectedVersion} and conditional updates \\
+Long AI jobs & \texttt{async\_\allowbreak{}processing\_\allowbreak{}jobs} table with leases and
+retries \\
+Lost event publication & \texttt{outbox\_\allowbreak{}events} committed with business
+mutation \\
+Duplicate SQS delivery & Lambda DynamoDB conditional write by
+\texttt{eventId} \\
+Duplicate chat message retry & DynamoDB conditional create with
+\texttt{clientMessageId} \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Commands}\par
+
+Check Kubernetes data-related configuration:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get configmap internship{-}config }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ yaml}
+\ExtensionTok{kubectl}\NormalTok{ get secret internship{-}secrets }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ get job backend{-}migrate chat{-}init }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ logs job/backend{-}migrate }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ logs job/chat{-}init }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+Check application tables through application health:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/chat{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/api/health/ready}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/chat/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Expected result}\par
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{backend-\allowbreak{}migrate} completes successfully.
+\item
+  Backend readiness returns PostgreSQL dependency \texttt{true}.
+\item
+  Chat readiness returns Redis and DynamoDB dependencies \texttt{true}.
+\item
+  DynamoDB chat tables are \texttt{ACTIVE}.
+\item
+  Redis replication group is \texttt{available}.
+\item
+  Lambda dedupe table exists and supports conditional writes.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Common errors}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Root cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Backend readiness fails & Wrong \texttt{DATABASE\_\allowbreak{}URL}, security group
+issue, migration failure & Inspect backend logs and RDS security
+groups \\
+Alembic fails to parse URL & Shell interpolation or secret formatting
+problem & Store URL as a secret and avoid printing it \\
+Chat readiness returns \texttt{not\_\allowbreak{}ready} & Redis adapter or DynamoDB
+initialization failure & Inspect \texttt{chat-\allowbreak{}service} logs and
+\texttt{chat-\allowbreak{}init} job \\
+Duplicate Lambda event sends email twice & Dedupe table write is missing
+or not conditional & Use DynamoDB conditional write keyed by
+\texttt{eventId} \\
+Outbox rows stay pending & Dispatcher cannot publish to SQS & Check
+\texttt{OUTBOX\_\allowbreak{}QUEUE\_\allowbreak{}URL}, IRSA SQS policy, dispatcher logs \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Troubleshooting}\par
+
+Use these commands during incidents:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/chat{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend{-}outbox{-}dispatcher }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{aws}\NormalTok{ rds describe{-}db{-}instances }\AttributeTok{{-}{-}db{-}instance{-}identifier}\NormalTok{ internship{-}prod{-}postgres }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ elasticache describe{-}replication{-}groups }\AttributeTok{{-}{-}replication{-}group{-}id}\NormalTok{ internship{-}prod{-}redis }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ dynamodb describe{-}table }\AttributeTok{{-}{-}table{-}name}\NormalTok{ ChatMessages }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Outcome}\par
+
+The database layer is ready when PostgreSQL migrations have completed,
+Redis is available to chat pods, DynamoDB chat tables are active, Lambda
+dedupe is configured, and application readiness checks pass through the
+deployed routing path.

@@ -1,0 +1,197 @@
+Khi bạn tạo một Interface Endpoint hoặc cổng, bạn có thể đính kèm một
+chính sách điểm cuối để kiểm soát quyền truy cập vào dịch vụ mà bạn đang
+kết nối. Chính sách VPC Endpoint là chính sách tài nguyên IAM mà bạn
+đính kèm vào điểm cuối. Nếu bạn không đính kèm chính sách khi tạo điểm
+cuối, thì AWS sẽ đính kèm chính sách mặc định cho bạn để cho phép toàn
+quyền truy cập vào dịch vụ thông qua điểm cuối.
+
+Bạn có thể tạo chính sách chỉ hạn chế quyền truy cập vào các S3 bucket
+cụ thể. Điều này hữu ích nếu bạn chỉ muốn một số Bộ chứa S3 nhất định có
+thể truy cập được thông qua điểm cuối.
+
+Trong phần này, bạn sẽ tạo chính sách VPC Endpoint hạn chế quyền truy
+cập vào S3 bucket được chỉ định trong chính sách VPC Endpoint.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={endpoint diagram}]{5-Workshop/5.5-Policy/s3-bucket-policy.png}}
+\caption{endpoint diagram}
+\end{figure}
+
+\vspace{0.5em}\noindent\textbf{Kết nối tới EC2 và xác minh kết nối tới
+S3.}\par
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Bắt đầu một phiên AWS Session Manager mới trên máy chủ có tên là
+  Test-Gateway-Endpoint. Từ phiên này, xác minh rằng bạn có thể liệt kê
+  nội dung của bucket mà bạn đã tạo trong Phần 1: Truy cập S3 từ VPC.
+\end{enumerate}
+
+\begin{verbatim}
+aws s3 ls s3://<your-bucket-name>
+\end{verbatim}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={test}]{5-Workshop/5.5-Policy/test1.png}}
+\caption{test}
+\end{figure}
+
+Nội dung của bucket bao gồm hai tệp có dung lượng 1GB đã được tải lên
+trước đó.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Tạo một bucket S3 mới; tuân thủ mẫu đặt tên mà bạn đã sử dụng trong
+  Phần 1, nhưng thêm `-2' vào tên. Để các trường khác là mặc định và
+  nhấp vào \textbf{Create}.
+\end{enumerate}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={create bucket}]{5-Workshop/5.5-Policy/create-bucket.png}}
+\caption{create bucket}
+\end{figure}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Tạo bucket thành công.
+\end{enumerate}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={Success}]{5-Workshop/5.5-Policy/create-bucket-success.png}}
+\caption{Success}
+\end{figure}
+
+Policy mặc định cho phép truy cập vào tất cả các S3 Buckets thông qua
+VPC endpoint.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  Trong giao diện \textbf{Edit Policy}, sao chép và dán theo policy sau,
+  thay thế yourbucketname-2 với tên bucket thứ hai của bạn. Policy này
+  sẽ cho phép truy cập đến bucket mới thông qua VPC endpoint, nhưng
+  không cho phép truy cập đến các bucket còn lại. Chọn \textbf{Save} để
+  kích hoạt policy.
+\end{enumerate}
+
+\begin{verbatim}
+{
+  "Id": "Policy1631305502445",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Stmt1631305501021",
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Resource": [
+                    "arn:aws:s3:::yourbucketname-2",
+                    "arn:aws:s3:::yourbucketname-2/*"
+       ],
+      "Principal": "*"
+    }
+  ]
+}
+\end{verbatim}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={custom policy}]{5-Workshop/5.5-Policy/policy2.png}}
+\caption{custom policy}
+\end{figure}
+
+Cấu hình policy thành công.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={success}]{5-Workshop/5.5-Policy/success.png}}
+\caption{success}
+\end{figure}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  Từ session của bạn trên Test-Gateway-Endpoint instance, kiểm tra truy
+  cập đến S3 bucket bạn tạo ở bước đầu
+\end{enumerate}
+
+\begin{verbatim}
+aws s3 ls s3://<yourbucketname>
+\end{verbatim}
+
+Câu lệnh trả về lỗi bởi vì truy cập vào S3 bucket không có quyền trong
+VPC endpoint policy.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={error}]{5-Workshop/5.5-Policy/error.png}}
+\caption{error}
+\end{figure}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  Trở lại home directory của bạn trên EC2 instance
+  \texttt{cd\textasciitilde{}}
+\end{enumerate}
+
+\begin{itemize}
+\tightlist
+\item
+  Tạo file \texttt{fallocate\ -l\ 1G\ test-\allowbreak{}bucket2.\allowbreak{}xyz}
+\item
+  Sao chép file lên bucket thứ 2
+  \texttt{aws\ s3\ cp\ test-bucket2.xyz\ s3://\textless{}your-2nd-bucket-name\textgreater{}}
+\end{itemize}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={success}]{5-Workshop/5.5-Policy/test2.png}}
+\caption{success}
+\end{figure}
+
+Thao tác này được cho phép bởi VPC endpoint policy.
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={success}]{5-Workshop/5.5-Policy/test2-success.png}}
+\caption{success}
+\end{figure}
+
+Sau đó chúng ta kiểm tra truy cập vào S3 bucket đầu tiên
+
+\texttt{aws\ s3\ cp\ test-bucket2.xyz\ s3://\textless{}your-1st-bucket-name\textgreater{}}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={fail}]{5-Workshop/5.5-Policy/test2-fail.png}}
+\caption{fail}
+\end{figure}
+
+Câu lệnh xảy ra lỗi bởi vì bucket không có quyền truy cập bởi VPC
+endpoint policy.
+
+Trong phần này, bạn đã tạo chính sách VPC Endpoint cho Amazon S3 và sử
+dụng AWS CLI để kiểm tra chính sách. Các hoạt động AWS CLI liên quan đến
+bucket S3 ban đầu của bạn thất bại vì bạn áp dụng một chính sách chỉ cho
+phép truy cập đến bucket thứ hai mà bạn đã tạo. Các hoạt động AWS CLI
+nhắm vào bucket thứ hai của bạn thành công vì chính sách cho phép chúng.
+Những chính sách này có thể hữu ích trong các tình huống khi bạn cần
+kiểm soát quyền truy cập vào tài nguyên thông qua VPC Endpoint.

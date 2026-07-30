@@ -1,0 +1,197 @@
+\vspace{0.5em}\noindent\textbf{Self-evaluation}\par
+
+\vspace{0.5em}\noindent\textbf{Assessment summary}\par
+
+This is my draft self-assessment based on the Internship Application
+Tracker project. It is not an official supervisor rating.
+
+During the project, I worked on a cloud-native internship application
+platform that combines a React/Vite frontend, FastAPI backend, Node.js
+Socket.IO chat service, PostgreSQL, DynamoDB, Redis, SQS, Lambda, S3,
+CloudFront, EKS, and SageMaker. The most important learning outcome for
+me was understanding how application code, Kubernetes, managed AWS
+services, IAM, networking, CI/CD, and runtime evidence connect in a real
+deployment.
+
+\vspace{0.5em}\noindent\textbf{Skill rating table}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Skill area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Draft rating
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence and reflection
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+AWS architecture & 8/10 & I helped shape the final architecture where
+CloudFront routes static frontend traffic to S3 and dynamic
+\texttt{/\allowbreak{}api}, \texttt{/\allowbreak{}chat}, and \texttt{/\allowbreak{}socket.\allowbreak{}io} traffic to the
+ALB. I learned to distinguish proposal diagrams from deployed
+evidence. \\
+Kubernetes & 8/10 & I worked with EKS workloads for backend, chat,
+outbox dispatcher, processing worker, and ai-service, including
+Deployments, Services, readiness/liveness probes, HPA, and PDB. \\
+Networking & 7/10 & I investigated issues such as a NAT Gateway
+blackhole that prevented EKS nodes from joining and the AWS Load
+Balancer Controller VPC ID failure. I still need more practice designing
+VPCs from scratch. \\
+IAM and security & 7/10 & I used GitHub OIDC, IRSA, runtime roles,
+secret separation, S3 private access, SQS SSE, and idempotency. I need
+to improve formal IAM policy review and permission boundary design. \\
+CI/CD & 8/10 & I worked with GitHub Actions workflow modes such as
+\texttt{validate}, \texttt{deploy-\allowbreak{}app}, \texttt{deploy-\allowbreak{}public},
+\texttt{deploy-\allowbreak{}frontend}, \texttt{rollout}, and \texttt{full}, including
+ECR SHA image verification and frontend S3 deployment. \\
+Database and messaging & 8/10 & I learned how PostgreSQL stores business
+data, processing jobs, idempotency records, and transactional outbox
+events, while SQS carries committed events to Lambda and DynamoDB
+supports chat and dedupe. \\
+Serverless & 7/10 & I integrated the SQS-to-Lambda notification flow
+conceptually and documented the successful Lambda smoke test, DynamoDB
+dedupe, S3 archive, SES result, and partial batch failure behavior. \\
+AI integration & 7/10 & I worked with the processing worker and
+ai-service adapter pattern, where the worker keeps stable routes and the
+adapter calls SageMaker endpoint \texttt{internship-\allowbreak{}qwen3-\allowbreak{}4b}. I need
+more experience operating model endpoints cost-effectively. \\
+Troubleshooting & 8/10 & I practiced evidence-led debugging for NAT, ALB
+controller, GitHub Actions job conditions, SQS queue naming, CloudFront
+routing, and DynamoDB reserved keyword errors. \\
+Documentation & 8/10 & I converted implementation details and runtime
+context into workshop, proposal, cost, security, testing,
+troubleshooting, and cleanup documentation. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Strengths}\par
+
+\begin{itemize}
+\tightlist
+\item
+  I can connect source code, deployment manifests, workflow files, and
+  runtime evidence into one coherent architecture explanation.
+\item
+  I became more careful about distinguishing implemented code from
+  verified production behavior.
+\item
+  I improved at troubleshooting AWS integration failures by starting
+  from logs and command output instead of assumptions.
+\item
+  I learned how to document deployment procedures with warnings,
+  expected results, and common errors.
+\item
+  I understand why frontend static hosting, EKS services, database
+  transactions, SQS delivery, Lambda idempotency, and SageMaker
+  inference belong in different parts of the architecture.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Challenges}\par
+
+\begin{itemize}
+\tightlist
+\item
+  AWS service interactions can fail for reasons outside application
+  code, especially IAM, route tables, controller configuration, and
+  GitHub Actions variable scope.
+\item
+  Debugging EKS required understanding both Kubernetes objects and
+  AWS-created resources such as ALB target groups and ENIs.
+\item
+  Cost estimation was difficult because exact AWS prices depend on live
+  instance types, endpoint uptime, data transfer, and log retention.
+\item
+  AI integration required preserving the worker-facing contract while
+  moving implementation details into the SageMaker adapter.
+\item
+  Documentation required discipline because it is easy to overstate
+  something that exists in code but has not been verified in production.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Lessons learned}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Runtime evidence should be treated as stronger than old manifests when
+  describing current production architecture.
+\item
+  A Kubernetes Service load-balances traffic but does not serialize
+  database writes; correctness must come from constraints, idempotency,
+  conditional writes, and transactions.
+\item
+  SQS Standard provides at-least-once delivery, so consumers must
+  deduplicate events.
+\item
+  Lambda is useful for short event-driven processing, but it only
+  reduces cost when it removes or scales down always-on capacity.
+\item
+  Static frontend delivery through S3 and CloudFront is a better fit
+  than running a frontend pod in EKS for this project.
+\item
+  Worker workloads should be enabled only after their dependencies,
+  especially SageMaker, are ready.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Areas for improvement}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Practice writing IAM policies with least privilege from the beginning
+  instead of tightening them after deployment failures.
+\item
+  Learn more about VPC endpoint strategy to reduce NAT Gateway cost and
+  dependency.
+\item
+  Add stronger production evidence collection for alarms, backups,
+  encryption settings, and PITR.
+\item
+  Build a repeatable frontend/browser E2E test harness for login, job
+  apply, chat, and AI processing flows.
+\item
+  Improve SageMaker cost control by testing scheduled shutdown,
+  asynchronous inference, or lower-cost inference options.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Future plan}\par
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Strengthen AWS networking knowledge, especially VPC routing, NAT,
+  endpoints, security groups, and private service access.
+\item
+  Practice production IAM design with OIDC, IRSA, Lambda roles, and
+  SageMaker execution roles.
+\item
+  Build a complete evidence package for deployed systems: CLI exports,
+  logs, screenshots, Cost Explorer, and Pricing Calculator results.
+\item
+  Add automated E2E tests and smoke tests for the main candidate and HR
+  flows.
+\item
+  Continue improving event-driven design with SQS, Lambda, DLQ handling,
+  idempotency, and observability.
+\end{enumerate}
+
+\vspace{0.5em}\noindent\textbf{Career orientation}\par
+
+This project confirmed that I want to keep developing skills in cloud
+engineering, backend systems, DevOps, and AI-enabled applications. I am
+especially interested in work that combines application development with
+reliable infrastructure, security, automation, and practical
+troubleshooting.

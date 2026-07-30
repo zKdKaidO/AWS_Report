@@ -1,0 +1,280 @@
+\vspace{0.5em}\noindent\textbf{Week 3 - Transactional Outbox and Asynchronous
+Processing}\par
+
+\vspace{0.5em}\noindent\textbf{Objectives}\par
+
+Week 3 focused on separating committed business changes from downstream
+side effects. The goal was to add a transactional outbox, define an
+event-consumer contract, and move long-running document and AI work into
+retryable background processing.
+
+\vspace{0.5em}\noindent\textbf{Tasks Completed}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence basis
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Completed & Designed and implemented the \texttt{outbox\_\allowbreak{}events} table.
+& \texttt{backend/\allowbreak{}alembic/\allowbreak{}versions/\allowbreak{}0007\_\allowbreak{}outbox\_\allowbreak{}events.\allowbreak{}py}. \\
+Completed & Added outbox statuses \texttt{PENDING}, \texttt{PROCESSING},
+\texttt{PUBLISHED}, and \texttt{DEAD}. & Migration check constraint and
+\texttt{backend/\allowbreak{}app/\allowbreak{}services/\allowbreak{}outbox.\allowbreak{}py}. \\
+Completed & Added \texttt{deduplication\_\allowbreak{}key} and claim/retry indexes. &
+Migration \texttt{0007\_\allowbreak{}outbox\_\allowbreak{}events.\allowbreak{}py}. \\
+Completed & Implemented the backend outbox dispatcher and admin
+operations. & \texttt{backend/\allowbreak{}app/\allowbreak{}workers/\allowbreak{}outbox\_\allowbreak{}dispatcher.\allowbreak{}py} and
+\texttt{backend/\allowbreak{}app/\allowbreak{}workers/\allowbreak{}outbox\_\allowbreak{}admin.\allowbreak{}py}. \\
+Completed & Documented SQS Standard as the production event transport. &
+\texttt{docs/\allowbreak{}architecture/\allowbreak{}adr/\allowbreak{}ADR-\allowbreak{}001-\allowbreak{}production-\allowbreak{}event-\allowbreak{}transport.\allowbreak{}md}. \\
+Completed & Added \texttt{async\_\allowbreak{}processing\_\allowbreak{}jobs} and a processing
+worker for document/AI tasks. & Migration
+\texttt{0008\_\allowbreak{}async\_\allowbreak{}processing\_\allowbreak{}jobs.\allowbreak{}py}, \texttt{processing\_\allowbreak{}jobs.\allowbreak{}py},
+and \texttt{processing\_\allowbreak{}worker.\allowbreak{}py}. \\
+Partially completed & Added real downstream consumers beyond the
+contract. & Source docs state downstream notification/search/analytics
+consumers were not implemented in this phase. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Technical Implementation}\par
+
+The outbox design keeps domain mutation and event creation in the same
+PostgreSQL transaction. If the business write fails, no event is
+inserted. If the API pod dies after commit, the outbox row remains
+\texttt{PENDING} and can be claimed later by the dispatcher.
+
+\{\{\textless{} mermaid \textgreater\}\} sequenceDiagram participant API
+as FastAPI backend participant DB as PostgreSQL participant D as Outbox
+dispatcher participant SQS as Amazon SQS Standard participant C as
+Future consumer API-\textgreater\textgreater DB: commit domain change +
+outbox row D-\textgreater\textgreater DB: claim PENDING event
+D-\textgreater\textgreater SQS: publish event envelope alt publish
+accepted D-\textgreater\textgreater DB: mark PUBLISHED else retryable
+failure D-\textgreater\textgreater DB: return to PENDING with backoff
+else non-retryable or max attempts D-\textgreater\textgreater DB: mark
+DEAD end C-\textgreater\textgreater SQS: consume message
+C-\textgreater\textgreater C: deduplicate by eventId \{\{\textless{}
+/mermaid \textgreater\}\}
+
+Asynchronous processing uses a separate database-backed queue because
+document parsing and AI matching are user-visible jobs with status,
+retry behavior, source-version guards, and result payloads. The worker
+claims jobs, applies lease-based retry logic, and persists results back
+to PostgreSQL.
+
+\vspace{0.5em}\noindent\textbf{Problems and Solutions}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Problem
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Root cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+A committed workflow change could lose its follow-up event if publishing
+failed after the database commit. & Direct publish inside request
+handling is not transactional with PostgreSQL. & Insert a canonical
+outbox event in the same DB transaction, then dispatch asynchronously. &
+Completed \\
+SQS Standard can redeliver or reorder messages. & Standard queues
+provide at-least-once delivery, not exactly-once delivery. & The event
+envelope includes \texttt{eventId}; consumers must deduplicate by
+\texttt{eventId}. & Completed \\
+Dispatcher failure can leave events half-processed. & A worker can die
+after claiming or publishing an event. & Lease expiry, retry counters,
+\texttt{DEAD} status, and admin requeue/cleanup commands were added. &
+Completed \\
+AI and document work can take too long for API request latency. &
+Parsing CVs, extracting text, and reranking candidates are long-running
+operations. & Added \texttt{async\_\allowbreak{}processing\_\allowbreak{}jobs} and
+\texttt{backend-\allowbreak{}processing-\allowbreak{}worker}. & Completed \\
+Real downstream consumers were not part of this implementation slice. &
+I focused the week on producer reliability and the consumer contract. &
+I kept downstream consumers as future work until runtime evidence is
+added. & Partially completed \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Testing, Build and Deployment
+Results}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Outbox unit/integration test coverage & Partially completed & Test
+sources exist: \texttt{test\_\allowbreak{}outbox\_\allowbreak{}events.\allowbreak{}py},
+\texttt{test\_\allowbreak{}outbox\_\allowbreak{}postgres.\allowbreak{}py},
+\texttt{test\_\allowbreak{}outbox\_\allowbreak{}publishers.\allowbreak{}py}, and
+\texttt{test\_\allowbreak{}outbox\_\allowbreak{}admin.\allowbreak{}py}. Current-run output is pending. \\
+Async processing tests & Partially completed & Test sources exist:
+\texttt{test\_\allowbreak{}processing\_\allowbreak{}jobs.\allowbreak{}py} and
+\texttt{test\_\allowbreak{}processing\_\allowbreak{}jobs\_\allowbreak{}postgres.\allowbreak{}py}. Current-run output is
+pending. \\
+Kubernetes deployment readiness & Implemented &
+\texttt{k8s/\allowbreak{}app/\allowbreak{}backend-\allowbreak{}outbox-\allowbreak{}dispatcher.\allowbreak{}yaml} and
+\texttt{k8s/\allowbreak{}app/\allowbreak{}backend-\allowbreak{}processing-\allowbreak{}worker.\allowbreak{}yaml} exist. \\
+SQS provisioning & Implemented &
+\texttt{scripts/\allowbreak{}aws/\allowbreak{}provision-\allowbreak{}outbox-\allowbreak{}sqs.\allowbreak{}ps1} and \texttt{.\allowbreak{}sh} exist.
+Runtime queue-name evidence still needs a screenshot or CLI log. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Evidence}\par
+
+\vspace{0.5em}\noindent\textbf{Screenshots}\par
+
+Evidence pending: add screenshots under
+\texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}03/\allowbreak{}}, for example:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}03/\allowbreak{}outbox-\allowbreak{}table.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}03/\allowbreak{}sqs-\allowbreak{}queue-\allowbreak{}dlq.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}03/\allowbreak{}dispatcher-\allowbreak{}logs.\allowbreak{}png}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Commits and Pull
+Requests}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Commit
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pull Request
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{0f9e7f2} & Added backend workflow outbox, async processing jobs,
+dispatcher, worker, and tests. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/0f9e7f2aed730153e905df0700fc3401f8957b21}{View
+commit} & Evidence pending \\
+\texttt{be84e4e} & Added Kubernetes deployments, SQS provisioning
+scripts, validation gates, and alerts for async workers. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/be84e4e5e6bd6a1ba73fb9c11532274788060e8c}{View
+commit} & Evidence pending \\
+\texttt{4970eba} & Documented phase 2 workflow operations, event
+transport ADR, and consumer contract. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/4970ebad398a5377004e943dc3486f8e717a952e}{View
+commit} & Evidence pending \\
+\texttt{14173c6} & Merged workflow, outbox, async processing, and
+infrastructure changes. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/14173c6d0e950f13a5f7e809d95fc39841c06048}{View
+commit} & Evidence pending \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Test Logs}\par
+
+Evidence pending: attach actual output from commands such as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{cd}\NormalTok{ backend}
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ pytest tests/test\_outbox\_events.py tests/test\_outbox\_publishers.py tests/test\_processing\_jobs.py}
+\ExtensionTok{python} \AttributeTok{{-}m}\NormalTok{ pytest }\AttributeTok{{-}m}\NormalTok{ postgres tests/test\_outbox\_postgres.py tests/test\_processing\_jobs\_postgres.py}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Build Logs}\par
+
+Evidence pending: no dedicated Week 3 image build log was found.
+
+\vspace{0.5em}\noindent\textbf{Deployment Logs}\par
+
+Evidence pending: add dispatcher or worker rollout logs after
+deployment, for example
+\texttt{kubectl\ rollout\ status\ deployment/\allowbreak{}backend-\allowbreak{}outbox-\allowbreak{}dispatcher\ -n\ internship}.
+
+\vspace{0.5em}\noindent\textbf{Weekly Results}\par
+
+The project gained a reliable event-publishing foundation and a separate
+queue for user-visible background work. The API can commit business
+state first, while dispatchers and workers handle retryable side effects
+after the transaction.
+
+\vspace{0.5em}\noindent\textbf{Lessons Learned}\par
+
+Idempotency exists at multiple layers. HTTP idempotency prevents
+duplicate command execution, the transactional outbox prevents lost
+domain events, and consumers still need event-level deduplication.
+
+\vspace{0.5em}\noindent\textbf{Next Week Plan}\par
+
+Standardize container builds, CI quality gates, smoke tests, security
+scans, and infrastructure validation so the system can be deployed
+repeatedly with less manual checking.

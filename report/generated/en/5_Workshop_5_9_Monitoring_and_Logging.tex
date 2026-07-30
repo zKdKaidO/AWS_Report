@@ -1,0 +1,399 @@
+\vspace{0.5em}\noindent\textbf{Monitoring and Logging}\par
+
+\vspace{0.5em}\noindent\textbf{Objective}\par
+
+Monitor application health, deployment state, logs, metrics, queues,
+Lambda processing, and AWS managed services.
+
+\vspace{0.5em}\noindent\textbf{Architecture context}\par
+
+The repository contains Kubernetes ServiceMonitor and PrometheusRule
+manifests for application metrics. AWS-side CloudWatch metrics and
+alarms must be verified from the target account before being marked as
+deployed.
+
+\vspace{0.5em}\noindent\textbf{Kubernetes resource
+inspection}\par
+
+Use \texttt{kubectl\ get} for fast status checks:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get deployments,pods,svc,endpoints,hpa,pdb,jobs }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}o}\NormalTok{ wide}
+\ExtensionTok{kubectl}\NormalTok{ get ingress internship{-}public }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ get events }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}sort{-}by}\OperatorTok{=}\NormalTok{.lastTimestamp}
+\end{Highlighting}
+\end{Shaded}
+
+Expected result:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{backend} and \texttt{chat-\allowbreak{}service} have Ready replicas.
+\item
+  \texttt{backend-\allowbreak{}outbox-\allowbreak{}dispatcher} is Ready.
+\item
+  \texttt{backend-\allowbreak{}processing-\allowbreak{}worker} is either Ready or intentionally
+  scaled to zero.
+\item
+  \texttt{ai-\allowbreak{}service} is Ready when AI deployment is enabled.
+\item
+  \texttt{backend-\allowbreak{}migrate} and \texttt{chat-\allowbreak{}init} have completed.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Rollout status}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/chat{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend{-}outbox{-}dispatcher }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{300s}
+\ExtensionTok{kubectl}\NormalTok{ rollout status deployment/ai{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}timeout}\OperatorTok{=}\NormalTok{900s}
+\end{Highlighting}
+\end{Shaded}
+
+Only check \texttt{ai-\allowbreak{}service} when AI deployment is enabled.
+
+\vspace{0.5em}\noindent\textbf{Application logs}\par
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/chat{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend{-}outbox{-}dispatcher }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend{-}processing{-}worker }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/ai{-}service }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\end{Highlighting}
+\end{Shaded}
+
+Use \texttt{-\/\allowbreak{}-previous} when a container has restarted:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ logs deployment/backend }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}{-}previous} \AttributeTok{{-}{-}tail}\OperatorTok{=}\NormalTok{200}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Describe commands}\par
+
+Use \texttt{kubectl\ describe} when readiness, scheduling, probes, or
+Ingress reconciliation fail:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ describe pod }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}l}\NormalTok{ app=backend}
+\ExtensionTok{kubectl}\NormalTok{ describe pod }\AttributeTok{{-}n}\NormalTok{ internship }\AttributeTok{{-}l}\NormalTok{ app=chat{-}service}
+\ExtensionTok{kubectl}\NormalTok{ describe hpa backend }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ describe ingress internship{-}public }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Health endpoints}\par
+
+Backend readiness checks PostgreSQL:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/api/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+Expected response:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{}\DataTypeTok{"status"}\FunctionTok{:}\StringTok{"ready"}\FunctionTok{,}\DataTypeTok{"service"}\FunctionTok{:}\StringTok{"internship{-}api"}\FunctionTok{,}\DataTypeTok{"dependencies"}\FunctionTok{:\{}\DataTypeTok{"postgres"}\FunctionTok{:}\KeywordTok{true}\FunctionTok{\}\}}
+\end{Highlighting}
+\end{Shaded}
+
+Chat readiness checks Redis and DynamoDB:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ https://dhm2rz5nmsibj.cloudfront.net/chat/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+Expected response:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{\{}\DataTypeTok{"status"}\FunctionTok{:}\StringTok{"ready"}\FunctionTok{,}\DataTypeTok{"dependencies"}\FunctionTok{:\{}\DataTypeTok{"redis"}\FunctionTok{:}\KeywordTok{true}\FunctionTok{,}\DataTypeTok{"dynamodb"}\FunctionTok{:}\KeywordTok{true}\FunctionTok{\}\}}
+\end{Highlighting}
+\end{Shaded}
+
+AI readiness checks that \texttt{SAGEMAKER\_\allowbreak{}ENDPOINT\_\allowbreak{}NAME} is
+configured:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/ai{-}service 18082:8010 }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{curl} \AttributeTok{{-}fsS}\NormalTok{ http://127.0.0.1:18082/health/ready}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Prometheus and Grafana}\par
+
+The repository defines ServiceMonitor resources for:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{backend}
+\item
+  \texttt{chat-\allowbreak{}service}
+\item
+  \texttt{backend-\allowbreak{}outbox-\allowbreak{}dispatcher}
+\item
+  \texttt{backend-\allowbreak{}processing-\allowbreak{}worker}
+\end{itemize}
+
+Apply when the Prometheus Operator CRDs are installed:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ apply }\AttributeTok{{-}f}\NormalTok{ k8s/observability/service{-}monitors.yaml}
+\ExtensionTok{kubectl}\NormalTok{ apply }\AttributeTok{{-}f}\NormalTok{ k8s/observability/prometheus{-}rules.yaml}
+\end{Highlighting}
+\end{Shaded}
+
+Verify:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{kubectl}\NormalTok{ get servicemonitor,prometheusrule }\AttributeTok{{-}n}\NormalTok{ monitoring}
+\ExtensionTok{kubectl}\NormalTok{ port{-}forward service/kube{-}prometheus{-}stack{-}prometheus 9092:9090 }\AttributeTok{{-}n}\NormalTok{ monitoring}
+\ExtensionTok{curl} \AttributeTok{{-}fsS} \StringTok{"http://127.0.0.1:9092/api/v1/targets?state=active"}
+\end{Highlighting}
+\end{Shaded}
+
+Expected application targets:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{backend}
+\item
+  \texttt{chat-\allowbreak{}service}
+\item
+  \texttt{backend-\allowbreak{}outbox-\allowbreak{}dispatcher}
+\item
+  \texttt{backend-\allowbreak{}processing-\allowbreak{}worker}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Repository-defined alerts}\par
+
+The repository includes Prometheus alerts for:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Alert
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{InternshipBackendDown} & Backend metrics target unavailable \\
+\texttt{InternshipChatDown} & Chat metrics target unavailable \\
+\texttt{InternshipChatDependencyDown} & Chat Redis or DynamoDB
+dependency unavailable \\
+\texttt{InternshipOutboxDispatcherDown} & Dispatcher metrics target
+unavailable \\
+\texttt{InternshipProcessingWorkerDown} & Processing worker metrics
+target unavailable \\
+\texttt{InternshipBackend5xxHigh} & Elevated backend 5xx rate \\
+\texttt{InternshipBackendP95LatencyHigh} & High backend p95 latency \\
+\texttt{InternshipChatMessageFailureRatioHigh} & High chat message
+failure rate \\
+\texttt{InternshipPodCrashLooping} & Pod CrashLoopBackOff \\
+\texttt{InternshipOutboxDeadEventsPresent} & Dead outbox events need
+operator action \\
+\texttt{InternshipOutboxPendingTooOld} & Pending outbox event age too
+high \\
+\texttt{InternshipOutboxTransportErrors} & SQS transport errors \\
+\texttt{InternshipProcessingQueueOld} & Processing queue age too high \\
+\texttt{InternshipProcessingJobsFailing} & Processing jobs failing \\
+\texttt{InternshipAIProviderFailures} & AI provider failures \\
+\end{longtable}
+\endgroup
+}
+
+Status: implemented in repository manifests. Evidence required to prove
+these were applied in production.
+
+\vspace{0.5em}\noindent\textbf{CloudWatch Logs}\par
+
+Check Lambda logs:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ logs describe{-}log{-}groups }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}log{-}group{-}name{-}prefix}\NormalTok{ /aws/lambda/internship{-}outbox{-}handler }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+
+\ExtensionTok{aws}\NormalTok{ logs tail /aws/lambda/internship{-}outbox{-}handler }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}since}\NormalTok{ 1h }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\end{Highlighting}
+\end{Shaded}
+
+Check EKS-related logs only if container log shipping is configured.
+Evidence required: CloudWatch log group names for backend, chat, worker,
+dispatcher, and AI service.
+
+\vspace{0.5em}\noindent\textbf{AWS managed-service
+metrics}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Service
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Useful metrics
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+ALB & \texttt{HTTPCode\_\allowbreak{}Target\_\allowbreak{}5XX\_\allowbreak{}Count},
+\texttt{TargetResponseTime}, healthy hosts, LCUs \\
+CloudFront & requests, 4xx/5xx rate, origin latency, bytes downloaded \\
+RDS & CPU, free storage, connections, read/write IOPS, replica lag if
+any \\
+ElastiCache Redis & CPU, memory, evictions, current connections \\
+DynamoDB & throttled requests, consumed read/write capacity, system
+errors \\
+SQS & approximate visible messages, age of oldest message, DLQ visible
+messages \\
+Lambda & errors, duration, throttles, iterator age, concurrent
+executions \\
+SageMaker & endpoint invocation errors, model latency, overhead latency,
+instance utilization \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Proposed CloudWatch
+alarms}\par
+
+These alarms are recommended. Evidence required before marking them
+deployed:
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Alarm
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Recommended condition
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+DLQ messages visible &
+\texttt{ApproximateNumberOfMessagesVisible\ \textgreater{}\ 0} on
+\texttt{internship-\allowbreak{}prod-\allowbreak{}outbox-\allowbreak{}dlq} \\
+Main queue age high & Oldest SQS message age exceeds operational
+threshold \\
+Lambda errors & \texttt{Errors\ \textgreater{}\ 0} for
+\texttt{internship-\allowbreak{}outbox-\allowbreak{}handler} \\
+Lambda throttles & \texttt{Throttles\ \textgreater{}\ 0} \\
+ALB target 5xx high & Target 5xx count/rate above threshold \\
+RDS CPU high & CPU above sustained threshold \\
+RDS free storage low & Free storage below threshold \\
+Redis memory high & Memory or evictions above threshold \\
+SageMaker errors & Invocation/model errors above threshold \\
+CloudFront 5xx high & 5xx error rate above threshold \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Expected result}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Kubernetes deployments are Ready.
+\item
+  Health endpoints pass through CloudFront.
+\item
+  Logs are available for each EKS workload and Lambda.
+\item
+  Prometheus can scrape application metrics when observability is
+  installed.
+\item
+  SQS, Lambda, RDS, Redis, DynamoDB, ALB, CloudFront, and SageMaker
+  metrics are visible in CloudWatch.
+\item
+  Proposed alarms are either deployed and evidenced or clearly listed as
+  proposed.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Common errors}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Symptom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{kubectl\ top} has no data & Metrics server unavailable or not
+scraped yet & Check metrics-server rollout \\
+Prometheus target down & ServiceMonitor selector or namespace mismatch &
+Inspect Service labels and ServiceMonitor selectors \\
+Chat health not ready & Redis or DynamoDB dependency down & Check chat
+logs and AWS service status \\
+Lambda logs absent & Function not invoked or wrong region & Confirm
+event-source mapping and region \\
+DLQ growing & Lambda or downstream processing failure & Inspect DLQ
+messages and Lambda logs \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Outcome}\par
+
+Monitoring is complete when operational staff can inspect Kubernetes
+state, logs, health endpoints, Prometheus metrics, CloudWatch metrics,
+Lambda logs, SQS/DLQ state, and alarms without exposing secrets.

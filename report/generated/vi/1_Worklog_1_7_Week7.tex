@@ -1,0 +1,278 @@
+\vspace{0.5em}\noindent\textbf{Week 7 - Amazon EKS and Managed AWS
+Services}\par
+
+\vspace{0.5em}\noindent\textbf{Objectives}\par
+
+Week 7 focused on the production AWS runtime: EKS, managed databases,
+runtime IAM, SQS outbox transport, public ALB routing, and deployment
+scripts that apply the Kubernetes workloads safely.
+
+\vspace{0.5em}\noindent\textbf{Tasks Completed}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Task
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence basis
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Completed & Added production deployment pipeline logic for EKS, ALB, and
+CloudFront support. & Commit \texttt{899ff3b}. \\
+Completed & Added no-domain ALB ingress path for \texttt{/\allowbreak{}api},
+\texttt{/\allowbreak{}chat}, and \texttt{/\allowbreak{}socket.\allowbreak{}io}. &
+\texttt{k8s/\allowbreak{}eks/\allowbreak{}ingress-\allowbreak{}alb-\allowbreak{}no-\allowbreak{}domain.\allowbreak{}yaml}. \\
+Completed & Added EKS deployment script behavior for secrets, config,
+migration/init jobs, rollouts, health checks, and optional AI service. &
+\texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}eks.\allowbreak{}sh}. \\
+Completed & Added rollout-only workflow mode for existing workloads. &
+Commits \texttt{51bceee} and \texttt{f81e086}. \\
+Completed & Hardened public ingress deployment around AWS Load Balancer
+Controller readiness and ALB health checks. & Commits \texttt{036a516}
+and \texttt{8272c4a}. \\
+Partially completed & Attached AWS console and CLI evidence for RDS,
+Redis, SQS, EKS, and service account status where available. & Evidence
+pending: I did not have the full live AWS screenshot/log set in the
+local evidence archive. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Technical Implementation}\par
+
+The target production environment is centered on EKS namespace
+\texttt{internship}. Backend and chat are long-running Kubernetes
+Deployments. PostgreSQL, Redis, DynamoDB, SQS, S3, CloudFront, and
+SageMaker are managed AWS services outside the cluster.
+
+\{\{\textless{} mermaid \textgreater\}\} graph TB CF{[}``CloudFront''{]}
+--\textgreater{} ALB{[}``Public ALB Ingress''{]} ALB --\textgreater{}
+API{[}``backend service :8000''{]} ALB --\textgreater{}
+Chat{[}``chat-service :3000''{]} API --\textgreater{} RDS{[}``RDS
+PostgreSQL''{]} API --\textgreater{} S3{[}``S3 uploads bucket''{]} API
+--\textgreater{} SQS{[}``SQS outbox queue''{]} Chat --\textgreater{}
+Redis{[}``ElastiCache Redis''{]} Chat --\textgreater{} DDB{[}``DynamoDB
+chat tables''{]} Worker{[}``backend-processing-worker''{]}
+--\textgreater{} AI{[}``ai-service / SageMaker''{]}
+Dispatcher{[}``backend-outbox-dispatcher''{]} --\textgreater{} SQS
+\{\{\textless{} /mermaid \textgreater\}\}
+
+Runtime variables such as \texttt{DATABASE\_\allowbreak{}URL}, \texttt{REDIS\_\allowbreak{}URL},
+\texttt{OUTBOX\_\allowbreak{}QUEUE\_\allowbreak{}URL}, and \texttt{AWS\_\allowbreak{}REGION} are treated as
+deployment inputs or Kubernetes secret/config values. The report does
+not include their secret values.
+
+\vspace{0.5em}\noindent\textbf{Problems and Solutions}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Problem
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Root cause
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Resolution
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Public ingress needed to work before a custom domain was available. &
+Domain and certificate readiness can lag behind backend deployment. &
+Added \texttt{ingress-\allowbreak{}alb-\allowbreak{}no-\allowbreak{}domain.\allowbreak{}yaml} with path-based ALB routing. &
+Completed \\
+AWS Load Balancer Controller may not be ready when ingress is applied. &
+Webhook endpoints can be unavailable during controller rollout. & Public
+ingress script waits and retries before applying ingress. & Completed \\
+Health checks can fail briefly while target groups converge. & ALB
+registration and pod readiness are eventually consistent. & Public
+deploy script retries ALB health checks. & Completed \\
+EKS rollout may run with limited permissions. & IAM/RBAC permissions may
+not allow every optional inspection command. & Rollout script tolerates
+selected limited-permission cases without hiding actual failures. &
+Completed \\
+Exact live managed-service evidence is missing from report files. & AWS
+CLI/console artifacts were not attached locally. & I kept
+EKS/RDS/Redis/SQS screenshots and logs pending. & Blocked \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Testing, Build and Deployment
+Results}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Area
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Result
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+EKS deployment script & Implemented & \texttt{scripts/\allowbreak{}k8s/\allowbreak{}deploy-\allowbreak{}eks.\allowbreak{}sh}
+validates required variables, applies resources, waits for jobs, rolls
+out deployments, and performs health smoke checks through
+port-forwarding. \\
+Public ingress script & Implemented &
+\texttt{scripts/\allowbreak{}aws/\allowbreak{}deploy-\allowbreak{}public-\allowbreak{}ingress.\allowbreak{}sh} waits for controller
+readiness and polls \texttt{/\allowbreak{}api/\allowbreak{}health/\allowbreak{}ready} and
+\texttt{/\allowbreak{}chat/\allowbreak{}health/\allowbreak{}ready}. \\
+Rollout mode & Implemented &
+\texttt{scripts/\allowbreak{}aws/\allowbreak{}rollout-\allowbreak{}eks-\allowbreak{}workloads.\allowbreak{}sh} supports restart/scale
+behavior for backend, chat, dispatcher, and processing worker. \\
+Managed AWS resource proof & Partially completed &
+\texttt{PROJECT\_\allowbreak{}CONTEXT.\allowbreak{}md} lists current resource names, but
+screenshots/CLI logs should be attached as evidence. \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Evidence}\par
+
+\vspace{0.5em}\noindent\textbf{Screenshots}\par
+
+Evidence pending: add screenshots under
+\texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}07/\allowbreak{}}, for example:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}07/\allowbreak{}eks-\allowbreak{}cluster.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}07/\allowbreak{}rds-\allowbreak{}postgres.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}07/\allowbreak{}elasticache-\allowbreak{}redis.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}07/\allowbreak{}sqs-\allowbreak{}outbox.\allowbreak{}png}
+\item
+  \texttt{/\allowbreak{}images/\allowbreak{}worklog/\allowbreak{}week-\allowbreak{}07/\allowbreak{}alb-\allowbreak{}target-\allowbreak{}groups.\allowbreak{}png}
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Commits and Pull
+Requests}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Commit
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pull Request
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{899ff3b} & Added production AWS deployment pipeline, EKS
+scripts, ALB no-domain ingress, and CloudFront helper. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/899ff3bfd8665f00cdb693cc81e5c48bb099a0b5}{View
+commit} & Evidence pending \\
+\texttt{51bceee} & Added EKS rollout workflow mode. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/51bceeed9c436f93f366c4e46b7c8109a03399df}{View
+commit} & Evidence pending \\
+\texttt{f81e086} & Tolerated limited EKS permissions during rollout. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/f81e086ae8f0164c089e054b063dfbec95ba6750}{View
+commit} & Evidence pending \\
+\texttt{036a516} & Waited for ALB webhook before public ingress. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/036a516acb845c75baeb3eed4d84177a2b58c447}{View
+commit} & Evidence pending \\
+\texttt{8272c4a} & Retried ALB health checks during public deploy. &
+\href{https://github.com/Temp-orgo/AWS-Internship/commit/8272c4ac1efca064f09470fe76da0e162ecc6ef6}{View
+commit} & Evidence pending \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Test Logs}\par
+
+Evidence pending: attach actual output from:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{aws}\NormalTok{ eks describe{-}cluster }\AttributeTok{{-}{-}name}\NormalTok{ internship{-}prod }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ rds describe{-}db{-}instances }\AttributeTok{{-}{-}db{-}instance{-}identifier}\NormalTok{ internship{-}prod{-}postgres }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ elasticache describe{-}replication{-}groups }\AttributeTok{{-}{-}replication{-}group{-}id}\NormalTok{ internship{-}prod{-}redis }\AttributeTok{{-}{-}region}\NormalTok{ ap{-}southeast{-}1}
+\ExtensionTok{aws}\NormalTok{ sqs get{-}queue{-}attributes }\AttributeTok{{-}{-}queue{-}url} \OperatorTok{\textless{}}\NormalTok{OUTBOX\_QUEUE\_URL}\OperatorTok{\textgreater{}}\NormalTok{ {-}{-}attribute{-}names All}
+\ExtensionTok{kubectl}\NormalTok{ get serviceaccount }\AttributeTok{{-}n}\NormalTok{ internship}
+\ExtensionTok{kubectl}\NormalTok{ describe serviceaccount internship{-}runtime }\AttributeTok{{-}n}\NormalTok{ internship}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{Build Logs}\par
+
+Evidence pending: attach EKS deployment workflow logs that show the
+image tags selected for backend, chat, and optional AI service.
+
+\vspace{0.5em}\noindent\textbf{Deployment Logs}\par
+
+Evidence pending: attach \texttt{kubectl\ rollout\ status},
+\texttt{kubectl\ get\ pods\ -n\ internship}, and ALB health-check
+output.
+
+\vspace{0.5em}\noindent\textbf{Weekly Results}\par
+
+The AWS deployment path became concrete: EKS hosts backend/chat/workers,
+ALB exposes API and chat routes, and managed AWS services provide
+relational data, chat storage, realtime pub/sub, queue transport, object
+storage, and edge delivery.
+
+\vspace{0.5em}\noindent\textbf{Lessons Learned}\par
+
+Production Kubernetes deployment depends on more than manifests. IAM,
+controller readiness, target group convergence, network routing, health
+endpoints, and secret handling must all be validated separately.
+
+\vspace{0.5em}\noindent\textbf{Next Week Plan}\par
+
+Run the full build, push, deploy, frontend, SageMaker, and
+operational-validation path; then document final completed items,
+partial items, and cost-control actions.

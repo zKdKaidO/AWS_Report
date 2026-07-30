@@ -1,0 +1,613 @@
+\vspace{0.5em}\noindent\textbf{BUILDING A SCALABLE REAL-TIME CHAT SYSTEM WITH SOCKET.IO,
+REDIS, AND
+DYNAMODB}\par
+
+Realtime chat appears in many systems such as e-commerce, recruitment
+platforms, customer support, social networks, and collaboration tools.
+
+At a basic level, a single server can receive and send messages.
+However, when the number of users grows, the system needs to answer more
+difficult questions:
+
+\begin{itemize}
+\tightlist
+\item
+  How can messages appear immediately?
+\item
+  What happens when the sender and receiver are connected to different
+  servers?
+\item
+  Where should messages be stored so they are not lost when a server
+  restarts?
+\item
+  How can the number of servers increase without interrupting users?
+\end{itemize}
+
+A common architecture for solving these problems combines Socket.IO,
+Redis, and Amazon DynamoDB.
+
+\vspace{0.5em}\noindent\textbf{1. Why REST API is not enough for realtime
+chat}\par
+
+REST API follows a request-response model:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Client sends request}
+\NormalTok{v}
+\NormalTok{Server processes}
+\NormalTok{v}
+\NormalTok{Server returns response}
+\end{Highlighting}
+\end{Shaded}
+
+If REST API is used for chat, the frontend usually needs to keep calling
+an API to check for new messages:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{GET /messages}
+\NormalTok{Wait a few seconds}
+\NormalTok{GET /messages}
+\NormalTok{Wait a few seconds}
+\NormalTok{GET /messages}
+\end{Highlighting}
+\end{Shaded}
+
+This approach is called polling.
+
+Polling is simple, but it has several limitations:
+
+\begin{itemize}
+\tightlist
+\item
+  Message latency depends on the polling interval.
+\item
+  The client sends requests even when there are no new messages.
+\item
+  The backend has to process many unnecessary requests.
+\item
+  System load increases quickly as the number of users grows.
+\end{itemize}
+
+For systems that require near-instant responses, WebSocket or a realtime
+library such as Socket.IO is usually more suitable.
+
+\vspace{0.5em}\noindent\textbf{2. Socket.IO for realtime
+communication}\par
+
+Socket.IO allows a two-way connection to be maintained between the
+client and the server.
+
+After the connection is established, the client and server can send
+events to each other without creating a new HTTP request for every
+exchange.
+
+A simple message flow can be understood as:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{User A sends a message}
+\NormalTok{v}
+\NormalTok{Socket.IO server receives the event}
+\NormalTok{v}
+\NormalTok{Server processes the message}
+\NormalTok{v}
+\NormalTok{Server sends a new event}
+\NormalTok{v}
+\NormalTok{User B receives the message}
+\end{Highlighting}
+\end{Shaded}
+
+Common events include:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{conversation:join}
+\item
+  \texttt{message:send}
+\item
+  \texttt{message:new}
+\item
+  \texttt{user:typing}
+\item
+  \texttt{message:read}
+\end{itemize}
+
+Socket.IO also supports:
+
+\begin{itemize}
+\tightlist
+\item
+  Automatic reconnection when the network is interrupted.
+\item
+  Grouping users into rooms.
+\item
+  Sending events to one user or a group of users.
+\item
+  Fallback when WebSocket is not available.
+\end{itemize}
+
+However, Socket.IO works best when the system has only one server. When
+the application runs multiple servers, an additional synchronization
+mechanism is required.
+
+\vspace{0.5em}\noindent\textbf{3. The issue when the chat service runs multiple
+instances}\par
+
+With one chat server, both users connect to the same server:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{User A {-}+}
+\NormalTok{        +{-}{-} Chat server}
+\NormalTok{User B {-}+}
+\end{Highlighting}
+\end{Shaded}
+
+When User A sends a message, the server can send it directly to User B's
+connection.
+
+As traffic grows, the system may need multiple servers:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Chat server 1}
+\NormalTok{Chat server 2}
+\NormalTok{Chat server 3}
+\end{Highlighting}
+\end{Shaded}
+
+A load balancer may distribute users like this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{User A $\textbackslash{}rightarrow$ Chat server 1}
+\NormalTok{User B $\textbackslash{}rightarrow$ Chat server 2}
+\end{Highlighting}
+\end{Shaded}
+
+At this point, Chat server 1 does not directly manage User B's
+connection.
+
+Without communication between servers, User A's message may be saved
+successfully, but User B may not receive a realtime notification.
+
+This is the problem Redis can solve.
+
+\vspace{0.5em}\noindent\textbf{4. Redis synchronizes events between chat
+servers}\par
+
+Redis is a high-speed in-memory data store. In realtime chat
+architecture, Redis is commonly used for publish/subscribe.
+
+The flow works like this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{User A}
+\NormalTok{v}
+\NormalTok{Chat server 1}
+\NormalTok{v Publish}
+\NormalTok{Redis}
+\NormalTok{v Subscribe}
+\NormalTok{Chat server 2}
+\NormalTok{v}
+\NormalTok{User B}
+\end{Highlighting}
+\end{Shaded}
+
+When Chat server 1 receives a message:
+
+\begin{itemize}
+\tightlist
+\item
+  The server processes and stores the message.
+\item
+  The server publishes an event to Redis.
+\item
+  Other chat servers receive the event.
+\item
+  The server that holds the receiver's connection sends the message to
+  the client.
+\end{itemize}
+
+Redis works like a shared broadcast channel between chat servers.
+
+Redis is suitable for this role because:
+
+\begin{itemize}
+\tightlist
+\item
+  It has high processing speed.
+\item
+  It supports publish/subscribe.
+\item
+  It is suitable for short-lived data and events.
+\item
+  It allows servers to operate independently while still exchanging
+  events.
+\end{itemize}
+
+Redis does not have to be the long-term storage location for chat
+history. That task should be handled by a more durable database.
+
+\vspace{0.5em}\noindent\textbf{5. DynamoDB stores chat
+data}\par
+
+Amazon DynamoDB is a managed NoSQL database service from AWS.
+
+Chat data often has these characteristics:
+
+\begin{itemize}
+\tightlist
+\item
+  The number of messages continuously increases.
+\item
+  Write throughput can be high.
+\item
+  Messages are usually queried by conversation.
+\item
+  Complex joins are rarely needed.
+\item
+  Usage can spike suddenly.
+\end{itemize}
+
+DynamoDB fits this model because it scales well and does not require
+users to manage database servers.
+
+A simple message table design can use:
+
+\begin{itemize}
+\tightlist
+\item
+  Partition key: \texttt{conversation\_\allowbreak{}id}
+\item
+  Sort key: \texttt{timestamp} or \texttt{message\_\allowbreak{}id}
+\end{itemize}
+
+In this design:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{conversation\_\allowbreak{}id} groups messages from the same conversation.
+\item
+  \texttt{timestamp} sorts messages by time.
+\end{itemize}
+
+When chat history is needed, the system queries records with the same
+\texttt{conversation\_\allowbreak{}id}.
+
+The roles of Redis and DynamoDB can be separated clearly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Redis}
+\NormalTok{$\textbackslash{}rightarrow$ Transmits realtime events between servers}
+
+\NormalTok{DynamoDB}
+\NormalTok{$\textbackslash{}rightarrow$ Stores long{-}term chat history}
+\end{Highlighting}
+\end{Shaded}
+
+\vspace{0.5em}\noindent\textbf{6. Complete message sending
+flow}\par
+
+A message can pass through the system in these steps:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The user enters a message.
+\item
+  The client sends an event through Socket.IO.
+\item
+  The chat server authenticates the user.
+\item
+  The server checks whether the user can access the conversation.
+\item
+  The message is stored in DynamoDB.
+\item
+  The server publishes an event through Redis.
+\item
+  The chat server holding the receiver's connection receives the event.
+\item
+  The server sends the new message to the receiver's client.
+\end{enumerate}
+
+General architecture:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Client A}
+\NormalTok{|}
+\NormalTok{| Socket.IO}
+\NormalTok{v}
+\NormalTok{Chat server 1}
+\NormalTok{|}
+\NormalTok{+{-}{-}{-}{-} Store data {-}{-}{-}{-}{-}\textgreater{} DynamoDB}
+\NormalTok{|}
+\NormalTok{+{-}{-}{-}{-} Publish event {-}{-}\textgreater{} Redis}
+\NormalTok{                         |}
+\NormalTok{                         v}
+\NormalTok{                  Chat server 2}
+\NormalTok{                         |}
+\NormalTok{                         v}
+\NormalTok{                      Client B}
+\end{Highlighting}
+\end{Shaded}
+
+This architecture achieves two goals:
+
+\begin{itemize}
+\tightlist
+\item
+  Realtime responses through Socket.IO and Redis.
+\item
+  Durable message history through DynamoDB.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{7. How Kubernetes supports scaling chat
+services}\par
+
+When the application is packaged as containers, Kubernetes can run
+multiple replicas of the chat service.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Chat service}
+\NormalTok{+{-}{-} Pod 1}
+\NormalTok{+{-}{-} Pod 2}
+\NormalTok{+{-}{-} Pod 3}
+\NormalTok{+{-}{-} Pod N}
+\end{Highlighting}
+\end{Shaded}
+
+A Kubernetes Service or load balancer distributes connections to the
+pods.
+
+Kubernetes also supports:
+
+\begin{itemize}
+\tightlist
+\item
+  Restarting containers automatically when failures occur.
+\item
+  Rolling updates for new versions.
+\item
+  Scaling the number of pods up or down.
+\item
+  Health checks through liveness and readiness probes.
+\item
+  Traffic distribution across multiple pods.
+\item
+  Horizontal Pod Autoscaler based on CPU, memory, or custom metrics.
+\end{itemize}
+
+However, Kubernetes only runs and manages multiple instances. Realtime
+synchronization between instances still requires Redis or a suitable
+message broker.
+
+\vspace{0.5em}\noindent\textbf{8. Sticky session and Redis solve different
+problems}\par
+
+When Socket.IO uses HTTP long polling, a client can create multiple
+consecutive requests in the same session.
+
+If these requests are routed to different servers, the connection
+session may fail.
+
+Sticky session keeps requests from the same client on the same server:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Client A $\textbackslash{}rightarrow$ Chat server 1}
+\NormalTok{Client A $\textbackslash{}rightarrow$ Chat server 1}
+\NormalTok{Client A $\textbackslash{}rightarrow$ Chat server 1}
+\end{Highlighting}
+\end{Shaded}
+
+However, sticky session does not replace Redis.
+
+The difference is:
+
+\begin{itemize}
+\tightlist
+\item
+  Sticky session keeps one client's connection stable on one server.
+\item
+  Redis transmits events between different servers.
+\end{itemize}
+
+Even when sticky session is enabled, the sender and receiver may still
+be connected to different servers.
+
+\vspace{0.5em}\noindent\textbf{9. Deployment on AWS}\par
+
+On AWS, the architecture can use:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Application Load Balancer}
+\NormalTok{v}
+\NormalTok{Amazon EKS or container service}
+\NormalTok{v}
+\NormalTok{Multiple chat service instances}
+\NormalTok{+{-}{-} Amazon DynamoDB}
+\NormalTok{+{-}{-} Amazon ElastiCache/Valkey}
+\end{Highlighting}
+\end{Shaded}
+
+Service roles:
+
+\begin{itemize}
+\tightlist
+\item
+  Amazon EKS: runs and manages chat service containers.
+\item
+  Application Load Balancer: receives and distributes user connections.
+\item
+  Amazon DynamoDB: stores chat data.
+\item
+  Amazon ElastiCache or Valkey: provides a Redis-compatible service.
+\item
+  Amazon CloudWatch: stores logs, metrics, and alarms.
+\end{itemize}
+
+For small projects or test environments, Redis and DynamoDB Local can be
+run with Docker before using real AWS services.
+
+\vspace{0.5em}\noindent\textbf{10. Common mistakes when building realtime
+chat}\par
+
+\vspace{0.5em}\noindent\textbf{Storing messages only in server
+memory}\par
+
+If the server restarts, all data may be lost.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Server restart $\textbackslash{}rightarrow$ Message history is lost}
+\end{Highlighting}
+\end{Shaded}
+
+Messages should be stored in a durable database.
+
+\vspace{0.5em}\noindent\textbf{Running multiple servers without a Redis
+adapter}\par
+
+Each server only knows the clients directly connected to it. Users on
+another server may not receive events.
+
+\vspace{0.5em}\noindent\textbf{Using Redis as the only storage
+layer}\par
+
+Redis is suitable for cache and event transmission, but it is not always
+suitable as the only source of chat history.
+
+\vspace{0.5em}\noindent\textbf{Not authenticating Socket.IO
+connections}\par
+
+WebSocket or Socket.IO connections still need to be authenticated with
+JWT, session, or another appropriate mechanism.
+
+\vspace{0.5em}\noindent\textbf{Not checking conversation
+access}\par
+
+A logged-in user is not automatically allowed to join every chat room.
+
+\vspace{0.5em}\noindent\textbf{Not handling duplicate
+messages}\par
+
+When the network is unstable, the client may resend the same message. A
+client-generated message ID or idempotency key can help reduce duplicate
+records.
+
+\vspace{0.5em}\noindent\textbf{Not limiting message size and sending
+frequency}\par
+
+The system should include:
+
+\begin{itemize}
+\tightlist
+\item
+  Message length limits.
+\item
+  Rate limiting.
+\item
+  Spam prevention.
+\item
+  File type validation if attachments are supported.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{11. Cost optimization ideas}\par
+
+Realtime chat on AWS can generate cost from compute, load balancers,
+databases, Redis, and logs.
+
+Some optimization ideas:
+
+\begin{itemize}
+\tightlist
+\item
+  Use DynamoDB On-Demand when traffic is low or unpredictable.
+\item
+  Choose a suitable ElastiCache node instead of over-provisioning.
+\item
+  Use Auto Scaling to avoid running too many instances during low
+  traffic.
+\item
+  Set retention periods for CloudWatch Logs instead of keeping logs
+  forever.
+\item
+  Use DynamoDB TTL for temporary data when the business rules allow it.
+\item
+  Delete Load Balancers, ElastiCache clusters, or test environments
+  after labs are completed.
+\item
+  Run the system with Docker and DynamoDB Local during development.
+\end{itemize}
+
+Managed services reduce operational work, but resources still need to be
+monitored to avoid unexpected cost.
+
+\vspace{0.5em}\noindent\textbf{12. Reference checklist}\par
+
+\begin{itemize}
+\tightlist
+\item
+  Use Socket.IO or WebSocket for realtime communication.
+\item
+  Use a Redis adapter when running multiple chat servers.
+\item
+  Store message history in a durable database.
+\item
+  Design an appropriate DynamoDB partition key.
+\item
+  Do not store important state only in server memory.
+\item
+  Configure sticky session if using long polling.
+\item
+  Authenticate realtime connections.
+\item
+  Check conversation access permission.
+\item
+  Add rate limiting and message size limits.
+\item
+  Configure liveness and readiness probes.
+\item
+  Monitor connection count, message rate, latency, and error rate.
+\item
+  Configure Auto Scaling and resource limits properly.
+\item
+  Check AWS resource cost after testing.
+\end{itemize}
+
+The most important lesson is that realtime chat is not only about
+setting up a WebSocket connection.
+
+When the system starts to scale, three responsibilities should be
+separated clearly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Socket.IO}
+\NormalTok{$\textbackslash{}rightarrow$ Realtime communication between client and server}
+
+\NormalTok{Redis}
+\NormalTok{$\textbackslash{}rightarrow$ Event synchronization between multiple servers}
+
+\NormalTok{DynamoDB}
+\NormalTok{$\textbackslash{}rightarrow$ Long{-}term chat data storage}
+\end{Highlighting}
+\end{Shaded}
+
+Choosing the right tool for each responsibility helps the system respond
+quickly while remaining scalable as the number of users increases.
+
+\texttt{\#AWS} \texttt{\#SocketIO} \texttt{\#Redis} \texttt{\#DynamoDB}
+\texttt{\#AmazonEKS} \texttt{\#RealtimeChat} \texttt{\#NodeJS}
+\texttt{\#Kubernetes} \texttt{\#CloudComputing} \texttt{\#AWSStudyGroup}

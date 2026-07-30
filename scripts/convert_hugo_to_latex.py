@@ -45,6 +45,18 @@ LATEX_SPECIALS = {
     "^": r"\textasciicircum{}",
 }
 
+LATEX_TEXT_FALLBACKS = {
+    "─": "-",
+    "│": "|",
+    "├": "+",
+    "└": "+",
+    "┐": "+",
+    "┘": "+",
+    "▼": "v",
+    "►": ">",
+    "↓": "v",
+}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -572,6 +584,8 @@ def preprocess_markdown(content, meta=None):
 
     content = re.sub(r"!\[([^\]]*)\]\(/static/images/", r"![\1](", content)
     content = re.sub(r"!\[([^\]]*)\]\(/images/",      r"![\1](", content)
+    content = re.sub(r"!\[([^\]]*)\]\(/static/logs/", r"![\1](../static/logs/", content)
+    content = re.sub(r"!\[([^\]]*)\]\(/logs/",        r"![\1](../static/logs/", content)
 
     content = re.sub(
         r"\{\{%\s*notice\s+(\w+)\s*%\}\}\s*",
@@ -586,6 +600,9 @@ def preprocess_markdown(content, meta=None):
     content = re.sub(r"⚠\ufe0f?", "!", content)
     content = content.replace("\u26a0", "!")
     content = content.replace("\u2192", r"$\rightarrow$")
+
+    for original, replacement in LATEX_TEXT_FALLBACKS.items():
+        content = content.replace(original, replacement)
 
     return content
 # ---------------------------------------------------------------------------
@@ -667,9 +684,33 @@ def compact_longtables(latex):
     return latex
 
 
+def add_texttt_breakpoints(latex):
+    """Allow long inline monospace identifiers to wrap inside table cells."""
+
+    def repl(match):
+        content = match.group(1)
+        if r"\allowbreak{}" in content:
+            return match.group(0)
+
+        content = re.sub(r"(?<=[A-Za-z0-9])-(?=[A-Za-z0-9])", r"-\\allowbreak{}", content)
+        content = content.replace(r"\_", r"\_\allowbreak{}")
+        content = content.replace("/", r"/\allowbreak{}")
+        content = content.replace(".", r".\allowbreak{}")
+        return rf"\texttt{{{content}}}"
+
+    return re.sub(r"\\texttt\{([^{}]*)\}", repl, latex)
+
+
 def postprocess_latex(latex):
     # Do NOT replace Pandoc table column specs by regex.
     latex = re.sub(r"\\label\{[^}]+\}", "", latex)
+    latex = re.sub(
+        r"\{\s*\\def\\LTcaptype\{none\}\s*%[^\n]*\n",
+        "{\n",
+        latex,
+    )
+    latex = latex.replace(r"\begin{longtable}[]{", r"\begin{longtable}{")
+    latex = add_texttt_breakpoints(latex)
     latex = neutralize_body_headings(latex)
     latex = compact_longtables(latex)
     return latex

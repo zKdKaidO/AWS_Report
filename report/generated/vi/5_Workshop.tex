@@ -1,0 +1,197 @@
+\vspace{0.5em}\noindent\textbf{Workshop}\par
+
+\vspace{0.5em}\noindent\textbf{Overview}\par
+
+This workshop presents the complete deployment process of the Internship
+Application Tracker on AWS.
+
+The workshop covers source code preparation, cloud infrastructure
+provisioning, database deployment, application deployment, AI
+processing, event-driven notification, monitoring, testing,
+troubleshooting, and resource clean-up.
+
+The final architecture uses:
+
+\begin{itemize}
+\tightlist
+\item
+  Amazon CloudFront and Amazon S3 for frontend delivery.
+\item
+  Application Load Balancer for public API and realtime traffic.
+\item
+  Amazon EKS for backend, chat, worker and AI adapter workloads.
+\item
+  Amazon RDS PostgreSQL for transactional business data.
+\item
+  Amazon ElastiCache Redis for realtime Socket.IO pub/sub.
+\item
+  Amazon DynamoDB for chat persistence and Lambda event deduplication.
+\item
+  Amazon SQS for asynchronous event delivery.
+\item
+  AWS Lambda and Amazon SES for notifications.
+\item
+  Amazon SageMaker for AI inference.
+\item
+  GitHub Actions and AWS OIDC for continuous deployment.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Learning objectives}\par
+
+After completing this workshop, the reader should be able to:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Prepare a multi-service application for AWS deployment.
+\item
+  Deploy containerized services to Amazon EKS.
+\item
+  Deploy a static React frontend through Amazon S3 and CloudFront.
+\item
+  Connect EKS workloads to RDS, Redis, DynamoDB, SQS and SageMaker.
+\item
+  Implement asynchronous processing with workers and transactional
+  outbox.
+\item
+  Process SQS events with AWS Lambda.
+\item
+  Implement idempotent Lambda processing using DynamoDB.
+\item
+  Configure CI/CD using GitHub Actions and AWS OIDC.
+\item
+  Validate the complete system through end-to-end testing.
+\item
+  Diagnose common networking, IAM and deployment failures.
+\end{enumerate}
+
+\vspace{0.5em}\noindent\textbf{Target audience}\par
+
+This workshop is intended for:
+
+\begin{itemize}
+\tightlist
+\item
+  Cloud engineering interns.
+\item
+  Backend and DevOps students.
+\item
+  Developers learning Amazon EKS.
+\item
+  Developers implementing event-driven AWS architectures.
+\item
+  Students preparing an AWS internship or graduation project report.
+\end{itemize}
+
+\vspace{0.5em}\noindent\textbf{Architecture summary}\par
+
+The browser connects to Amazon CloudFront through HTTPS.
+
+CloudFront routes:
+
+\begin{itemize}
+\tightlist
+\item
+  static frontend requests to Amazon S3
+\item
+  \texttt{/\allowbreak{}api/\allowbreak{}*} requests to the backend through the Application Load
+  Balancer
+\item
+  \texttt{/\allowbreak{}chat/\allowbreak{}*} requests to the chat service
+\item
+  \texttt{/\allowbreak{}socket.\allowbreak{}io/\allowbreak{}*} requests to the realtime Socket.IO service
+\end{itemize}
+
+The backend, chat service, processing worker, AI service and outbox
+dispatcher run inside Amazon EKS.
+
+PostgreSQL stores transactional business data and processing jobs.
+DynamoDB stores chat data. Redis provides pub/sub between chat pods.
+
+The processing worker calls the AI service, which invokes the SageMaker
+endpoint.
+
+The outbox dispatcher publishes business events to Amazon SQS. AWS
+Lambda consumes these events, performs deduplication in DynamoDB,
+archives events to Amazon S3 and sends notifications through Amazon SES.
+
+\vspace{0.5em}\noindent\textbf{Chapters}\par
+
+{
+\begingroup
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Chapter
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Title
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+5.1 & Overview & Workshop objectives, scope and final architecture &
+Complete \\
+5.2 & Architecture & Detailed AWS architecture and request flows &
+Complete \\
+5.3 & Prerequisites & Required accounts, tools and local configuration &
+Complete \\
+5.4 & Source Code Preparation & Repository structure, environment
+variables and validation & Complete \\
+5.5 & AWS Infrastructure & Networking, IAM, EKS, ECR, ALB and CloudFront
+& Complete \\
+5.6 & Database Deployment & PostgreSQL, Redis and DynamoDB deployment &
+Complete \\
+5.7 & Backend Deployment & Backend, chat, dispatcher, AI service and
+worker deployment & Complete \\
+5.8 & Frontend Deployment & React build, S3 upload and CloudFront
+distribution & Complete \\
+5.9 & Monitoring and Logging & Logs, health checks, metrics and alarms &
+Complete \\
+5.10 & End-to-End Testing & Application, chat, AI and Lambda
+verification & Complete \\
+5.11 & Security and Cost & IAM, encryption, OIDC and cost assumptions &
+Complete \\
+5.12 & Troubleshooting & Resolved deployment and runtime failures &
+Complete \\
+5.13 & Clean-up & Safe resource deletion procedure & Complete \\
+\end{longtable}
+\endgroup
+}
+
+\vspace{0.5em}\noindent\textbf{Final outcome}\par
+
+At the end of the workshop, the Internship Application Tracker is
+available through CloudFront and supports:
+
+\begin{itemize}
+\tightlist
+\item
+  static frontend delivery
+\item
+  backend APIs
+\item
+  realtime chat
+\item
+  persistent data storage
+\item
+  asynchronous AI processing
+\item
+  transactional outbox publishing
+\item
+  Lambda-based event notifications
+\item
+  automated deployment through GitHub Actions
+\end{itemize}
