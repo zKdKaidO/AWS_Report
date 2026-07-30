@@ -38,7 +38,7 @@ Báo cáo này trình bày quá trình thực tập với dự án **Internship 
 | Tên dự án | Internship Application Tracker |
 | Mô tả dự án | Nền tảng kết nối ứng viên và nhà tuyển dụng, hỗ trợ đăng tin tuyển dụng thực tập, quản lý hồ sơ ứng tuyển, tải lên CV/tài liệu, trò chuyện theo thời gian thực, xử lý AI bất đồng bộ và thông báo theo kiến trúc hướng sự kiện trên AWS. |
 | Đóng góp cá nhân | Xây dựng tài liệu kiến trúc hệ thống, tài liệu triển khai AWS, hướng dẫn workshop, ghi nhận và xử lý các sự cố trong quá trình triển khai, phân tích bảo mật và chi phí, đồng thời tổng hợp báo cáo thực tập dựa trên các bằng chứng triển khai thực tế. |
-| Địa chỉ triển khai công khai | https://dhm2rz5nmsibj.cloudfront.net |
+| Địa chỉ triển khai công khai | https://d3irpvimfunr93.cloudfront.net |
 
 ## Các dịch vụ AWS chính
 
