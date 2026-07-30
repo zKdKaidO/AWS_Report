@@ -1,73 +1,82 @@
 ---
 title: "Tự đánh giá"
-date: 2024-01-01
+date: 2026-30-07
 weight: 6
 chapter: false
 pre: " <b> 6. </b> "
 ---
 
-## Assessment summary
+# Tự đánh giá
 
-This is my draft self-assessment based on the Internship Application Tracker project. It is not an official supervisor rating.
+## Tổng quan đánh giá
 
-During the project, I worked on a cloud-native internship application platform that combines a React/Vite frontend, FastAPI backend, Node.js Socket.IO chat service, PostgreSQL, DynamoDB, Redis, SQS, Lambda, S3, CloudFront, EKS, and SageMaker. The most important learning outcome for me was understanding how application code, Kubernetes, managed AWS services, IAM, networking, CI/CD, and runtime evidence connect in a real deployment.
+Phần tự đánh giá này phản ánh quá trình học tập và những đóng góp của tôi trong dự án Internship Application Tracker. Các mức điểm được đưa ra dựa trên quá trình tôi trực tiếp tham gia phân tích kiến trúc, chuẩn bị triển khai AWS, nghiên cứu tích hợp AI, xử lý sự cố, xây dựng tài liệu và kiểm chứng hệ thống. Đây không phải là kết quả đánh giá chính thức từ người hướng dẫn thực tập.
 
-## Skill rating table
+Thông qua dự án, tôi có cơ hội tiếp cận thực tế với việc kết nối mã nguồn ứng dụng và hạ tầng điện toán đám mây. Tôi nhận ra rằng triển khai một hệ thống hoàn chỉnh không chỉ yêu cầu viết mã nguồn mà còn liên quan đến mạng, quyền IAM, container, Kubernetes, các dịch vụ AWS được quản lý, quy trình CI/CD, giám sát, bảo mật, chi phí và tài liệu kỹ thuật.
 
-| Skill area | Draft rating | Evidence and reflection |
+## Đánh giá kỹ năng
+
+| Nhóm kỹ năng | Điểm tự đánh giá | Bằng chứng và nhận xét |
 |---|---:|---|
-| AWS architecture | 8/10 | I helped shape the final architecture where CloudFront routes static frontend traffic to S3 and dynamic `/api`, `/chat`, and `/socket.io` traffic to the ALB. I learned to distinguish proposal diagrams from deployed evidence. |
-| Kubernetes | 8/10 | I worked with EKS workloads for backend, chat, outbox dispatcher, processing worker, and ai-service, including Deployments, Services, readiness/liveness probes, HPA, and PDB. |
-| Networking | 7/10 | I investigated issues such as a NAT Gateway blackhole that prevented EKS nodes from joining and the AWS Load Balancer Controller VPC ID failure. I still need more practice designing VPCs from scratch. |
-| IAM and security | 7/10 | I used GitHub OIDC, IRSA, runtime roles, secret separation, S3 private access, SQS SSE, and idempotency. I need to improve formal IAM policy review and permission boundary design. |
-| CI/CD | 8/10 | I worked with GitHub Actions workflow modes such as `validate`, `deploy-app`, `deploy-public`, `deploy-frontend`, `rollout`, and `full`, including ECR SHA image verification and frontend S3 deployment. |
-| Database and messaging | 8/10 | I learned how PostgreSQL stores business data, processing jobs, idempotency records, and transactional outbox events, while SQS carries committed events to Lambda and DynamoDB supports chat and dedupe. |
-| Serverless | 7/10 | I integrated the SQS-to-Lambda notification flow conceptually and documented the successful Lambda smoke test, DynamoDB dedupe, S3 archive, SES result, and partial batch failure behavior. |
-| AI integration | 7/10 | I worked with the processing worker and ai-service adapter pattern, where the worker keeps stable routes and the adapter calls SageMaker endpoint `internship-qwen3-4b`. I need more experience operating model endpoints cost-effectively. |
-| Troubleshooting | 8/10 | I practiced evidence-led debugging for NAT, ALB controller, GitHub Actions job conditions, SQS queue naming, CloudFront routing, and DynamoDB reserved keyword errors. |
-| Documentation | 8/10 | I converted implementation details and runtime context into workshop, proposal, cost, security, testing, troubleshooting, and cleanup documentation. |
+| Kiến trúc AWS và lựa chọn dịch vụ | 8/10 | Tôi có thể giải thích vai trò và cách kết nối giữa CloudFront, S3, ALB, EKS, RDS, Redis, DynamoDB, SQS, Lambda, SES, SageMaker và ECR trong dự án. Tôi cũng chú ý hơn đến việc phân biệt kiến trúc mục tiêu với các dịch vụ đã thực sự được triển khai và kiểm chứng. |
+| Triển khai Cloud và Kubernetes | 7.5/10 | Tôi đã làm việc với cấu trúc triển khai backend, dịch vụ chat thời gian thực, worker và các workload liên quan đến AI trên Amazon EKS. Tôi hiểu vai trò của Deployment, Service, health probe, autoscaling, container image và load balancing, nhưng vẫn cần thêm kinh nghiệm để có thể tự vận hành EKS một cách độc lập. |
+| Tích hợp AI và machine learning | 8/10 | Tôi đã nghiên cứu cách kết nối processing worker, AI service và SageMaker endpoint trong ứng dụng. Tôi cũng có kinh nghiệm làm việc với mô hình ngôn ngữ chạy local, thiết kế prompt có cấu trúc, kiểm tra JSON đầu ra, grounding, loại bỏ dữ liệu trùng lặp và đánh giá kết quả xử lý mô tả công việc và CV. Tôi cần học thêm về fine-tuning, giám sát mô hình trong môi trường production và tối ưu chi phí inference. |
+| Backend và kiến trúc hướng sự kiện | 8/10 | Tôi hiểu cách PostgreSQL lưu dữ liệu nghiệp vụ có tính giao dịch, Redis hỗ trợ dữ liệu tạm thời cần tốc độ cao, DynamoDB lưu trữ dữ liệu có khả năng mở rộng và SQS kết hợp với Lambda để xử lý sự kiện bất đồng bộ. Tôi cũng hiểu tầm quan trọng của idempotency, transactional outbox, retry và dead-letter queue trong hệ thống phân tán. |
+| CI/CD và tự động hóa | 7.5/10 | Tôi đã tìm hiểu cách GitHub Actions, AWS OIDC, Amazon ECR, quy trình build image, deployment workflow và kiểm tra rollout hỗ trợ việc phát hành hệ thống có thể lặp lại. Tôi có thể theo dõi và viết tài liệu cho quy trình này, nhưng vẫn cần thêm kinh nghiệm để tự thiết kế toàn bộ pipeline từ đầu. |
+| Nhận thức về bảo mật và IAM | 7/10 | Tôi hiểu tầm quan trọng của việc không sử dụng access key dài hạn, sử dụng OIDC và IAM role, tách biệt secret, giới hạn quyền truy cập S3, mã hóa hàng đợi và áp dụng nguyên tắc least privilege. Điểm tôi cần cải thiện là khả năng thiết kế và kiểm tra IAM policy một cách có hệ thống. |
+| Xử lý sự cố và kiểm chứng hệ thống | 8.5/10 | Một trong những kỹ năng tôi cải thiện rõ nhất là xác định vấn đề dựa trên log, kết quả lệnh, trạng thái triển khai và bằng chứng runtime. Tôi đã tham gia xử lý hoặc phân tích các vấn đề liên quan đến networking, EKS node, ALB, điều kiện chạy GitHub Actions, SQS, CloudFront routing và cấu hình tài nguyên AWS. |
+| Tài liệu kỹ thuật và truyền đạt | 8.5/10 | Tôi đã hệ thống hóa thông tin dự án thành proposal kiến trúc, workshop triển khai, worklog theo tuần, bằng chứng kiểm thử, tài liệu xử lý sự cố, phân tích bảo mật, phân tích chi phí và báo cáo tổng kết. Tôi cải thiện khả năng trình bày một quy trình kỹ thuật theo hướng có cấu trúc và có thể tái thực hiện. |
 
-## Strengths
+## Điểm mạnh
 
-- I can connect source code, deployment manifests, workflow files, and runtime evidence into one coherent architecture explanation.
-- I became more careful about distinguishing implemented code from verified production behavior.
-- I improved at troubleshooting AWS integration failures by starting from logs and command output instead of assumptions.
-- I learned how to document deployment procedures with warnings, expected results, and common errors.
-- I understand why frontend static hosting, EKS services, database transactions, SQS delivery, Lambda idempotency, and SageMaker inference belong in different parts of the architecture.
+- Tôi có khả năng kết nối mã nguồn ứng dụng, dịch vụ Cloud, cấu hình triển khai và bằng chứng runtime thành một mô tả hệ thống thống nhất.
+- Khi gặp vấn đề kỹ thuật, tôi ưu tiên kiểm tra log và hành vi thực tế của hệ thống thay vì chỉ dựa trên giả định.
+- Tôi có thể nghiên cứu phương pháp tích hợp AI và chuyển chúng thành quy trình xử lý phù hợp với backend.
+- Tôi chú ý phân biệt rõ phần đã phát triển, phần đã triển khai thành công, phần mới chỉ được đề xuất và phần cần cải thiện trong tương lai.
+- Tôi có khả năng viết lại các quy trình triển khai phức tạp thành tài liệu để người khác có thể thực hiện theo.
+- Tôi hiểu những đánh đổi cơ bản giữa độ tin cậy, bảo mật, khả năng mở rộng, hiệu năng và chi phí AWS.
 
-## Challenges
+## Khó khăn chính
 
-- AWS service interactions can fail for reasons outside application code, especially IAM, route tables, controller configuration, and GitHub Actions variable scope.
-- Debugging EKS required understanding both Kubernetes objects and AWS-created resources such as ALB target groups and ENIs.
-- Cost estimation was difficult because exact AWS prices depend on live instance types, endpoint uptime, data transfer, and log retention.
-- AI integration required preserving the worker-facing contract while moving implementation details into the SageMaker adapter.
-- Documentation required discipline because it is easy to overstate something that exists in code but has not been verified in production.
+- Amazon EKS bao gồm nhiều thành phần liên kết với nhau nên lỗi có thể xuất phát từ Kubernetes, IAM, networking, load balancer, container image hoặc AWS controller thay vì chỉ từ mã nguồn ứng dụng.
+- Triển khai mô hình AI yêu cầu cân bằng giữa độ chính xác, thời gian phản hồi, tài nguyên GPU, độ sẵn sàng của endpoint và chi phí vận hành.
+- Một số dịch vụ AWS có thể tạo ra chi phí lớn khi hoạt động liên tục, đặc biệt là EKS, NAT Gateway, cơ sở dữ liệu và SageMaker endpoint.
+- Xử lý lỗi IAM tương đối phức tạp vì một quy trình triển khai có thể liên quan đến nhiều dịch vụ và nhiều execution role khác nhau.
+- Việc thu thập bằng chứng đáng tin cậy yêu cầu kiểm tra cả cấu hình và kết quả runtime, thay vì chỉ dựa vào sơ đồ kiến trúc hoặc mã nguồn.
+- Khi làm việc trong repository chung, cần thao tác Git cẩn thận để tránh ghi đè công việc của thành viên khác hoặc commit nhầm các file chỉ dùng tại máy local.
 
-## Lessons learned
+## Bài học rút ra
 
-- Runtime evidence should be treated as stronger than old manifests when describing current production architecture.
-- A Kubernetes Service load-balances traffic but does not serialize database writes; correctness must come from constraints, idempotency, conditional writes, and transactions.
-- SQS Standard provides at-least-once delivery, so consumers must deduplicate events.
-- Lambda is useful for short event-driven processing, but it only reduces cost when it removes or scales down always-on capacity.
-- Static frontend delivery through S3 and CloudFront is a better fit than running a frontend pod in EKS for this project.
-- Worker workloads should be enabled only after their dependencies, especially SageMaker, are ready.
+- Sơ đồ kiến trúc cần phản ánh đúng trạng thái triển khai và phải ghi rõ những dịch vụ mới chỉ nằm trong kế hoạch.
+- Log runtime, screenshot, kết quả CLI và kết quả kiểm thử thành công là những bằng chứng mạnh hơn so với file cấu hình đơn lẻ.
+- Hệ thống phân tán phải dự đoán trước khả năng nhận sự kiện trùng lặp, retry, lỗi một phần và dịch vụ tạm thời không khả dụng.
+- Phần tích hợp AI nên cung cấp một interface ổn định cho ứng dụng để có thể thay đổi mô hình hoặc phương thức triển khai mà không ảnh hưởng nhiều đến hệ thống còn lại.
+- Health probe và autoscaling trên Kubernetes chỉ hoạt động hiệu quả khi resource request, dependency và hành vi của ứng dụng được cấu hình đúng.
+- Bảo mật cần được xem xét ngay từ giai đoạn thiết kế kiến trúc thay vì chỉ bổ sung sau khi quá trình triển khai gặp lỗi.
+- Tối ưu chi phí cần xem xét đồng thời thời gian hoạt động của tài nguyên, data transfer, storage, log và giá của các dịch vụ được quản lý.
+- Tài liệu kỹ thuật là một phần của quy trình phát triển vì nó hỗ trợ triển khai, xử lý sự cố, chuyển giao kiến thức và đánh giá kết quả.
 
-## Areas for improvement
+## Nội dung cần cải thiện
 
-- Practice writing IAM policies with least privilege from the beginning instead of tightening them after deployment failures.
-- Learn more about VPC endpoint strategy to reduce NAT Gateway cost and dependency.
-- Add stronger production evidence collection for alarms, backups, encryption settings, and PITR.
-- Build a repeatable frontend/browser E2E test harness for login, job apply, chat, and AI processing flows.
-- Improve SageMaker cost control by testing scheduled shutdown, asynchronous inference, or lower-cost inference options.
+- Tăng kinh nghiệm thực hành độc lập với việc tạo EKS cluster, thiết kế VPC, cấu hình ingress, autoscaling và observability.
+- Cải thiện khả năng thiết kế IAM policy theo nguyên tắc least privilege, permission boundary, resource-level permission và các công cụ phân tích policy.
+- Nghiên cứu sâu hơn các phương pháp đánh giá hệ thống đối sánh công việc và CV, bao gồm xây dựng tập dữ liệu, retrieval metrics, chất lượng reranking và human evaluation.
+- Học thêm về fine-tuning, quantization, asynchronous inference, endpoint autoscaling và các phương án phục vụ mô hình có chi phí thấp hơn.
+- Xây dựng integration test và end-to-end test tự động cho các luồng đăng nhập, đăng tin tuyển dụng, ứng tuyển, xử lý CV, chat thời gian thực và gửi thông báo.
+- Cải thiện hệ thống giám sát bằng CloudWatch dashboard, alarm, tracing, failure-rate metric và cảnh báo chi phí.
+- Thực hành xây dựng kế hoạch khôi phục sự cố, kiểm tra backup cơ sở dữ liệu, point-in-time recovery và quy trình phản ứng sự cố.
 
-## Future plan
+## Kế hoạch phát triển
 
-1. Strengthen AWS networking knowledge, especially VPC routing, NAT, endpoints, security groups, and private service access.
-2. Practice production IAM design with OIDC, IRSA, Lambda roles, and SageMaker execution roles.
-3. Build a complete evidence package for deployed systems: CLI exports, logs, screenshots, Cost Explorer, and Pricing Calculator results.
-4. Add automated E2E tests and smoke tests for the main candidate and HR flows.
-5. Continue improving event-driven design with SQS, Lambda, DLQ handling, idempotency, and observability.
+1. Tự xây dựng một môi trường AWS có quy mô nhỏ để thực hành VPC, EKS, ALB, RDS, IAM và CI/CD từ đầu.
+2. Tiếp tục phát triển pipeline AI xử lý mô tả công việc và CV với structured output, grounding, reranking và phương pháp đánh giá có thể đo lường.
+3. Bổ sung smoke test tự động và end-to-end test trên trình duyệt cho các luồng chính của Candidate và HR.
+4. Cải thiện khả năng quan sát hệ thống thông qua log tập trung, metric, dashboard, alarm và request ID có thể truy vết.
+5. So sánh SageMaker endpoint với các phương án inference khác dựa trên độ chính xác, độ trễ, khả năng mở rộng và chi phí hàng tháng.
+6. Hoàn thiện bộ bằng chứng triển khai gồm screenshot, kết quả CLI, build log, runtime log, kết quả kiểm thử và thông tin chi phí AWS.
 
-## Career orientation
+## Định hướng nghề nghiệp
 
-This project confirmed that I want to keep developing skills in cloud engineering, backend systems, DevOps, and AI-enabled applications. I am especially interested in work that combines application development with reliable infrastructure, security, automation, and practical troubleshooting.
+Dự án thực tập này giúp tôi xác định rõ hơn sự quan tâm của mình đối với Cloud Engineering, phát triển backend, DevOps và các hệ thống tích hợp AI. Tôi đặc biệt quan tâm đến những công việc kết hợp giữa phát triển phần mềm, hạ tầng Cloud, tự động hóa, độ tin cậy của hệ thống và ứng dụng AI vào các bài toán thực tế.
+
+Trong tương lai, tôi muốn có khả năng tự thiết kế và triển khai một hệ thống hoàn chỉnh, từ kiến trúc ứng dụng và xử lý AI đến hạ tầng, bảo mật, giám sát, kiểm thử và tối ưu chi phí.

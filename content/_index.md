@@ -1,6 +1,6 @@
 ---
 title: "Internship Report"
-date: 2024-01-01
+date: 2026-30-07
 weight: 1
 chapter: false
 ---
@@ -9,15 +9,15 @@ chapter: false
 
 This internship report presents the Internship Application Tracker, an AI-integrated internship application management platform that I documented, validated, and prepared for AWS deployment.
 
-![Student profile](/images/avatar.png)
+![Student profile](/images/avatar.jpg)
 
 ## Student Information
 
 | Field | Value |
 |---|---|
-| Student name | Evidence required: student name |
-| University | Evidence required: university name |
-| Major | Evidence required: major |
+| Student name | Phạm Nhật Nam |
+| University | Trường Đại học Bách Khoa TP.HCM (HCMUT) |
+| Major | Computer Science |
 | Internship position | Cloud / AWS internship project participant |
 
 ## Internship Organization
@@ -25,7 +25,7 @@ This internship report presents the Internship Application Tracker, an AI-integr
 | Field | Value |
 |---|---|
 | Program or organization | First Cloud AI Journey / FCAJ |
-| Team members | Evidence required: official team member list |
+| Team members | 5 |
 
 ## Internship Period
 

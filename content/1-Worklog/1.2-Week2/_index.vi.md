@@ -1,125 +1,42 @@
 ﻿---
-title: "Nháº­t kÃ½ tuáº§n 2"
-date: 2024-01-01
+title: "Nhật ký tuần 2"
+date: 2026-06-15
 weight: 2
 chapter: false
 pre: " <b> 1.2. </b> "
 ---
 
-# Week 2 - Concurrency Control and Data Integrity
+# Tuần 2 - Phát triển chức năng Candidate-HR và lưu trữ tài liệu với Amazon S3
 
-## Objectives
+### Mục tiêu tuần 2:
 
-Week 2 focused on making write operations safe when several backend or chat pods handle requests at the same time. The target was to prevent duplicate registrations, duplicate applications, stale workflow updates, and duplicate chat messages without using global application-level locks.
+- Phát triển các chức năng hồ sơ dành cho Candidate và HR/Company.
+- Xây dựng các luồng đăng tuyển, tìm kiếm việc làm, nộp hồ sơ và quản lý ứng viên.
+- Hoàn thiện cơ chế upload, kiểm tra và phân quyền truy cập tài liệu.
+- Tìm hiểu Amazon S3, presigned URL và cách quản lý quyền truy cập tài nguyên bằng IAM.
+- Làm quen với AWS CLI trong quá trình kiểm tra bucket và object storage.
 
-## Tasks Completed
+### Các công việc thực hiện trong tuần:
 
-| Status | Task | Evidence basis |
-|---|---|---|
-| Completed | Analyzed concurrent writes across multiple backend pods. | `docs/architecture/concurrency-policy.md`. |
-| Completed | Documented optimistic and pessimistic UI policies. | `docs/architecture/concurrency-policy.md` and `docs/frontend/COMMAND_MUTATION_POLICY.md`. |
-| Completed | Added database-backed idempotency for candidate apply requests. | `backend/app/services/idempotency_service.py`, `backend/app/routers/jobs.py`, and migration `0004_idempotency_records.py`. |
-| Completed | Added version-gated workflow commands using `expectedVersion`. | `backend/app/services/optimistic_concurrency.py`, `backend/app/services/workflow_commands.py`, and HR/Candidate routers. |
-| Completed | Hardened chat writes against duplicate retry behavior. | `chat-service/repositories/chatRepository.js` and `chat-service/tests/chatRepository.concurrency.test.js`. |
-| Partially completed | Attached visible API screenshots and CI logs where available. | Evidence pending: I did not have a screenshot or GitHub Actions log artifact in the local evidence archive. |
+| Ngày | Công việc | Ngày bắt đầu | Ngày hoàn thành | Tài liệu tham khảo |
+|---|---|---|---|---|
+| 1 | Xây dựng Candidate profile và Company profile; bổ sung kiểm tra role, quyền sở hữu dữ liệu và các endpoint cập nhật thông tin hồ sơ. | 15/06/2026 | 15/06/2026 | [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html); [OWASP IDOR Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html) |
+| 2 | Phát triển API tạo, cập nhật và quản lý job posting; xây dựng luồng tìm kiếm việc làm, nộp application và HR review applicant. | 16/06/2026 | 17/06/2026 | [REST API Security Guidelines](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html); [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) |
+| 3 | Tìm hiểu Amazon S3, cấu trúc bucket và object key; thực hành một số thao tác cơ bản bằng AWS CLI và cấu hình quyền truy cập tối thiểu bằng IAM. | 18/06/2026 | 18/06/2026 | [Amazon S3 User Guide](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html); [AWS CLI Command Reference for S3](https://docs.aws.amazon.com/cli/latest/reference/s3/); [IAM Policies and Permissions](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html) |
+| 4 | Xây dựng document upload, file validation và permission checks; tích hợp S3 object key, presigned URL và kiểm thử tính nhất quán giữa database với object storage. | 19/06/2026 | 19/06/2026 | [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html); [Amazon S3 Presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html); [Uploading Objects with Presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html) |
 
-## Technical Implementation
+### Kết quả đạt được trong tuần:
 
-Concurrency control was implemented at the database and API-contract level:
+- Hoàn thiện các chức năng hồ sơ cơ bản cho Candidate và HR/Company.
+- HR có thể quản lý thông tin công ty, job posting và danh sách ứng viên.
+- Candidate có thể tìm kiếm công việc, nộp application, tải tài liệu và theo dõi trạng thái hồ sơ.
+- Các endpoint quan trọng đã được bổ sung kiểm tra role và quyền sở hữu dữ liệu.
+- Hiểu cấu trúc bucket, object key và quyền truy cập cơ bản trong Amazon S3.
+- Tích hợp luồng truy cập tài liệu riêng tư thông qua presigned URL.
+- Kiểm thử được tính nhất quán giữa metadata lưu trong database và file lưu trên S3.
 
-- PostgreSQL unique constraints protect duplicate user, company, application, and idempotency records.
-- `Idempotency-Key` is accepted for candidate application submission and selected workflow commands.
-- Reusing the same idempotency key with the same payload replays the stored response.
-- Reusing the same idempotency key with a different payload returns `409` with `idempotency_key_reused`.
-- Mutable HR job and application commands require `expectedVersion`.
-- Stale version updates return controlled `409 Conflict` responses.
-- Chat retries use deterministic client message IDs and DynamoDB conditional write behavior to avoid duplicate logical messages.
-
-Conflict flow:
-
-{{< mermaid >}}
-sequenceDiagram
-  participant C as Client
-  participant API as FastAPI backend pod
-  participant DB as PostgreSQL
-  C->>API: POST /jobs/{id}/apply + Idempotency-Key
-  API->>DB: reserve scoped idempotency record
-  alt new request
-    API->>DB: insert application, documents, history
-    API->>DB: complete idempotency record
-    API-->>C: 200/201 application response
-  else exact replay
-    DB-->>API: completed stored response
-    API-->>C: stored response + Idempotency-Replayed
-  else payload mismatch or duplicate business conflict
-    API-->>C: 409 Conflict
-  end
-{{< /mermaid >}}
-
-## Problems and Solutions
-
-| Problem | Root cause | Resolution | Status |
-|---|---|---|---|
-| Duplicate registration or company creation could surface as uncontrolled database errors. | Unique constraints existed or were needed, but error translation had to be explicit. | Integrity errors are rolled back and translated into `409 Conflict`. | Completed |
-| Candidate apply can be retried by browser/network clients. | A second request may reach another backend pod before the first response is received. | Scoped idempotency records persist request hash and response data. | Completed |
-| HR workflow updates can become stale when two users act on the same job/application. | Plain updates do not know whether the client saw the latest row version. | Commands require `expectedVersion` and use conditional updates. | Completed |
-| Chat retries can duplicate realtime messages. | Socket retries and REST retries can re-send the same logical message. | Chat repository uses deterministic message identity and skips duplicate broadcast on replay. | Completed |
-| Public evidence for a `409` screenshot is missing. | The source repo contains tests and docs, but no screenshot artifact. | I kept screenshot evidence pending. | Blocked |
-
-## Testing, Build and Deployment Results
-
-| Area | Result | Evidence |
-|---|---|---|
-| Backend concurrency tests | Partially completed | Test sources exist: `backend/tests/test_apply_idempotency.py`, `backend/tests/test_apply_idempotency_postgres.py`, `backend/tests/test_optimistic_concurrency.py`, and `backend/tests/test_optimistic_concurrency_postgres.py`. Current-run output is pending. |
-| Chat concurrency tests | Partially completed | Test source exists: `chat-service/tests/chatRepository.concurrency.test.js`. Current-run output is pending. |
-| API conflict behavior | Implemented | Source contains explicit `409` handling for stale versions, duplicate apply, and idempotency-key reuse. |
-| Deployment | Planned | This week focused on correctness before deployment. |
-
-## Evidence
-
-### Screenshots
-
-Evidence pending: add screenshots under `/images/worklog/week-02/`, for example:
-
-- `/images/worklog/week-02/duplicate-apply-409.png`
-- `/images/worklog/week-02/idempotency-replay.png`
-- `/images/worklog/week-02/postgres-concurrency-tests.png`
-
-### Commits and Pull Requests
-
-| Commit | Description | Evidence | Pull Request |
-|---|---|---|---|
-| `0f9e7f2` | Added backend workflow outbox, idempotency records, optimistic concurrency helpers, async processing foundation, and tests. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/0f9e7f2aed730153e905df0700fc3401f8957b21) | Evidence pending |
-| `5326cb0` | Hardened chat repository concurrency and added chat concurrency tests. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/5326cb0ad12bf5e311236469e5c2b90c7fe20b6e) | Evidence pending |
-| `77faab4` | Integrated workflow and processing contracts into frontend API helpers and UI flows. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/77faab4a919405beef1865fc06a106b0289a3310) | Evidence pending |
-| `5041f84` | Fixed failing optimistic concurrency test assertions. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/5041f84600390724c4760c51da499592b1cf6104) | Evidence pending |
-
-### Test Logs
-
-Evidence pending: attach actual output from commands such as:
-
-```bash
-cd backend
-python -m pytest tests/test_apply_idempotency.py tests/test_optimistic_concurrency.py
-python -m pytest -m postgres tests/test_apply_idempotency_postgres.py tests/test_optimistic_concurrency_postgres.py
-```
-
-### Build Logs
-
-Not applicable for the core Week 2 task. No dedicated build artifact was found for this phase.
-
-### Deployment Logs
-
-Not applicable for Week 2. The feature was designed to be safe before scaling the backend in Kubernetes.
-
-## Weekly Results
-
-The application gained stronger data-integrity guarantees: duplicate writes are constrained by PostgreSQL or DynamoDB, client retries are handled through idempotency records, stale updates produce `409 Conflict`, and chat replay behavior avoids duplicate broadcasts.
-
-## Lessons Learned
-
-Service load balancing does not serialize writes. Correctness must be enforced at the storage and transaction boundary, then reflected clearly through API response codes and UI behavior.
-
-## Next Week Plan
-
-Build the transactional outbox and asynchronous processing layers so committed domain changes can trigger reliable downstream work without keeping the main API request open.
+<!--
+TODO: Add screenshots, commits, API test results, S3 bucket configuration, IAM policy, or document upload evidence for this week.
+Expected image directory:
+static/images/worklog/week-2/
+-->

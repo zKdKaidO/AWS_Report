@@ -1,111 +1,40 @@
 ﻿---
-title: "Nháº­t kÃ½ tuáº§n 6"
-date: 2024-01-01
+title: "Nhật ký tuần 6"
+date: 2026-07-13
 weight: 6
 chapter: false
 pre: " <b> 1.6. </b> "
 ---
 
-# Week 6 - AWS Foundation, IAM, OIDC and ECR
+# Tuần 6 - Container hóa hệ thống và tích hợp với Docker Compose
 
-## Objectives
+### Mục tiêu tuần 6:
 
-Week 6 focused on preparing the AWS deployment foundation: AWS region, GitHub OIDC authentication, IAM deployment permissions, ECR image repositories, and CI jobs that build and push backend/chat images without long-lived AWS credentials.
+- Chuẩn hóa môi trường chạy cho backend, frontend, chat service và AI service.
+- Tích hợp các thành phần của hệ thống trong cùng một môi trường Docker Compose.
+- Hoàn thiện quy trình khởi động, kiểm tra tình trạng dịch vụ và chuẩn bị dữ liệu demo.
+- Xây dựng hướng dẫn chạy hệ thống local có thể sử dụng lại.
 
-## Tasks Completed
+### Các công việc thực hiện trong tuần:
 
-| Status | Task | Evidence basis |
-|---|---|---|
-| Completed | Standardized production region as `ap-southeast-1`. | `PROJECT_CONTEXT.md`, `.github/workflows/cicd.yml`, and deployment scripts. |
-| Completed | Added GitHub OIDC smoke workflow. | Commit `2777b56`. |
-| Completed | Added ECR build and push workflow for application images. | Commit `9f9fcf3`. |
-| Completed | Aligned AWS deployment workflow with production architecture. | Commit `7eb1a76`. |
-| Completed | Added EKS access smoke test workflow. | Commit `bfacd3a`. |
-| Partially completed | Captured IAM policy simulation, ECR digest, and GitHub Actions screenshots where available. | Evidence pending: I did not have the full runtime screenshot/log set in the local evidence archive. |
+| Ngày | Công việc | Ngày bắt đầu | Ngày hoàn thành | Tài liệu tham khảo |
+|---|---|---|---|---|
+| 1 | Viết và điều chỉnh Dockerfile cho backend, frontend, chat service và AI service; chuẩn hóa biến môi trường, thư mục làm việc, dependency installation và startup command cho từng container. | 13/07/2026 | 13/07/2026 | [Dockerfile Reference](https://docs.docker.com/reference/dockerfile/); [Docker Compose File Reference](https://docs.docker.com/compose/compose-file/) |
+| 2 | Cấu hình PostgreSQL, Redis và DynamoDB Local trong Docker Compose; tích hợp backend, worker, frontend và chat service thông qua internal network, volume và service dependencies. | 15/07/2026 | 16/07/2026 | [Docker Compose Application Model](https://docs.docker.com/compose/intro/compose-application-model/); [Docker Compose Quickstart](https://docs.docker.com/compose/gettingstarted/); [Control Startup Order](https://docs.docker.com/compose/how-tos/startup-order/) |
+| 3 | Tách cấu hình AI service thành Compose file riêng, chạy database migration và seed data, sau đó thực hiện health check, smoke test và ghi lại các lỗi thường gặp trong quá trình khởi động hệ thống. | 17/07/2026 | 17/07/2026 | [Docker Compose File Reference](https://docs.docker.com/compose/compose-file/); [Docker Compose Quickstart](https://docs.docker.com/compose/gettingstarted/); [Control Startup Order](https://docs.docker.com/compose/how-tos/startup-order/) |
 
-## Technical Implementation
+### Kết quả đạt được trong tuần:
 
-The CI/CD path uses GitHub Actions OIDC to assume the AWS deployment role instead of storing long-lived AWS access keys. ECR image URIs are based on AWS account, region, repository name, and immutable Git SHA tags.
+- Các service chính đã được container hóa và có cấu hình runtime thống nhất.
+- Hệ thống có thể được khởi động bằng Docker Compose trong môi trường local.
+- Backend kết nối với PostgreSQL, trong khi chat service sử dụng Redis và DynamoDB Local.
+- Các container giao tiếp với nhau thông qua internal network và service name.
+- Database migration và demo data có thể được khởi tạo theo quy trình thống nhất.
+- Health check và smoke test giúp xác nhận các service hoạt động sau khi khởi động.
+- Local runbook và troubleshooting notes được chuẩn bị để hỗ trợ quá trình chạy lại hệ thống.
 
-{{< mermaid >}}
-graph LR
-  GitHub["GitHub Actions"] --> OIDC["GitHub OIDC token"]
-  OIDC --> IAM["IAM role: internship-github-deploy"]
-  IAM --> ECR["Amazon ECR"]
-  IAM --> EKS["Amazon EKS"]
-  ECR --> BackendImage["internship-backend:<github.sha>"]
-  ECR --> ChatImage["internship-chat:<github.sha>"]
-  EKS --> Deploy["scripts/k8s/deploy-eks.sh"]
-{{< /mermaid >}}
-
-The source repository includes deployment scripts for both EKS application deployment and frontend deployment. I keep sensitive runtime values such as `DATABASE_URL`, `REDIS_URL`, and `SECRET_KEY` in environment variables or Kubernetes Secrets, not in published documentation.
-
-## Problems and Solutions
-
-| Problem | Root cause | Resolution | Status |
-|---|---|---|---|
-| AWS access must not depend on static access keys. | Static credentials are high-risk for CI/CD. | GitHub OIDC was introduced for role assumption. | Completed |
-| ECR push requires authorization permissions. | The GitHub deployment role needs ECR token and repository permissions. | ECR build/push workflow and later permission verification commits were added. | Partially completed |
-| Deployment needs deterministic image names. | Manually passing image URIs is error-prone. | Workflow builds/pushes SHA-tagged images and deployment scripts consume those values. | Completed |
-| EKS access can be blocked by limited permissions. | Deployment role may lack cluster or Kubernetes RBAC permissions. | EKS access smoke workflow and later rollout tolerance were added. | Partially completed |
-| Digest and policy screenshots are missing. | AWS console/CLI evidence was not attached locally. | I kept AWS evidence pending. | Blocked |
-
-## Testing, Build and Deployment Results
-
-| Area | Result | Evidence |
-|---|---|---|
-| OIDC workflow | Implemented | `.github/workflows/aws-oidc-smoke-test.yml` existed in commit `2777b56`; later consolidated into CI/CD. |
-| ECR build/push workflow | Implemented | Commit `9f9fcf3` added AWS ECR build/push workflow. |
-| Production deploy workflow | Implemented | Commit `7eb1a76` added `scripts/ci/deploy-eks-pipeline.sh` and `scripts/ci/deploy-frontend.sh`. |
-| AWS CLI/runtime logs | Partially completed | I did not find local `aws sts`, `aws ecr`, or policy simulation output in the local evidence archive. |
-
-## Evidence
-
-### Screenshots
-
-Evidence pending: add screenshots under `/images/worklog/week-06/`, for example:
-
-- `/images/worklog/week-06/github-oidc-success.png`
-- `/images/worklog/week-06/ecr-images.png`
-- `/images/worklog/week-06/iam-role-policy.png`
-
-### Commits and Pull Requests
-
-| Commit | Description | Evidence | Pull Request |
-|---|---|---|---|
-| `2777b56` | Added AWS OIDC smoke test workflow. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/2777b56e0080518dbafc895c8bb5e751ead33dd9) | Evidence pending |
-| `9f9fcf3` | Added ECR build and push workflow. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/9f9fcf39354fd80fdb3bd724415fd5238a6c2c41) | Evidence pending |
-| `7eb1a76` | Aligned AWS deployment with production architecture. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/7eb1a7685df2582e59c7c180355e479efcafe06c) | Evidence pending |
-| `bfacd3a` | Added EKS access smoke test workflow. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/bfacd3acc67aeba66cc7ad9071b10eb1c0145fe9) | Evidence pending |
-| `404ba6c` | Reran deployment path with ECR verify permission. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/404ba6c8da2344e38edf10498cf904105a618545) | Evidence pending |
-
-### Test Logs
-
-Evidence pending: attach actual output from:
-
-```bash
-aws sts get-caller-identity
-aws ecr describe-repositories --repository-names internship-backend internship-chat
-aws ecr describe-images --repository-name internship-backend
-aws ecr describe-images --repository-name internship-chat
-```
-
-### Build Logs
-
-Evidence pending: attach GitHub Actions or terminal logs showing Docker image build, tag, push, and digest output.
-
-### Deployment Logs
-
-Evidence pending: attach OIDC, ECR, or EKS smoke workflow logs. Do not include secrets or database URLs.
-
-## Weekly Results
-
-The project gained a cloud deployment identity model and image delivery foundation. GitHub Actions can be used as the deployment controller, ECR stores immutable image tags, and deployment scripts were prepared for EKS rollout.
-
-## Lessons Learned
-
-AWS CI/CD work depends on both IAM and runtime evidence. A workflow file can be correct structurally, but I only mark authentication, image push, or cluster access as verified when the corresponding AWS/Actions log is available.
-
-## Next Week Plan
-
-Deploy and validate the managed AWS runtime: EKS cluster, namespace, RDS PostgreSQL, ElastiCache Redis, DynamoDB tables, SQS queue/DLQ, IRSA runtime role, and ALB ingress.
+<!--
+TODO: Add Docker container screenshots, Compose logs, health-check results, smoke-test evidence, or startup documentation for this week.
+Expected image directory:
+static/images/worklog/week-6/
+-->

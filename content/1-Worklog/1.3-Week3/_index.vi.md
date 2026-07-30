@@ -1,120 +1,43 @@
 ﻿---
-title: "Nháº­t kÃ½ tuáº§n 3"
-date: 2024-01-01
+title: "Nhật ký tuần 3"
+date: 2026-06-22
 weight: 3
 chapter: false
 pre: " <b> 1.3. </b> "
 ---
 
-# Week 3 - Transactional Outbox and Asynchronous Processing
+# Tuần 3 - Phát triển React frontend, tích hợp REST API và tìm hiểu triển khai tĩnh trên AWS
 
-## Objectives
+### Mục tiêu tuần 3:
 
-Week 3 focused on separating committed business changes from downstream side effects. The goal was to add a transactional outbox, define an event-consumer contract, and move long-running document and AI work into retryable background processing.
+- Xây dựng giao diện chính cho Candidate và HR/Company.
+- Tích hợp React frontend với các REST API của backend.
+- Hoàn thiện authentication context, role-based routing và protected pages.
+- Chuẩn bị production build và xử lý cấu hình môi trường, CORS.
+- Tìm hiểu cách triển khai static website bằng Amazon S3 và phân phối nội dung qua Amazon CloudFront.
 
-## Tasks Completed
+### Các công việc thực hiện trong tuần:
 
-| Status | Task | Evidence basis |
-|---|---|---|
-| Completed | Designed and implemented the `outbox_events` table. | `backend/alembic/versions/0007_outbox_events.py`. |
-| Completed | Added outbox statuses `PENDING`, `PROCESSING`, `PUBLISHED`, and `DEAD`. | Migration check constraint and `backend/app/services/outbox.py`. |
-| Completed | Added `deduplication_key` and claim/retry indexes. | Migration `0007_outbox_events.py`. |
-| Completed | Implemented the backend outbox dispatcher and admin operations. | `backend/app/workers/outbox_dispatcher.py` and `backend/app/workers/outbox_admin.py`. |
-| Completed | Documented SQS Standard as the production event transport. | `docs/architecture/adr/ADR-001-production-event-transport.md`. |
-| Completed | Added `async_processing_jobs` and a processing worker for document/AI tasks. | Migration `0008_async_processing_jobs.py`, `processing_jobs.py`, and `processing_worker.py`. |
-| Partially completed | Added real downstream consumers beyond the contract. | Source docs state downstream notification/search/analytics consumers were not implemented in this phase. |
+| Ngày | Công việc | Ngày bắt đầu | Ngày hoàn thành | Tài liệu tham khảo |
+|---|---|---|---|---|
+| 1 | Khởi tạo React với Vite, cấu hình Tailwind CSS, xây dựng cấu trúc thư mục frontend và các thành phần giao diện dùng chung. | 22/06/2026 | 22/06/2026 | [React Documentation](https://react.dev/learn); [Vite Getting Started](https://vite.dev/guide/); [Tailwind CSS with Vite](https://tailwindcss.com/docs/installation/using-vite) |
+| 2 | Xây dựng trang đăng ký, đăng nhập, authentication context, lưu trạng thái người dùng và điều hướng theo vai trò Candidate hoặc HR/Company. | 23/06/2026 | 23/06/2026 | [React Documentation](https://react.dev/learn); [React Router Documentation](https://reactrouter.com/) |
+| 3 | Phát triển Candidate dashboard, job board, profile, application detail và document management; tích hợp các API liên quan đến jobs, applications và documents. | 24/06/2026 | 24/06/2026 | [React Documentation](https://react.dev/learn); [MDN Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) |
+| 4 | Phát triển HR dashboard, company profile, job editor và applicant review; bổ sung loading state, error handling và kiểm tra quyền truy cập cho các trang riêng tư. | 25/06/2026 | 25/06/2026 | [React Documentation](https://react.dev/learn); [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) |
+| 5 | Chuẩn bị production build, cấu hình biến môi trường và kiểm tra CORS; tìm hiểu cách lưu trữ static website trên Amazon S3 và phân phối nội dung thông qua Amazon CloudFront. | 26/06/2026 | 26/06/2026 | [Vite - Building for Production](https://vite.dev/guide/build); [MDN CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS); [Hosting a Static Website with Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html); [Amazon CloudFront Developer Guide](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html) |
 
-## Technical Implementation
+### Kết quả đạt được trong tuần:
 
-The outbox design keeps domain mutation and event creation in the same PostgreSQL transaction. If the business write fails, no event is inserted. If the API pod dies after commit, the outbox row remains `PENDING` and can be claimed later by the dispatcher.
+- Hoàn thiện các giao diện chính cho Candidate và HR/Company.
+- Frontend có thể gọi các API authentication, jobs, applications, documents và dashboard.
+- Người dùng được điều hướng theo đúng vai trò sau khi đăng nhập.
+- Các trang riêng tư được bảo vệ bằng authentication state và role checks.
+- Bổ sung xử lý loading, lỗi API và trường hợp phiên đăng nhập không hợp lệ.
+- Production build được tạo và kiểm tra thành công.
+- Hiểu cách Amazon S3 có thể lưu trữ static frontend và CloudFront hỗ trợ phân phối nội dung với tốc độ tốt hơn.
 
-{{< mermaid >}}
-sequenceDiagram
-  participant API as FastAPI backend
-  participant DB as PostgreSQL
-  participant D as Outbox dispatcher
-  participant SQS as Amazon SQS Standard
-  participant C as Future consumer
-  API->>DB: commit domain change + outbox row
-  D->>DB: claim PENDING event
-  D->>SQS: publish event envelope
-  alt publish accepted
-    D->>DB: mark PUBLISHED
-  else retryable failure
-    D->>DB: return to PENDING with backoff
-  else non-retryable or max attempts
-    D->>DB: mark DEAD
-  end
-  C->>SQS: consume message
-  C->>C: deduplicate by eventId
-{{< /mermaid >}}
-
-Asynchronous processing uses a separate database-backed queue because document parsing and AI matching are user-visible jobs with status, retry behavior, source-version guards, and result payloads. The worker claims jobs, applies lease-based retry logic, and persists results back to PostgreSQL.
-
-## Problems and Solutions
-
-| Problem | Root cause | Resolution | Status |
-|---|---|---|---|
-| A committed workflow change could lose its follow-up event if publishing failed after the database commit. | Direct publish inside request handling is not transactional with PostgreSQL. | Insert a canonical outbox event in the same DB transaction, then dispatch asynchronously. | Completed |
-| SQS Standard can redeliver or reorder messages. | Standard queues provide at-least-once delivery, not exactly-once delivery. | The event envelope includes `eventId`; consumers must deduplicate by `eventId`. | Completed |
-| Dispatcher failure can leave events half-processed. | A worker can die after claiming or publishing an event. | Lease expiry, retry counters, `DEAD` status, and admin requeue/cleanup commands were added. | Completed |
-| AI and document work can take too long for API request latency. | Parsing CVs, extracting text, and reranking candidates are long-running operations. | Added `async_processing_jobs` and `backend-processing-worker`. | Completed |
-| Real downstream consumers were not part of this implementation slice. | I focused the week on producer reliability and the consumer contract. | I kept downstream consumers as future work until runtime evidence is added. | Partially completed |
-
-## Testing, Build and Deployment Results
-
-| Area | Result | Evidence |
-|---|---|---|
-| Outbox unit/integration test coverage | Partially completed | Test sources exist: `test_outbox_events.py`, `test_outbox_postgres.py`, `test_outbox_publishers.py`, and `test_outbox_admin.py`. Current-run output is pending. |
-| Async processing tests | Partially completed | Test sources exist: `test_processing_jobs.py` and `test_processing_jobs_postgres.py`. Current-run output is pending. |
-| Kubernetes deployment readiness | Implemented | `k8s/app/backend-outbox-dispatcher.yaml` and `k8s/app/backend-processing-worker.yaml` exist. |
-| SQS provisioning | Implemented | `scripts/aws/provision-outbox-sqs.ps1` and `.sh` exist. Runtime queue-name evidence still needs a screenshot or CLI log. |
-
-## Evidence
-
-### Screenshots
-
-Evidence pending: add screenshots under `/images/worklog/week-03/`, for example:
-
-- `/images/worklog/week-03/outbox-table.png`
-- `/images/worklog/week-03/sqs-queue-dlq.png`
-- `/images/worklog/week-03/dispatcher-logs.png`
-
-### Commits and Pull Requests
-
-| Commit | Description | Evidence | Pull Request |
-|---|---|---|---|
-| `0f9e7f2` | Added backend workflow outbox, async processing jobs, dispatcher, worker, and tests. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/0f9e7f2aed730153e905df0700fc3401f8957b21) | Evidence pending |
-| `be84e4e` | Added Kubernetes deployments, SQS provisioning scripts, validation gates, and alerts for async workers. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/be84e4e5e6bd6a1ba73fb9c11532274788060e8c) | Evidence pending |
-| `4970eba` | Documented phase 2 workflow operations, event transport ADR, and consumer contract. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/4970ebad398a5377004e943dc3486f8e717a952e) | Evidence pending |
-| `14173c6` | Merged workflow, outbox, async processing, and infrastructure changes. | [View commit](https://github.com/Temp-orgo/AWS-Internship/commit/14173c6d0e950f13a5f7e809d95fc39841c06048) | Evidence pending |
-
-### Test Logs
-
-Evidence pending: attach actual output from commands such as:
-
-```bash
-cd backend
-python -m pytest tests/test_outbox_events.py tests/test_outbox_publishers.py tests/test_processing_jobs.py
-python -m pytest -m postgres tests/test_outbox_postgres.py tests/test_processing_jobs_postgres.py
-```
-
-### Build Logs
-
-Evidence pending: no dedicated Week 3 image build log was found.
-
-### Deployment Logs
-
-Evidence pending: add dispatcher or worker rollout logs after deployment, for example `kubectl rollout status deployment/backend-outbox-dispatcher -n internship`.
-
-## Weekly Results
-
-The project gained a reliable event-publishing foundation and a separate queue for user-visible background work. The API can commit business state first, while dispatchers and workers handle retryable side effects after the transaction.
-
-## Lessons Learned
-
-Idempotency exists at multiple layers. HTTP idempotency prevents duplicate command execution, the transactional outbox prevents lost domain events, and consumers still need event-level deduplication.
-
-## Next Week Plan
-
-Standardize container builds, CI quality gates, smoke tests, security scans, and infrastructure validation so the system can be deployed repeatedly with less manual checking.
+<!--
+TODO: Add frontend screenshots, commits, API integration tests, production build output, S3 static hosting configuration, or CloudFront evidence for this week.
+Expected image directory:
+static/images/worklog/week-3/
+-->
