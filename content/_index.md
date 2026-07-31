@@ -41,6 +41,7 @@ This internship report presents the Internship Application Tracker, an AI-integr
 | Project description | A Candidate and HR platform for internship job posting, application tracking, CV/document upload, realtime chat, asynchronous AI processing, and event-driven notification on AWS. |
 | Personal contribution | Architecture documentation, AWS deployment report, workshop steps, troubleshooting record, security/cost analysis, and evidence-based final report preparation. |
 | Public deployment URL | https://dhm2rz5nmsibj.cloudfront.net |
+| Demo video | https://youtu.be/pMq3JmzhudQ?si=cuvjAVDQLTPLu8Uw |
 
 ## Main AWS Services
 
