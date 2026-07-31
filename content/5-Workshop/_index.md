@@ -52,7 +52,7 @@ This workshop is intended for:
 
 ## Architecture summary
 
-![Internship Application Tracker architecture on AWS](/images/5-Workshop/architecture.png)
+![Internship Application Tracker architecture on AWS](/images/5-Workshop/infra.png)
 
 The browser connects to Amazon CloudFront through HTTPS.
 

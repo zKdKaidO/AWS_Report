@@ -52,7 +52,7 @@ Workshop này phù hợp dành cho:
 
 ## Tóm tắt kiến trúc
 
-![Internship Application Tracker architecture on AWS](/images/5-Workshop/architecture.png)
+![Internship Application Tracker architecture on AWS](/images/5-Workshop/infra.png)
 
 Trình duyệt người dùng kết nối an toàn tới Amazon CloudFront thông qua giao thức HTTPS.
 
