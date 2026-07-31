@@ -42,7 +42,7 @@ weight = 20
 [Languages.vi]
 title = "BÃ¡o cÃ¡o thá»±c táº­p"
 weight = 2
-languageName = "Tiáº¿ng Viá»‡t"
+languageName = "Ti\u1EBFng Vi\u1EC7t"
 
 [[Languages.vi.menu.shortcuts]]
 name = "<i class='fab fa-aws'></i> AWS Study Group - Blog"
